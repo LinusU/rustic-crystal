@@ -1,7 +1,7 @@
-use crate::register::CpuFlag::{C, N, H, Z};
+use crate::mmu::MMU;
+use crate::register::CpuFlag::{C, H, N, Z};
 use crate::register::Registers;
 use crate::serial::SerialCallback;
-use crate::mmu::MMU;
 use crate::StrResult;
 
 pub struct CPU<'a> {
@@ -41,7 +41,7 @@ impl<'a> CPU<'a> {
     fn docycle(&mut self) -> u32 {
         self.updateime();
         match self.handleinterrupt() {
-            0 => {},
+            0 => {}
             n => return n,
         };
 
@@ -68,34 +68,48 @@ impl<'a> CPU<'a> {
     fn updateime(&mut self) {
         self.setdi = match self.setdi {
             2 => 1,
-            1 => { self.ime = false; 0 },
+            1 => {
+                self.ime = false;
+                0
+            }
             _ => 0,
         };
         self.setei = match self.setei {
             2 => 1,
-            1 => { self.ime = true; 0 },
+            1 => {
+                self.ime = true;
+                0
+            }
             _ => 0,
         };
     }
 
     fn handleinterrupt(&mut self) -> u32 {
-        if self.ime == false && self.halted == false { return 0 }
+        if self.ime == false && self.halted == false {
+            return 0;
+        }
 
         let triggered = self.mmu.inte & self.mmu.intf;
-        if triggered == 0 { return 0 }
+        if triggered == 0 {
+            return 0;
+        }
 
         self.halted = false;
-        if self.ime == false { return 0 }
+        if self.ime == false {
+            return 0;
+        }
         self.ime = false;
 
         let n = triggered.trailing_zeros();
-        if n >= 5 { panic!("Invalid interrupt triggered"); }
+        if n >= 5 {
+            panic!("Invalid interrupt triggered");
+        }
         self.mmu.intf &= !(1 << n);
         let pc = self.reg.pc;
         self.pushstack(pc);
         self.reg.pc = 0x0040 | ((n as u16) << 3);
 
-        return 4
+        return 4;
     }
 
     fn pushstack(&mut self, value: u16) {
@@ -109,6 +123,7 @@ impl<'a> CPU<'a> {
         res
     }
 
+    #[rustfmt::skip]
     fn call(&mut self) -> u32 {
         let opcode = self.fetchbyte();
         match opcode {
@@ -361,6 +376,7 @@ impl<'a> CPU<'a> {
         }
     }
 
+    #[rustfmt::skip]
     fn call_cb(&mut self) -> u32 {
         let opcode = self.fetchbyte();
         match opcode {
@@ -630,7 +646,8 @@ impl<'a> CPU<'a> {
         self.reg.flag(Z, r == 0);
         self.reg.flag(H, (a & 0xF) + (b & 0xF) + c > 0xF);
         self.reg.flag(N, false);
-        self.reg.flag(C, (a as u16) + (b as u16) + (c as u16) > 0xFF);
+        self.reg
+            .flag(C, (a as u16) + (b as u16) + (c as u16) > 0xFF);
         self.reg.a = r;
     }
 
@@ -683,7 +700,7 @@ impl<'a> CPU<'a> {
         self.reg.flag(Z, r == 0);
         self.reg.flag(H, (a & 0x0F) + 1 > 0x0F);
         self.reg.flag(N, false);
-        return r
+        return r;
     }
 
     fn alu_dec(&mut self, a: u8) -> u8 {
@@ -691,7 +708,7 @@ impl<'a> CPU<'a> {
         self.reg.flag(Z, r == 0);
         self.reg.flag(H, (a & 0x0F) == 0);
         self.reg.flag(N, true);
-        return r
+        return r;
     }
 
     fn alu_add16(&mut self, b: u16) {
@@ -709,7 +726,7 @@ impl<'a> CPU<'a> {
         self.reg.flag(Z, false);
         self.reg.flag(H, (a & 0x000F) + (b & 0x000F) > 0x000F);
         self.reg.flag(C, (a & 0x00FF) + (b & 0x00FF) > 0x00FF);
-        return a.wrapping_add(b)
+        return a.wrapping_add(b);
     }
 
     fn alu_swap(&mut self, a: u8) -> u8 {
@@ -731,49 +748,49 @@ impl<'a> CPU<'a> {
         let c = a & 0x80 == 0x80;
         let r = (a << 1) | (if c { 1 } else { 0 });
         self.alu_srflagupdate(r, c);
-        return r
+        return r;
     }
 
     fn alu_rl(&mut self, a: u8) -> u8 {
         let c = a & 0x80 == 0x80;
         let r = (a << 1) | (if self.reg.getflag(C) { 1 } else { 0 });
         self.alu_srflagupdate(r, c);
-        return r
+        return r;
     }
 
     fn alu_rrc(&mut self, a: u8) -> u8 {
         let c = a & 0x01 == 0x01;
         let r = (a >> 1) | (if c { 0x80 } else { 0 });
         self.alu_srflagupdate(r, c);
-        return r
+        return r;
     }
 
     fn alu_rr(&mut self, a: u8) -> u8 {
         let c = a & 0x01 == 0x01;
         let r = (a >> 1) | (if self.reg.getflag(C) { 0x80 } else { 0 });
         self.alu_srflagupdate(r, c);
-        return r
+        return r;
     }
 
     fn alu_sla(&mut self, a: u8) -> u8 {
         let c = a & 0x80 == 0x80;
         let r = a << 1;
         self.alu_srflagupdate(r, c);
-        return r
+        return r;
     }
 
     fn alu_sra(&mut self, a: u8) -> u8 {
         let c = a & 0x01 == 0x01;
         let r = (a >> 1) | (a & 0x80);
         self.alu_srflagupdate(r, c);
-        return r
+        return r;
     }
 
     fn alu_srl(&mut self, a: u8) -> u8 {
         let c = a & 0x01 == 0x01;
         let r = a >> 1;
         self.alu_srflagupdate(r, c);
-        return r
+        return r;
     }
 
     fn alu_bit(&mut self, a: u8, b: u8) {
@@ -786,10 +803,16 @@ impl<'a> CPU<'a> {
     fn alu_daa(&mut self) {
         let mut a = self.reg.a;
         let mut adjust = if self.reg.getflag(C) { 0x60 } else { 0x00 };
-        if self.reg.getflag(H) { adjust |= 0x06; };
+        if self.reg.getflag(H) {
+            adjust |= 0x06;
+        };
         if !self.reg.getflag(N) {
-            if a & 0x0F > 0x09 { adjust |= 0x06; };
-            if a > 0x99 { adjust |= 0x60; };
+            if a & 0x0F > 0x09 {
+                adjust |= 0x06;
+            };
+            if a > 0x99 {
+                adjust |= 0x60;
+            };
             a = a.wrapping_add(adjust);
         } else {
             a = a.wrapping_sub(adjust);

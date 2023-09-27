@@ -1,5 +1,5 @@
+pub use crate::gpu::{SCREEN_H, SCREEN_W};
 pub use crate::keypad::KeypadKey;
-pub use crate::gpu::{SCREEN_W, SCREEN_H};
 pub use crate::sound::{AudioPlayer, Sound};
 
 pub mod cpu;
