@@ -72,6 +72,7 @@ fn main() -> Result<(), &'static str> {
     let mut renderoptions = <RenderOptions as Default>::default();
 
     let cputhread = thread::spawn(move || run_cpu(cpu));
+    let periodic = timer_periodic(16_743);
 
     eventloop.run_return(move |ev, _evtarget, controlflow| {
         use glium::glutin::event::ElementState::{Pressed, Released};
@@ -129,7 +130,10 @@ fn main() -> Result<(), &'static str> {
             },
             Event::MainEventsCleared => {
                 match receiver2.recv() {
-                    Ok(data) => recalculate_screen(&display, &mut texture, &data, &renderoptions),
+                    Ok(data) => {
+                        periodic.recv().unwrap();
+                        recalculate_screen(&display, &mut texture, &data, &renderoptions);
+                    }
                     Err(..) => stop = true, // Remote end has hung-up
                 }
             }
@@ -210,26 +214,15 @@ fn recalculate_screen(
 }
 
 fn run_cpu(mut cpu: Cpu) {
-    let periodic = timer_periodic(16);
-
-    let waitticks = (4194304f64 / 1000.0 * 16.0).round() as u32;
-    let mut ticks = 0;
-
     loop {
-        while ticks < waitticks {
-            ticks += cpu.do_cycle();
-        }
-
-        ticks -= waitticks;
-
-        let _ = periodic.recv();
+        cpu.do_cycle();
     }
 }
 
-fn timer_periodic(ms: u64) -> Receiver<()> {
+fn timer_periodic(micros: u64) -> Receiver<()> {
     let (tx, rx) = std::sync::mpsc::sync_channel(1);
     std::thread::spawn(move || loop {
-        std::thread::sleep(std::time::Duration::from_millis(ms));
+        std::thread::sleep(std::time::Duration::from_micros(micros));
         if tx.send(()).is_err() {
             break;
         }
