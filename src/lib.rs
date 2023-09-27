@@ -10,7 +10,6 @@ mod gpu;
 mod keypad;
 mod mbc3;
 mod mmu;
-mod register;
 mod rom;
 mod serial;
 mod sound;
