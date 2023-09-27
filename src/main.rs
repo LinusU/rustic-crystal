@@ -214,9 +214,7 @@ fn recalculate_screen(
 }
 
 fn run_cpu(mut cpu: Cpu) {
-    loop {
-        cpu.do_cycle();
-    }
+    cpu.call(0x0100)
 }
 
 fn timer_periodic(micros: u64) -> Receiver<()> {

@@ -32,24 +32,20 @@ impl<'a> Cpu<'a> {
         })
     }
 
-    pub fn do_cycle(&mut self) -> u32 {
-        let ticks = self.docycle() * 4;
-        self.mmu.do_cycle(ticks)
+    pub fn call(&mut self, pc: u16) {
+        self.stack_push(0x0000);
+        self.reg.pc = pc;
+
+        while self.reg.pc != 0x0000 {
+            let ticks = if self.halted { 4 } else { self.step() * 4 };
+            self.cycle(ticks);
+        }
     }
 
-    fn docycle(&mut self) -> u32 {
+    fn cycle(&mut self, ticks: u32) {
+        self.mmu.do_cycle(ticks);
         self.updateime();
-        match self.handleinterrupt() {
-            0 => {}
-            n => return n,
-        };
-
-        if self.halted {
-            // Emulate an noop instruction
-            1
-        } else {
-            self.call()
-        }
+        self.handleinterrupt();
     }
 
     fn fetch_byte(&mut self) -> u8 {
@@ -83,32 +79,30 @@ impl<'a> Cpu<'a> {
         };
     }
 
-    fn handleinterrupt(&mut self) -> u32 {
+    fn handleinterrupt(&mut self) {
         if !self.ime && !self.halted {
-            return 0;
+            return;
         }
 
         let triggered = self.mmu.inte & self.mmu.intf;
         if triggered == 0 {
-            return 0;
+            return;
         }
 
         self.halted = false;
         if !self.ime {
-            return 0;
+            return;
         }
         self.ime = false;
 
         let n = triggered.trailing_zeros();
-        if n >= 5 {
-            panic!("Invalid interrupt triggered");
-        }
-        self.mmu.intf &= !(1 << n);
-        let pc = self.reg.pc;
-        self.stack_push(pc);
-        self.reg.pc = 0x0040 | ((n as u16) << 3);
+        assert!(n < 5, "Invalid interrupt triggered");
 
-        4
+        self.mmu.intf &= !(1 << n);
+
+        let pc = self.reg.pc;
+        self.call(0x0040 | ((n as u16) << 3));
+        self.reg.pc = pc;
     }
 
     fn stack_push(&mut self, value: u16) {
@@ -123,7 +117,7 @@ impl<'a> Cpu<'a> {
     }
 
     #[rustfmt::skip]
-    fn call(&mut self) -> u32 {
+    fn step(&mut self) -> u32 {
         let opcode = self.fetch_byte();
         match opcode {
             0x00 => { 1 },
@@ -329,7 +323,7 @@ impl<'a> Cpu<'a> {
             0xC8 => { if self.reg.flag(Z) { self.reg.pc = self.stack_pop(); 5 } else { 2 } },
             0xC9 => { self.reg.pc = self.stack_pop(); 4 },
             0xCA => { if self.reg.flag(Z) { self.reg.pc = self.fetch_word(); 4 } else { self.reg.pc += 2; 3 } },
-            0xCB => { self.call_cb() },
+            0xCB => { self.step_cb() },
             0xCC => { if self.reg.flag(Z) { self.stack_push(self.reg.pc + 2); self.reg.pc = self.fetch_word(); 6 } else { self.reg.pc += 2; 3 } },
             0xCD => { self.stack_push(self.reg.pc + 2); self.reg.pc = self.fetch_word(); 6 },
             0xCE => { let v = self.fetch_byte(); self.alu_add(v, true); 2 },
@@ -376,7 +370,7 @@ impl<'a> Cpu<'a> {
     }
 
     #[rustfmt::skip]
-    fn call_cb(&mut self) -> u32 {
+    fn step_cb(&mut self) -> u32 {
         let opcode = self.fetch_byte();
         match opcode {
             0x00 => { self.reg.b = self.alu_rlc(self.reg.b); 2 },
