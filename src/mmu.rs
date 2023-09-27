@@ -1,4 +1,3 @@
-use crate::gbmode::{GbMode, GbSpeed};
 use crate::gpu::GPU;
 use crate::keypad::Keypad;
 use crate::mbc3::MBC3;
@@ -15,6 +14,12 @@ enum DMAType {
     NoDMA,
     GDMA,
     HDMA,
+}
+
+#[derive(PartialEq, Copy, Clone)]
+enum GbSpeed {
+    Single,
+    Double,
 }
 
 pub struct MMU<'a> {
@@ -34,7 +39,6 @@ pub struct MMU<'a> {
     hdma_len: u8,
     wrambank: usize,
     pub mbc: MBC3,
-    pub gbmode: GbMode,
     gbspeed: GbSpeed,
     speed_switch_req: bool,
     undocumented_cgb_regs: [u8; 3], // 0xFF72, 0xFF73, 0xFF75
@@ -72,7 +76,6 @@ impl<'a> MMU<'a> {
             gpu: GPU::new_cgb(),
             sound: None,
             mbc: MBC3::new()?,
-            gbmode: GbMode::Color,
             gbspeed: GbSpeed::Single,
             speed_switch_req: false,
             hdma_src: 0,
@@ -122,12 +125,10 @@ impl<'a> MMU<'a> {
     }
 
     fn determine_mode(&mut self) {
-        let mode = match self.rb(0x0143) & 0x80 {
-            0x80 => GbMode::Color,
-            _ => GbMode::ColorAsClassic,
-        };
-        self.gbmode = mode;
-        self.gpu.gbmode = mode;
+        match self.rb(0x0143) & 0x80 {
+            0x80 => (),
+            mode => panic!("Invalid mode: {}", mode),
+        }
     }
 
     pub fn do_cycle(&mut self, ticks: u32) -> u32 {
@@ -173,10 +174,6 @@ impl<'a> MMU<'a> {
             0xFF04..=0xFF07 => self.timer.rb(address),
             0xFF0F => self.intf | 0b11100000,
             0xFF10..=0xFF3F => self.sound.as_mut().map_or(0xFF, |s| s.rb(address)),
-            0xFF4D | 0xFF4F | 0xFF51..=0xFF55 | 0xFF6C | 0xFF70 if self.gbmode != GbMode::Color => {
-                0xFF
-            }
-            0xFF72..=0xFF73 | 0xFF75..=0xFF77 if self.gbmode == GbMode::Classic => 0xFF,
             0xFF4D => {
                 0b01111110
                     | (if self.gbspeed == GbSpeed::Double {
@@ -218,9 +215,6 @@ impl<'a> MMU<'a> {
             0xFF04..=0xFF07 => self.timer.wb(address, value),
             0xFF10..=0xFF3F => self.sound.as_mut().map_or((), |s| s.wb(address, value)),
             0xFF46 => self.oamdma(value),
-            0xFF4D | 0xFF4F | 0xFF51..=0xFF55 | 0xFF6C | 0xFF70 | 0xFF76..=0xFF77
-                if self.gbmode != GbMode::Color => {}
-            0xFF72..=0xFF73 | 0xFF75..=0xFF77 if self.gbmode == GbMode::Classic => {}
             0xFF4D => {
                 if value & 0x1 == 0x1 {
                     self.speed_switch_req = true;

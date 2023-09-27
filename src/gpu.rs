@@ -1,4 +1,3 @@
-use crate::gbmode::GbMode;
 use std::cmp::Ordering;
 
 const VRAM_SIZE: usize = 0x4000;
@@ -55,7 +54,6 @@ pub struct GPU {
     bgprio: [PrioType; SCREEN_W],
     pub updated: bool,
     pub interrupt: u8,
-    pub gbmode: GbMode,
     hblanking: bool,
 }
 
@@ -96,7 +94,6 @@ impl GPU {
             bgprio: [PrioType::Normal; SCREEN_W],
             updated: false,
             interrupt: 0,
-            gbmode: GbMode::Classic,
             cbgpal_inc: false,
             cbgpal_ind: 0,
             cbgpal: [[[0u8; 3]; 4]; 8],
@@ -224,7 +221,6 @@ impl GPU {
             0xFF4B => self.winx,
             0xFF4C => 0xFF,
             0xFF4E => 0xFF,
-            0xFF4F..=0xFF6B if self.gbmode != GbMode::Color => 0xFF,
             0xFF4F => self.vrambank as u8 | 0xFE,
             0xFF68 => 0x40 | self.cbgpal_ind | (if self.cbgpal_inc { 0x80 } else { 0 }),
             0xFF69 => {
@@ -318,7 +314,6 @@ impl GPU {
             0xFF4B => self.winx = v,
             0xFF4C => {}
             0xFF4E => {}
-            0xFF4F..=0xFF6B if self.gbmode != GbMode::Color => {}
             0xFF4F => self.vrambank = (v & 0x01) as usize,
             0xFF68 => {
                 self.cbgpal_ind = v & 0x3F;
@@ -419,7 +414,7 @@ impl GPU {
     }
 
     fn draw_bg(&mut self) {
-        let drawbg = self.gbmode == GbMode::Color || self.lcdc0;
+        let drawbg = self.lcdc0;
 
         let wx_trigger = self.winx <= 166;
         let winy = if self.win_on && self.wy_trigger && wx_trigger {
@@ -464,7 +459,7 @@ impl GPU {
 
             let tilenr: u8 = self.rbvram0(tilemapbase + tiley * 32 + tilex);
 
-            let (palnr, vram1, xflip, yflip, prio) = if self.gbmode == GbMode::Color {
+            let (palnr, vram1, xflip, yflip, prio) = {
                 let flags = self.rbvram1(tilemapbase + tiley * 32 + tilex) as usize;
                 (
                     flags & 0x07,
@@ -473,8 +468,6 @@ impl GPU {
                     flags & (1 << 6) != 0,
                     flags & (1 << 7) != 0,
                 )
-            } else {
-                (0, false, false, false, false)
             };
 
             let tileaddress = self.tilebase
@@ -508,15 +501,11 @@ impl GPU {
             } else {
                 PrioType::Normal
             };
-            if self.gbmode == GbMode::Color {
-                let r = self.cbgpal[palnr][colnr][0];
-                let g = self.cbgpal[palnr][colnr][1];
-                let b = self.cbgpal[palnr][colnr][2];
-                self.setrgb(x as usize, r, g, b);
-            } else {
-                let color = self.palb[colnr];
-                self.setcolor(x, color);
-            }
+
+            let r = self.cbgpal[palnr][colnr][0];
+            let g = self.cbgpal[palnr][colnr][1];
+            let b = self.cbgpal[palnr][colnr][2];
+            self.setrgb(x as usize, r, g, b);
         }
     }
 
@@ -543,11 +532,8 @@ impl GPU {
                 break;
             }
         }
-        if self.gbmode == GbMode::Color {
-            sprites_to_draw[..sidx].sort_unstable_by(cgb_sprite_order);
-        } else {
-            sprites_to_draw[..sidx].sort_unstable_by(dmg_sprite_order);
-        }
+
+        sprites_to_draw[..sidx].sort_unstable_by(cgb_sprite_order);
 
         for &(spritex, spritey, i) in &sprites_to_draw[..sidx] {
             if spritex < -7 || spritex >= (SCREEN_W as i32) {
@@ -559,7 +545,6 @@ impl GPU {
                 & (if self.sprite_size == 16 { 0xFE } else { 0xFF }))
                 as u16;
             let flags = self.rb(spriteaddr + 3) as usize;
-            let usepal1: bool = flags & (1 << 4) != 0;
             let xflip: bool = flags & (1 << 5) != 0;
             let yflip: bool = flags & (1 << 6) != 0;
             let belowbg: bool = flags & (1 << 7) != 0;
@@ -573,7 +558,7 @@ impl GPU {
             };
 
             let tileaddress = 0x8000u16 + tilenum * 16 + tiley * 2;
-            let (b1, b2) = if c_vram1 && self.gbmode == GbMode::Color {
+            let (b1, b2) = if c_vram1 {
                 (self.rbvram1(tileaddress), self.rbvram1(tileaddress + 1))
             } else {
                 (self.rbvram0(tileaddress), self.rbvram0(tileaddress + 1))
@@ -591,28 +576,16 @@ impl GPU {
                     continue;
                 }
 
-                if self.gbmode == GbMode::Color {
-                    if self.lcdc0
-                        && (self.bgprio[(spritex + x) as usize] == PrioType::PrioFlag
-                            || (belowbg && self.bgprio[(spritex + x) as usize] != PrioType::Color0))
-                    {
-                        continue 'xloop;
-                    }
-                    let r = self.csprit[c_palnr][colnr][0];
-                    let g = self.csprit[c_palnr][colnr][1];
-                    let b = self.csprit[c_palnr][colnr][2];
-                    self.setrgb((spritex + x) as usize, r, g, b);
-                } else {
-                    if belowbg && self.bgprio[(spritex + x) as usize] != PrioType::Color0 {
-                        continue 'xloop;
-                    }
-                    let color = if usepal1 {
-                        self.pal1[colnr]
-                    } else {
-                        self.pal0[colnr]
-                    };
-                    self.setcolor((spritex + x) as usize, color);
+                if self.lcdc0
+                    && (self.bgprio[(spritex + x) as usize] == PrioType::PrioFlag
+                        || (belowbg && self.bgprio[(spritex + x) as usize] != PrioType::Color0))
+                {
+                    continue 'xloop;
                 }
+                let r = self.csprit[c_palnr][colnr][0];
+                let g = self.csprit[c_palnr][colnr][1];
+                let b = self.csprit[c_palnr][colnr][2];
+                self.setrgb((spritex + x) as usize, r, g, b);
             }
         }
     }
@@ -622,16 +595,8 @@ impl GPU {
     }
 }
 
-// Functions to determine the order of sprites. Input is a tuple x-coord, OAM position
-// These function ensures that sprites with a higher priority are 'larger'
-fn dmg_sprite_order(a: &(i32, i32, u8), b: &(i32, i32, u8)) -> Ordering {
-    // DMG order: prioritize on x-coord, and then by OAM position.
-    if a.0 != b.0 {
-        return b.0.cmp(&a.0);
-    }
-    return b.2.cmp(&a.2);
-}
-
+// Function to determine the order of sprites. Input is a tuple x-coord, OAM position
+// This function ensures that sprites with a higher priority are 'larger'
 fn cgb_sprite_order(a: &(i32, i32, u8), b: &(i32, i32, u8)) -> Ordering {
     // CGB order: only prioritize based on OAM position.
     return b.2.cmp(&a.2);

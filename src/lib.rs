@@ -4,7 +4,6 @@ pub use crate::sound::{AudioPlayer, Sound};
 
 pub mod cpu;
 
-mod gbmode;
 mod gpu;
 mod keypad;
 mod mbc3;

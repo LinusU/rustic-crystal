@@ -15,15 +15,13 @@ pub struct CPU<'a> {
 
 impl<'a> CPU<'a> {
     pub fn new_cgb(serial_callback: Option<SerialCallback<'a>>) -> StrResult<CPU<'a>> {
-        let cpu_mmu = MMU::new_cgb(serial_callback)?;
-        let registers = Registers::new(cpu_mmu.gbmode);
         Ok(CPU {
-            reg: registers,
+            reg: Registers::new(),
             halted: false,
             ime: true,
             setdi: 0,
             setei: 0,
-            mmu: cpu_mmu,
+            mmu: MMU::new_cgb(serial_callback)?,
         })
     }
 
