@@ -1,3 +1,5 @@
+use std::sync::mpsc::SyncSender;
+
 use crate::mmu::Mmu;
 use crate::register::CpuFlag::{C, H, N, Z};
 use crate::register::Registers;
@@ -14,21 +16,18 @@ pub struct Cpu<'a> {
 }
 
 impl<'a> Cpu<'a> {
-    pub fn new_cgb(serial_callback: Option<SerialCallback<'a>>) -> StrResult<Cpu<'a>> {
+    pub fn new_cgb(
+        serial_callback: Option<SerialCallback<'a>>,
+        update_screen: SyncSender<Vec<u8>>,
+    ) -> StrResult<Cpu<'a>> {
         Ok(Cpu {
             reg: Registers::new(),
             halted: false,
             ime: true,
             setdi: 0,
             setei: 0,
-            mmu: Mmu::new_cgb(serial_callback)?,
+            mmu: Mmu::new_cgb(serial_callback, update_screen)?,
         })
-    }
-
-    pub fn check_and_reset_gpu_updated(&mut self) -> bool {
-        let result = self.mmu.gpu.updated;
-        self.mmu.gpu.updated = false;
-        result
     }
 
     pub fn do_cycle(&mut self) -> u32 {

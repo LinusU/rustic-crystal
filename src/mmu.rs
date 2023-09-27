@@ -1,3 +1,5 @@
+use std::sync::mpsc::SyncSender;
+
 use crate::gpu::Gpu;
 use crate::keypad::Keypad;
 use crate::mbc3::MBC3;
@@ -58,7 +60,10 @@ fn fill_random(slice: &mut [u8], start: u32) {
 }
 
 impl<'a> Mmu<'a> {
-    pub fn new_cgb(serial_callback: Option<SerialCallback<'a>>) -> StrResult<Mmu<'a>> {
+    pub fn new_cgb(
+        serial_callback: Option<SerialCallback<'a>>,
+        update_screen: SyncSender<Vec<u8>>,
+    ) -> StrResult<Mmu<'a>> {
         let serial = match serial_callback {
             Some(cb) => Serial::new_with_callback(cb),
             None => Serial::new(),
@@ -73,7 +78,7 @@ impl<'a> Mmu<'a> {
             serial,
             timer: Timer::new(),
             keypad: Keypad::new(),
-            gpu: Gpu::new_cgb(),
+            gpu: Gpu::new_cgb(update_screen),
             sound: None,
             mbc: MBC3::new()?,
             gbspeed: GbSpeed::Single,

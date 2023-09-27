@@ -2,7 +2,7 @@ use cpal::traits::{DeviceTrait, HostTrait, StreamTrait};
 use glium::glutin::platform::run_return::EventLoopExtRunReturn;
 use rustic_crystal::cpu::Cpu;
 use rustic_crystal::Sound;
-use std::sync::mpsc::{self, Receiver, SyncSender, TryRecvError, TrySendError};
+use std::sync::mpsc::{self, Receiver, TryRecvError};
 use std::sync::{Arc, Mutex};
 use std::thread;
 
@@ -43,7 +43,10 @@ fn create_window_builder() -> glium::glutin::window::WindowBuilder {
 fn main() -> Result<(), &'static str> {
     let scale = 4;
 
-    let mut cpu = Cpu::new_cgb(None)?;
+    let (sender1, receiver1) = mpsc::channel();
+    let (sender2, receiver2) = mpsc::sync_channel(1);
+
+    let mut cpu = Cpu::new_cgb(None, sender2)?;
 
     let cpal_audio_stream = match CpalPlayer::get() {
         Some((v, s)) => {
@@ -56,9 +59,6 @@ fn main() -> Result<(), &'static str> {
             return Err("Could not open audio device");
         }
     };
-
-    let (sender1, receiver1) = mpsc::channel();
-    let (sender2, receiver2) = mpsc::sync_channel(1);
 
     let mut eventloop = glium::glutin::event_loop::EventLoop::new();
     let window_builder = create_window_builder();
@@ -78,7 +78,7 @@ fn main() -> Result<(), &'static str> {
 
     let mut renderoptions = <RenderOptions as Default>::default();
 
-    let cputhread = thread::spawn(move || run_cpu(cpu, sender2, receiver1));
+    let cputhread = thread::spawn(move || run_cpu(cpu, receiver1));
 
     eventloop.run_return(move |ev, _evtarget, controlflow| {
         use glium::glutin::event::ElementState::{Pressed, Released};
@@ -230,7 +230,7 @@ fn recalculate_screen(
     target.finish().unwrap();
 }
 
-fn run_cpu(mut cpu: Cpu, sender: SyncSender<Vec<u8>>, receiver: Receiver<GBEvent>) {
+fn run_cpu(mut cpu: Cpu, receiver: Receiver<GBEvent>) {
     let periodic = timer_periodic(16);
     let mut limit_speed = true;
 
@@ -240,12 +240,6 @@ fn run_cpu(mut cpu: Cpu, sender: SyncSender<Vec<u8>>, receiver: Receiver<GBEvent
     'outer: loop {
         while ticks < waitticks {
             ticks += cpu.do_cycle();
-            if cpu.check_and_reset_gpu_updated() {
-                let data = cpu.mmu.gpu.data.to_vec();
-                if let Err(TrySendError::Disconnected(..)) = sender.try_send(data) {
-                    break 'outer;
-                }
-            }
         }
 
         ticks -= waitticks;
