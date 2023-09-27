@@ -97,8 +97,8 @@ mod test {
             KeypadKey::Start,
         ];
 
-        for i in 0..keys0.len() {
-            keypad.keydown(keys0[i]);
+        for (i, &key) in keys0.iter().enumerate() {
+            keypad.keydown(key);
 
             keypad.wb(0x00);
             assert_eq!(keypad.rb(), 0xCF & !(1 << i));
@@ -112,7 +112,7 @@ mod test {
             keypad.wb(0x30);
             assert_eq!(keypad.rb(), 0xFF);
 
-            keypad.keyup(keys0[i]);
+            keypad.keyup(key);
         }
     }
 
@@ -126,8 +126,8 @@ mod test {
             KeypadKey::Down,
         ];
 
-        for i in 0..keys1.len() {
-            keypad.keydown(keys1[i]);
+        for (i, &key) in keys1.iter().enumerate() {
+            keypad.keydown(key);
 
             keypad.wb(0x00);
             assert_eq!(keypad.rb(), 0xCF & !(1 << i));
@@ -141,7 +141,7 @@ mod test {
             keypad.wb(0x30);
             assert_eq!(keypad.rb(), 0xFF);
 
-            keypad.keyup(keys1[i]);
+            keypad.keyup(key);
         }
     }
 }

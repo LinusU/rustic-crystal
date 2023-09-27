@@ -1,6 +1,6 @@
 use cpal::traits::{DeviceTrait, HostTrait, StreamTrait};
 use glium::glutin::platform::run_return::EventLoopExtRunReturn;
-use rustic_crystal::cpu::CPU;
+use rustic_crystal::cpu::Cpu;
 use rustic_crystal::Sound;
 use std::sync::mpsc::{self, Receiver, SyncSender, TryRecvError, TrySendError};
 use std::sync::{Arc, Mutex};
@@ -21,29 +21,29 @@ enum GBEvent {
 #[cfg(target_os = "windows")]
 fn create_window_builder() -> glium::glutin::window::WindowBuilder {
     use glium::glutin::platform::windows::WindowBuilderExtWindows;
-    return glium::glutin::window::WindowBuilder::new()
+    glium::glutin::window::WindowBuilder::new()
         .with_drag_and_drop(false)
         .with_inner_size(glium::glutin::dpi::LogicalSize::<u32>::from((
             rustic_crystal::SCREEN_W as u32,
             rustic_crystal::SCREEN_H as u32,
         )))
-        .with_title("Rustic Crystal");
+        .with_title("Rustic Crystal")
 }
 
 #[cfg(not(target_os = "windows"))]
 fn create_window_builder() -> glium::glutin::window::WindowBuilder {
-    return glium::glutin::window::WindowBuilder::new()
+    glium::glutin::window::WindowBuilder::new()
         .with_inner_size(glium::glutin::dpi::LogicalSize::<u32>::from((
             rustic_crystal::SCREEN_W as u32,
             rustic_crystal::SCREEN_H as u32,
         )))
-        .with_title("Rustic Crystal");
+        .with_title("Rustic Crystal")
 }
 
 fn main() -> Result<(), &'static str> {
     let scale = 4;
 
-    let mut cpu = CPU::new_cgb(None)?;
+    let mut cpu = Cpu::new_cgb(None)?;
 
     let cpal_audio_stream = match CpalPlayer::get() {
         Some((v, s)) => {
@@ -150,13 +150,13 @@ fn main() -> Result<(), &'static str> {
             },
             Event::MainEventsCleared => {
                 match receiver2.recv() {
-                    Ok(data) => recalculate_screen(&display, &mut texture, &*data, &renderoptions),
+                    Ok(data) => recalculate_screen(&display, &mut texture, &data, &renderoptions),
                     Err(..) => stop = true, // Remote end has hung-up
                 }
             }
             _ => (),
         }
-        if stop == true {
+        if stop {
             *controlflow = glium::glutin::event_loop::ControlFlow::Exit;
         }
     });
@@ -230,7 +230,7 @@ fn recalculate_screen(
     target.finish().unwrap();
 }
 
-fn run_cpu(mut cpu: CPU, sender: SyncSender<Vec<u8>>, receiver: Receiver<GBEvent>) {
+fn run_cpu(mut cpu: Cpu, sender: SyncSender<Vec<u8>>, receiver: Receiver<GBEvent>) {
     let periodic = timer_periodic(16);
     let mut limit_speed = true;
 
@@ -332,9 +332,7 @@ impl CpalPlayer {
                 break;
             }
         }
-        if supported_config.is_none() {
-            return None;
-        }
+        supported_config.as_ref()?;
 
         let selected_config = supported_config.unwrap();
 
@@ -419,6 +417,6 @@ impl rustic_crystal::AudioPlayer for CpalPlayer {
     }
 
     fn underflowed(&self) -> bool {
-        (*self.buffer.lock().unwrap()).len() == 0
+        (*self.buffer.lock().unwrap()).is_empty()
     }
 }

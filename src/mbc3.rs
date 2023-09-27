@@ -133,9 +133,7 @@ impl MBC3 {
     }
 
     fn compute_difftime(&self) -> Option<u64> {
-        if self.rtc_zero.is_none() {
-            return None;
-        }
+        self.rtc_zero?;
         let mut difftime = match time::SystemTime::now().duration_since(time::UNIX_EPOCH) {
             Ok(t) => t.as_secs(),
             Err(_) => panic!("System clock is set to a time before the unix epoch (1970-01-01)"),
@@ -162,17 +160,14 @@ impl Drop for MBC3 {
                     Ok(f) => f,
                     Err(..) => return,
                 };
-                let rtc = match self.rtc_zero {
-                    Some(t) => t,
-                    None => 0,
-                };
+                let rtc = self.rtc_zero.unwrap_or(0);
                 let mut ok = true;
                 if ok {
                     let rtc_bytes = rtc.to_be_bytes();
                     ok = file.write_all(&rtc_bytes).is_ok();
                 };
                 if ok {
-                    let _ = file.write_all(&*self.ram);
+                    let _ = file.write_all(&self.ram);
                 };
             }
         };
@@ -184,7 +179,7 @@ impl MBC3 {
         let idx = if a < 0x4000 {
             a as usize
         } else {
-            self.rombank * 0x4000 | ((a as usize) & 0x3FFF)
+            (self.rombank * 0x4000) | ((a as usize) & 0x3FFF)
         };
         *ROM.get(idx).unwrap_or(&0xFF)
     }
@@ -193,7 +188,7 @@ impl MBC3 {
             return 0xFF;
         }
         if !self.selectrtc && self.rambank < self.rambanks {
-            self.ram[self.rambank * 0x2000 | ((a as usize) & 0x1FFF)]
+            self.ram[(self.rambank * 0x2000) | ((a as usize) & 0x1FFF)]
         } else if self.selectrtc && self.rambank < 5 {
             self.rtc_ram_latch[self.rambank]
         } else {
@@ -222,7 +217,7 @@ impl MBC3 {
             return;
         }
         if !self.selectrtc && self.rambank < self.rambanks {
-            self.ram[self.rambank * 0x2000 | ((a as usize) & 0x1FFF)] = v;
+            self.ram[(self.rambank * 0x2000) | ((a as usize) & 0x1FFF)] = v;
         } else if self.selectrtc && self.rambank < 5 {
             self.calc_rtc_reg();
             let vmask = match self.rambank {

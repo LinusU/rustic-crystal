@@ -27,12 +27,9 @@ impl<'a> Serial<'a> {
             0xFF02 => {
                 self.control = v;
                 if v & 0x81 == 0x81 {
-                    match (self.callback)(self.data) {
-                        Some(v) => {
-                            self.data = v;
-                            self.interrupt = 0x8
-                        }
-                        None => {}
+                    if let Some(v) = (self.callback)(self.data) {
+                        self.data = v;
+                        self.interrupt = 0x8
                     }
                 }
             }

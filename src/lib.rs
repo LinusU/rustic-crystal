@@ -1,3 +1,5 @@
+#![allow(clippy::new_without_default)]
+
 pub use crate::gpu::{SCREEN_H, SCREEN_W};
 pub use crate::keypad::KeypadKey;
 pub use crate::sound::{AudioPlayer, Sound};
