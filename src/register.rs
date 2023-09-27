@@ -52,33 +52,33 @@ impl Registers {
     }
     pub fn hld(&mut self) -> u16 {
         let res = self.hl();
-        self.sethl(res - 1);
+        self.set_hl(res - 1);
         res
     }
     pub fn hli(&mut self) -> u16 {
         let res = self.hl();
-        self.sethl(res + 1);
+        self.set_hl(res + 1);
         res
     }
 
-    pub fn setaf(&mut self, value: u16) {
+    pub fn set_af(&mut self, value: u16) {
         self.a = (value >> 8) as u8;
         self.f = (value & 0x00F0) as u8;
     }
-    pub fn setbc(&mut self, value: u16) {
+    pub fn set_bc(&mut self, value: u16) {
         self.b = (value >> 8) as u8;
         self.c = (value & 0x00FF) as u8;
     }
-    pub fn setde(&mut self, value: u16) {
+    pub fn set_de(&mut self, value: u16) {
         self.d = (value >> 8) as u8;
         self.e = (value & 0x00FF) as u8;
     }
-    pub fn sethl(&mut self, value: u16) {
+    pub fn set_hl(&mut self, value: u16) {
         self.h = (value >> 8) as u8;
         self.l = (value & 0x00FF) as u8;
     }
 
-    pub fn flag(&mut self, flags: CpuFlag, set: bool) {
+    pub fn set_flag(&mut self, flags: CpuFlag, set: bool) {
         let mask = flags as u8;
         match set {
             true => self.f |= mask,
@@ -87,7 +87,7 @@ impl Registers {
         self.f &= 0xF0;
     }
 
-    pub fn getflag(&self, flags: CpuFlag) -> bool {
+    pub fn flag(&self, flags: CpuFlag) -> bool {
         let mask = flags as u8;
         self.f & mask > 0
     }
