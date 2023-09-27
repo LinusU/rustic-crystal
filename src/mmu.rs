@@ -1,7 +1,7 @@
-use std::sync::mpsc::SyncSender;
+use std::sync::mpsc::{Receiver, SyncSender};
 
 use crate::gpu::Gpu;
-use crate::keypad::Keypad;
+use crate::keypad::{Keypad, KeypadEvent};
 use crate::mbc3::MBC3;
 use crate::serial::{Serial, SerialCallback};
 use crate::sound::Sound;
@@ -63,6 +63,7 @@ impl<'a> Mmu<'a> {
     pub fn new_cgb(
         serial_callback: Option<SerialCallback<'a>>,
         update_screen: SyncSender<Vec<u8>>,
+        keypad_events: Receiver<KeypadEvent>,
     ) -> StrResult<Mmu<'a>> {
         let serial = match serial_callback {
             Some(cb) => Serial::new_with_callback(cb),
@@ -77,7 +78,7 @@ impl<'a> Mmu<'a> {
             intf: 0,
             serial,
             timer: Timer::new(),
-            keypad: Keypad::new(),
+            keypad: Keypad::new(keypad_events),
             gpu: Gpu::new_cgb(update_screen),
             sound: None,
             mbc: MBC3::new()?,
@@ -148,9 +149,6 @@ impl<'a> Mmu<'a> {
         self.timer.do_cycle(cputicks);
         self.intf |= self.timer.interrupt;
         self.timer.interrupt = 0;
-
-        self.intf |= self.keypad.interrupt;
-        self.keypad.interrupt = 0;
 
         self.gpu.do_cycle(gputicks);
         self.intf |= self.gpu.interrupt;

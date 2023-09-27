@@ -1,5 +1,6 @@
-use std::sync::mpsc::SyncSender;
+use std::sync::mpsc::{Receiver, SyncSender};
 
+use crate::keypad::KeypadEvent;
 use crate::mmu::Mmu;
 use crate::register::CpuFlag::{C, H, N, Z};
 use crate::register::Registers;
@@ -19,6 +20,7 @@ impl<'a> Cpu<'a> {
     pub fn new_cgb(
         serial_callback: Option<SerialCallback<'a>>,
         update_screen: SyncSender<Vec<u8>>,
+        keypad_events: Receiver<KeypadEvent>,
     ) -> StrResult<Cpu<'a>> {
         Ok(Cpu {
             reg: Registers::new(),
@@ -26,7 +28,7 @@ impl<'a> Cpu<'a> {
             ime: true,
             setdi: 0,
             setei: 0,
-            mmu: Mmu::new_cgb(serial_callback, update_screen)?,
+            mmu: Mmu::new_cgb(serial_callback, update_screen, keypad_events)?,
         })
     }
 

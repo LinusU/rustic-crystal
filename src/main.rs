@@ -1,21 +1,14 @@
 use cpal::traits::{DeviceTrait, HostTrait, StreamTrait};
 use glium::glutin::platform::run_return::EventLoopExtRunReturn;
 use rustic_crystal::cpu::Cpu;
-use rustic_crystal::Sound;
-use std::sync::mpsc::{self, Receiver, TryRecvError};
+use rustic_crystal::{KeypadEvent, Sound};
+use std::sync::mpsc::{self, Receiver};
 use std::sync::{Arc, Mutex};
 use std::thread;
 
 #[derive(Default)]
 struct RenderOptions {
     pub linear_interpolation: bool,
-}
-
-enum GBEvent {
-    KeyUp(rustic_crystal::KeypadKey),
-    KeyDown(rustic_crystal::KeypadKey),
-    SpeedUp,
-    SpeedDown,
 }
 
 #[cfg(target_os = "windows")]
@@ -46,7 +39,7 @@ fn main() -> Result<(), &'static str> {
     let (sender1, receiver1) = mpsc::channel();
     let (sender2, receiver2) = mpsc::sync_channel(1);
 
-    let mut cpu = Cpu::new_cgb(None, sender2)?;
+    let mut cpu = Cpu::new_cgb(None, sender2, receiver1)?;
 
     let cpal_audio_stream = match CpalPlayer::get() {
         Some((v, s)) => {
@@ -78,7 +71,7 @@ fn main() -> Result<(), &'static str> {
 
     let mut renderoptions = <RenderOptions as Default>::default();
 
-    let cputhread = thread::spawn(move || run_cpu(cpu, receiver1));
+    let cputhread = thread::spawn(move || run_cpu(cpu));
 
     eventloop.run_return(move |ev, _evtarget, controlflow| {
         use glium::glutin::event::ElementState::{Pressed, Released};
@@ -107,20 +100,6 @@ fn main() -> Result<(), &'static str> {
                     } => set_window_size(display.gl_window().window(), scale),
                     KeyboardInput {
                         state: Pressed,
-                        virtual_keycode: Some(VirtualKeyCode::LShift),
-                        ..
-                    } => {
-                        let _ = sender1.send(GBEvent::SpeedUp);
-                    }
-                    KeyboardInput {
-                        state: Released,
-                        virtual_keycode: Some(VirtualKeyCode::LShift),
-                        ..
-                    } => {
-                        let _ = sender1.send(GBEvent::SpeedDown);
-                    }
-                    KeyboardInput {
-                        state: Pressed,
                         virtual_keycode: Some(VirtualKeyCode::T),
                         ..
                     } => {
@@ -132,7 +111,7 @@ fn main() -> Result<(), &'static str> {
                         ..
                     } => {
                         if let Some(key) = glutin_to_keypad(glutinkey) {
-                            let _ = sender1.send(GBEvent::KeyDown(key));
+                            let _ = sender1.send(KeypadEvent::Down(key));
                         }
                     }
                     KeyboardInput {
@@ -141,7 +120,7 @@ fn main() -> Result<(), &'static str> {
                         ..
                     } => {
                         if let Some(key) = glutin_to_keypad(glutinkey) {
-                            let _ = sender1.send(GBEvent::KeyUp(key));
+                            let _ = sender1.send(KeypadEvent::Up(key));
                         }
                     }
                     _ => (),
@@ -230,39 +209,20 @@ fn recalculate_screen(
     target.finish().unwrap();
 }
 
-fn run_cpu(mut cpu: Cpu, receiver: Receiver<GBEvent>) {
+fn run_cpu(mut cpu: Cpu) {
     let periodic = timer_periodic(16);
-    let mut limit_speed = true;
 
     let waitticks = (4194304f64 / 1000.0 * 16.0).round() as u32;
     let mut ticks = 0;
 
-    'outer: loop {
+    loop {
         while ticks < waitticks {
             ticks += cpu.do_cycle();
         }
 
         ticks -= waitticks;
 
-        'recv: loop {
-            match receiver.try_recv() {
-                Ok(event) => match event {
-                    GBEvent::KeyUp(key) => cpu.mmu.keypad.keyup(key),
-                    GBEvent::KeyDown(key) => cpu.mmu.keypad.keydown(key),
-                    GBEvent::SpeedUp => limit_speed = false,
-                    GBEvent::SpeedDown => {
-                        limit_speed = true;
-                        cpu.mmu.sound.as_mut().unwrap().sync();
-                    }
-                },
-                Err(TryRecvError::Empty) => break 'recv,
-                Err(TryRecvError::Disconnected) => break 'outer,
-            }
-        }
-
-        if limit_speed {
-            let _ = periodic.recv();
-        }
+        let _ = periodic.recv();
     }
 }
 
