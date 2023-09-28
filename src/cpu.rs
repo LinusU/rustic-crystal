@@ -61,16 +61,31 @@ impl<'a> Cpu<'a> {
     }
 
     pub fn call(&mut self, pc: u16) {
+        assert_ne!(pc, 0x0000);
+
         self.stack_push(0x0000);
         self.pc = pc;
 
-        while self.pc != 0x0000 {
-            let ticks = if self.halted { 4 } else { self.step() * 4 };
-            self.cycle(ticks);
+        loop {
+            match (self.bank(), self.pc) {
+                (_, 0x0000) => break,
+
+                (0x3a, 0x4000) => crate::game::audio::engine::init_sound(self),
+                (0x3a, 0x4b30) => crate::game::audio::engine::play_music(self),
+
+                _ => {
+                    let ticks = if self.halted { 4 } else { self.step() * 4 };
+                    self.cycle(ticks);
+                }
+            }
         }
     }
 
-    fn cycle(&mut self, ticks: u32) {
+    pub fn bank(&self) -> usize {
+        self.mmu.mbc.rombank
+    }
+
+    pub fn cycle(&mut self, ticks: u32) {
         self.mmu.do_cycle(ticks);
         self.updateime();
         self.handleinterrupt();
@@ -133,12 +148,12 @@ impl<'a> Cpu<'a> {
         self.pc = pc;
     }
 
-    fn stack_push(&mut self, value: u16) {
+    pub fn stack_push(&mut self, value: u16) {
         self.sp = self.sp.wrapping_sub(2);
         self.mmu.ww(self.sp, value);
     }
 
-    fn stack_pop(&mut self) -> u16 {
+    pub fn stack_pop(&mut self) -> u16 {
         let res = self.mmu.rw(self.sp);
         self.sp += 2;
         res

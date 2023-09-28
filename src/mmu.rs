@@ -5,6 +5,7 @@ use crate::keypad::{Keypad, KeypadEvent};
 use crate::mbc3::MBC3;
 use crate::serial::{Serial, SerialCallback};
 use crate::sound::Sound;
+use crate::sound2::Sound2;
 use crate::timer::Timer;
 use crate::StrResult;
 
@@ -35,6 +36,7 @@ pub struct Mmu<'a> {
     pub keypad: Keypad,
     pub gpu: Gpu,
     pub sound: Option<Sound>,
+    pub sound2: Sound2,
     hdma_status: DmaType,
     hdma_src: u16,
     hdma_dst: u16,
@@ -81,6 +83,7 @@ impl<'a> Mmu<'a> {
             keypad: Keypad::new(keypad_events),
             gpu: Gpu::new_cgb(update_screen),
             sound: None,
+            sound2: Sound2::new(),
             mbc: MBC3::new()?,
             gbspeed: GbSpeed::Single,
             speed_switch_req: false,
