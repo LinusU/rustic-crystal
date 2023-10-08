@@ -1164,6 +1164,12 @@ dependencies = [
 ]
 
 [[package]]
+name = "pokemon-synthesizer"
+version = "0.2.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "432a622e7112639d34e0a79dc1169c84ca0f91ae9080efc98e41ef035df2fede"
+
+[[package]]
 name = "proc-macro-crate"
 version = "1.3.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1273,6 +1279,7 @@ dependencies = [
  "blip_buf",
  "cpal",
  "glium",
+ "pokemon-synthesizer",
  "rodio",
 ]
 

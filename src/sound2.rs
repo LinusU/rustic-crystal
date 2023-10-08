@@ -11,6 +11,7 @@ pub trait Music<TSource>: Sfx<TSource> {
 pub struct Sound2 {
     handle: OutputStreamHandle,
     music: Option<(u32, Sink)>,
+    sfx: Option<Sink>,
     _stream: OutputStream,
 }
 
@@ -22,6 +23,7 @@ impl Sound2 {
             _stream: stream,
             music: None,
             handle,
+            sfx: None,
         }
     }
 
@@ -57,5 +59,21 @@ impl Sound2 {
         let sink = Sink::try_new(&self.handle).unwrap();
         sink.append(music.open());
         self.music = Some((id, sink));
+    }
+
+    pub fn play_sfx<T, TSource>(&mut self, sound: T)
+    where
+        T: Sfx<TSource>,
+        TSource: rodio::Source + Send + 'static,
+        f32: cpal::FromSample<TSource::Item>,
+        TSource::Item: rodio::Sample + Send,
+    {
+        if let Some(sink) = self.sfx.take() {
+            sink.stop();
+        }
+
+        let sink = Sink::try_new(&self.handle).unwrap();
+        sink.append(sound.open());
+        self.sfx = Some(sink);
     }
 }
