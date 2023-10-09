@@ -21,6 +21,14 @@ Rustic Crystal requires a copy of the original Pokemon Crystal ROM to run. The R
 
 You can obtain a ROM file from various sources online, but please note that it may be illegal to download and use ROMs in some jurisdictions.
 
+## Music
+
+Rustic Crystal requires music in FLAC format from the "Pokémon Gold & Pokémon Silver: Super Music Collection" album. You can download the music from the following link:
+
+https://archive.org/details/pkmn-gsc-soundtrack
+
+Copy all of the FLAC files from the album, both from `Disc 1` and `Disc 2 (Crystal)`, into a directory named `music` in the project root.
+
 ## Running the Game
 
 Use the following command to build and run the game:

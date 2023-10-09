@@ -1,14 +1,15 @@
 use std::sync::mpsc::{Receiver, SyncSender};
 
+use crate::game_state::GameState;
 use crate::gpu::Gpu;
 use crate::keypad::{Keypad, KeypadEvent};
 use crate::mbc3::MBC3;
 use crate::serial::{Serial, SerialCallback};
 use crate::sound::Sound;
+use crate::sound2::Sound2;
 use crate::timer::Timer;
 use crate::StrResult;
 
-const WRAM_SIZE: usize = 0x8000;
 const ZRAM_SIZE: usize = 0x7F;
 
 #[derive(PartialEq)]
@@ -25,7 +26,7 @@ enum GbSpeed {
 }
 
 pub struct Mmu<'a> {
-    wram: [u8; WRAM_SIZE],
+    wram: GameState,
     zram: [u8; ZRAM_SIZE],
     hdma: [u8; 4],
     pub inte: u8,
@@ -35,6 +36,7 @@ pub struct Mmu<'a> {
     pub keypad: Keypad,
     pub gpu: Gpu,
     pub sound: Option<Sound>,
+    pub sound2: Sound2,
     hdma_status: DmaType,
     hdma_src: u16,
     hdma_dst: u16,
@@ -44,19 +46,6 @@ pub struct Mmu<'a> {
     gbspeed: GbSpeed,
     speed_switch_req: bool,
     undocumented_cgb_regs: [u8; 3], // 0xFF72, 0xFF73, 0xFF75
-}
-
-fn fill_random(slice: &mut [u8], start: u32) {
-    // Simple LCG to generate (non-cryptographic) random values
-    // Each distinct invocation should use a different start value
-    const A: u32 = 1103515245;
-    const C: u32 = 12345;
-
-    let mut x = start;
-    for v in slice.iter_mut() {
-        x = x.wrapping_mul(A).wrapping_add(C);
-        *v = ((x >> 23) & 0xFF) as u8;
-    }
 }
 
 impl<'a> Mmu<'a> {
@@ -70,7 +59,7 @@ impl<'a> Mmu<'a> {
             None => Serial::new(),
         };
         let mut res = Mmu {
-            wram: [0; WRAM_SIZE],
+            wram: GameState::new(),
             zram: [0; ZRAM_SIZE],
             wrambank: 1,
             hdma: [0; 4],
@@ -81,6 +70,7 @@ impl<'a> Mmu<'a> {
             keypad: Keypad::new(keypad_events),
             gpu: Gpu::new_cgb(update_screen),
             sound: None,
+            sound2: Sound2::new(),
             mbc: MBC3::new()?,
             gbspeed: GbSpeed::Single,
             speed_switch_req: false,
@@ -90,7 +80,6 @@ impl<'a> Mmu<'a> {
             hdma_len: 0xFF,
             undocumented_cgb_regs: [0; 3],
         };
-        fill_random(&mut res.wram, 42);
         res.determine_mode();
         res.set_initial();
         Ok(res)
@@ -167,10 +156,10 @@ impl<'a> Mmu<'a> {
             0x0000..=0x7FFF => self.mbc.readrom(address),
             0x8000..=0x9FFF => self.gpu.rb(address),
             0xA000..=0xBFFF => self.mbc.readram(address),
-            0xC000..=0xCFFF | 0xE000..=0xEFFF => self.wram[address as usize & 0x0FFF],
-            0xD000..=0xDFFF | 0xF000..=0xFDFF => {
-                self.wram[(self.wrambank * 0x1000) | address as usize & 0x0FFF]
-            }
+            0xC000..=0xCFFF | 0xE000..=0xEFFF => self.wram.byte(address as usize & 0x0FFF),
+            0xD000..=0xDFFF | 0xF000..=0xFDFF => self
+                .wram
+                .byte((self.wrambank * 0x1000) | address as usize & 0x0FFF),
             0xFE00..=0xFE9F => self.gpu.rb(address),
             0xFF00 => self.keypad.rb(),
             0xFF01..=0xFF02 => self.serial.rb(address),
@@ -208,10 +197,13 @@ impl<'a> Mmu<'a> {
             0x0000..=0x7FFF => self.mbc.writerom(address, value),
             0x8000..=0x9FFF => self.gpu.wb(address, value),
             0xA000..=0xBFFF => self.mbc.writeram(address, value),
-            0xC000..=0xCFFF | 0xE000..=0xEFFF => self.wram[address as usize & 0x0FFF] = value,
-            0xD000..=0xDFFF | 0xF000..=0xFDFF => {
-                self.wram[(self.wrambank * 0x1000) | (address as usize & 0x0FFF)] = value
+            0xC000..=0xCFFF | 0xE000..=0xEFFF => {
+                self.wram.set_byte(address as usize & 0x0FFF, value)
             }
+            0xD000..=0xDFFF | 0xF000..=0xFDFF => self.wram.set_byte(
+                (self.wrambank * 0x1000) | (address as usize & 0x0FFF),
+                value,
+            ),
             0xFE00..=0xFE9F => self.gpu.wb(address, value),
             0xFF00 => self.keypad.wb(value),
             0xFF01..=0xFF02 => self.serial.wb(address, value),
@@ -255,6 +247,14 @@ impl<'a> Mmu<'a> {
             }
         }
         self.speed_switch_req = false;
+    }
+
+    pub fn borrow_wram(&self) -> &GameState {
+        &self.wram
+    }
+
+    pub fn borrow_wram_mut(&mut self) -> &mut GameState {
+        &mut self.wram
     }
 
     fn oamdma(&mut self, value: u8) {

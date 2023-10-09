@@ -24,7 +24,7 @@ fn ram_banks(v: u8) -> usize {
 
 pub struct MBC3 {
     ram: Vec<u8>,
-    rombank: usize,
+    pub rombank: usize,
     rambank: usize,
     rambanks: usize,
     selectrtc: bool,
