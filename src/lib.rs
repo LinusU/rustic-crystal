@@ -7,6 +7,7 @@ pub use crate::sound::{AudioPlayer, Sound};
 pub mod cpu;
 pub mod game;
 
+mod game_state;
 mod gpu;
 mod keypad;
 mod mbc3;

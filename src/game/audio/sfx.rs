@@ -12,7 +12,7 @@ pub struct Sfx {
 }
 
 impl Sfx {
-    const fn new(bank: u8, addr: u16) -> Self {
+    pub const fn new(bank: u8, addr: u16) -> Self {
         Self {
             bank,
             addr,

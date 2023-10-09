@@ -72,6 +72,7 @@ impl<'a> Cpu<'a> {
 
                 (0x3a, 0x4000) => crate::game::audio::engine::init_sound(self),
                 (0x3a, 0x4b30) => crate::game::audio::engine::play_music(self),
+                (0x3a, 0x4b79) => crate::game::audio::engine::play_cry(self),
                 (0x3a, 0x4c04) => crate::game::audio::engine::play_sfx(self),
 
                 _ => {
