@@ -37,6 +37,12 @@ Use the following command to build and run the game:
 cargo run --release
 ```
 
+## Packaging
+
+I've added some basic support for packaging the game to a proper app using [Cargo bundle](https://github.com/burtonageo/cargo-bundle). Currently only macOS is supported, but it should be possible to add support for other platforms as well.
+
+Running `cargo bundle` should produce an `.app` file with the game and the music bundled together. The `.app` file can be moved to the `Applications` folder and run from there.
+
 ## Contributing
 
 Contributions to Rustic Crystal are welcome! Feel free to open an issue if you have any questions or suggestions. If you want to contribute code, it's probably a good idea to open an issue first to discuss the change you want to make, since it's still early days for this project.
