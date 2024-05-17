@@ -1,5 +1,6 @@
 use std::fs::File;
 use std::io::BufReader;
+use std::path::PathBuf;
 
 use rodio::decoder::LoopedDecoder;
 use rodio::Decoder;
@@ -8,8 +9,26 @@ use crate::sound2::{Music as MusicTrait, Sfx as SfxTrait};
 
 type MusicDecoder = LoopedDecoder<BufReader<File>>;
 
+fn resources_root() -> Option<PathBuf> {
+    if std::env::var_os("CARGO").is_some() {
+        return Some(PathBuf::from(std::env::var_os("CARGO_MANIFEST_DIR")?));
+    }
+
+    // TODO: support for other platforms
+    #[cfg(target_os = "macos")]
+    {
+        let bundle = core_foundation::bundle::CFBundle::main_bundle();
+        let bundle_path = bundle.path()?;
+        let resources_path = bundle.resources_path()?;
+        Some(bundle_path.join(resources_path))
+    }
+    #[cfg(not(any(target_os = "macos")))]
+    None
+}
+
+
 fn open_music(name: &str) -> MusicDecoder {
-    let root = std::env::current_dir().unwrap();
+    let root = resources_root().unwrap_or(std::env::current_dir().unwrap());
     let file = File::open(root.join("music").join(name)).unwrap();
 
     Decoder::new_looped(BufReader::new(file)).unwrap()
