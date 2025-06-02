@@ -2,6 +2,7 @@ use glium::glutin::platform::run_return::EventLoopExtRunReturn;
 use rustic_crystal::cpu::Cpu;
 use rustic_crystal::KeypadEvent;
 use std::sync::mpsc::{self, Receiver, SyncSender};
+use std::sync::{atomic::AtomicU64, Arc};
 use std::thread;
 
 #[derive(Default)]
@@ -34,6 +35,8 @@ fn create_window_builder() -> glium::glutin::window::WindowBuilder {
 fn main() -> Result<(), &'static str> {
     let scale = 4;
 
+    let render_delay = Arc::new(AtomicU64::new(16_743));
+
     let (sender1, receiver1) = mpsc::channel();
     let (sender2, receiver2) = mpsc::sync_channel(1);
 
@@ -56,7 +59,7 @@ fn main() -> Result<(), &'static str> {
     let mut renderoptions = <RenderOptions as Default>::default();
 
     let cputhread = thread::spawn(move || run_game(sender2, receiver1));
-    let periodic = timer_periodic(16_743);
+    let periodic = timer_periodic(render_delay.clone());
 
     eventloop.run_return(move |ev, _evtarget, controlflow| {
         use glium::glutin::event::ElementState::{Pressed, Released};
@@ -77,12 +80,32 @@ fn main() -> Result<(), &'static str> {
                         state: Pressed,
                         virtual_keycode: Some(VirtualKeyCode::Key1),
                         ..
-                    } => set_window_size(display.gl_window().window(), 1),
+                    } => render_delay.store(16_743, std::sync::atomic::Ordering::Relaxed), // 59.7 fps
                     KeyboardInput {
                         state: Pressed,
-                        virtual_keycode: Some(VirtualKeyCode::R),
+                        virtual_keycode: Some(VirtualKeyCode::Key2),
                         ..
-                    } => set_window_size(display.gl_window().window(), scale),
+                    } => render_delay.store(10_000, std::sync::atomic::Ordering::Relaxed), // 100 fps
+                    KeyboardInput {
+                        state: Pressed,
+                        virtual_keycode: Some(VirtualKeyCode::Key3),
+                        ..
+                    } => render_delay.store(8_333, std::sync::atomic::Ordering::Relaxed), // 120 fps
+                    KeyboardInput {
+                        state: Pressed,
+                        virtual_keycode: Some(VirtualKeyCode::Key4),
+                        ..
+                    } => render_delay.store(5_000, std::sync::atomic::Ordering::Relaxed), // 200 fps
+                    KeyboardInput {
+                        state: Pressed,
+                        virtual_keycode: Some(VirtualKeyCode::Key5),
+                        ..
+                    } => render_delay.store(4_166, std::sync::atomic::Ordering::Relaxed), // 240 fps
+                    KeyboardInput {
+                        state: Pressed,
+                        virtual_keycode: Some(VirtualKeyCode::Key6),
+                        ..
+                    } => render_delay.store(2_500, std::sync::atomic::Ordering::Relaxed), // 400 fps
                     KeyboardInput {
                         state: Pressed,
                         virtual_keycode: Some(VirtualKeyCode::T),
@@ -113,9 +136,10 @@ fn main() -> Result<(), &'static str> {
                 _ => (),
             },
             Event::MainEventsCleared => {
+                periodic.recv().unwrap();
+
                 match receiver2.recv() {
                     Ok(data) => {
-                        periodic.recv().unwrap();
                         recalculate_screen(&display, &mut texture, &data, &renderoptions);
                     }
                     Err(..) => stop = true, // Remote end has hung-up
@@ -202,9 +226,10 @@ fn run_game(update_screen: SyncSender<Vec<u8>>, keypad_events: Receiver<KeypadEv
         .call(0x0100)
 }
 
-fn timer_periodic(micros: u64) -> Receiver<()> {
+fn timer_periodic(delay: Arc<AtomicU64>) -> Receiver<()> {
     let (tx, rx) = std::sync::mpsc::sync_channel(1);
     std::thread::spawn(move || loop {
+        let micros = delay.load(std::sync::atomic::Ordering::Relaxed);
         std::thread::sleep(std::time::Duration::from_micros(micros));
         if tx.send(()).is_err() {
             break;
