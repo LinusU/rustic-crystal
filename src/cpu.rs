@@ -70,6 +70,7 @@ impl<'a> Cpu<'a> {
             match (self.bank(), self.pc) {
                 (_, 0x0000) => break,
 
+                (_, 0x0100) => crate::game::home::init::start(self),
                 (_, 0x3dfe) => crate::game::home::audio::terminate_exp_bar_sound(self),
 
                 (0x3a, 0x4000) => crate::game::audio::engine::init_sound(self),
@@ -87,6 +88,10 @@ impl<'a> Cpu<'a> {
 
     pub fn bank(&self) -> usize {
         self.mmu.mbc.rombank
+    }
+
+    pub fn write_byte(&mut self, addr: u16, value: u8) {
+        self.mmu.wb(addr, value);
     }
 
     pub fn cycle(&mut self, ticks: u32) {
