@@ -5,6 +5,7 @@ edition = "2021"
 description = "A re-implementation of the classic GameBoy Color game Pokemon Crystal in Rust"
 
 [dependencies]
+bitflags = "2.9.1"
 blip_buf = "0.1.4"
 cpal = "0.15.2"
 glium = { version = "0.32.1", default_features = false, features = [ "glutin" ] }

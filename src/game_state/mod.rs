@@ -1,3 +1,5 @@
+use crate::game::audio::music::Music;
+
 const WRAM_SIZE: usize = 0x8000;
 
 fn fill_random(slice: &mut [u8], start: u32) {
@@ -42,5 +44,9 @@ impl GameState {
 
     pub fn cry_length(&self) -> u16 {
         u16::from_le_bytes([self.data[0x02b2], self.data[0x02b3]])
+    }
+
+    pub fn set_map_music(&mut self, value: Option<Music>) {
+        self.data[0x02c0] = value.map_or(0, |value| value as u8);
     }
 }

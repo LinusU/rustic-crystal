@@ -1,5 +1,6 @@
 use std::sync::mpsc::{Receiver, SyncSender};
 
+use crate::game_state::GameState;
 use crate::keypad::KeypadEvent;
 use crate::mmu::Mmu;
 use crate::serial::SerialCallback;
@@ -29,7 +30,7 @@ pub struct Cpu<'a> {
 
     pub mmu: Mmu<'a>,
     halted: bool,
-    ime: bool,
+    pub ime: bool,
     setdi: u32,
     setei: u32,
 }
@@ -71,6 +72,7 @@ impl<'a> Cpu<'a> {
                 (_, 0x0000) => break,
 
                 (_, 0x0100) => crate::game::home::init::start(self),
+                (_, 0x017d) => panic!("init should only be called from Rust"),
                 (_, 0x3dfe) => crate::game::home::audio::terminate_exp_bar_sound(self),
 
                 (0x3a, 0x4000) => crate::game::audio::engine::init_sound(self),
@@ -90,6 +92,10 @@ impl<'a> Cpu<'a> {
         self.mmu.mbc.rombank
     }
 
+    pub fn read_byte(&mut self, addr: u16) -> u8 {
+        self.mmu.rb(addr)
+    }
+
     pub fn write_byte(&mut self, addr: u16, value: u8) {
         self.mmu.wb(addr, value);
     }
@@ -98,6 +104,14 @@ impl<'a> Cpu<'a> {
         self.mmu.do_cycle(ticks);
         self.updateime();
         self.handleinterrupt();
+    }
+
+    pub fn borrow_wram(&self) -> &GameState {
+        self.mmu.borrow_wram()
+    }
+
+    pub fn borrow_wram_mut(&mut self) -> &mut GameState {
+        self.mmu.borrow_wram_mut()
     }
 
     fn fetch_byte(&mut self) -> u8 {

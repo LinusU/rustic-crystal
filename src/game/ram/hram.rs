@@ -1,2 +1,9 @@
-pub const H_CGB: u16 = 0xffe6;
-pub const H_SYSTEM_BOOTED: u16 = 0xffea;
+pub const SERIAL_CONNECTION_STATUS: u16 = 0xffcb;
+pub const SCX: u16 = 0xffcf;
+pub const SCY: u16 = 0xffd0;
+pub const WX: u16 = 0xffd1;
+pub const WY: u16 = 0xffd2;
+pub const CGB: u16 = 0xffe6;
+pub const SYSTEM_BOOTED: u16 = 0xffea;
+pub const BG_MAP_ADDRESS: u16 = 0xffd6;
+pub const MAP_ANIMS: u16 = 0xffde;
