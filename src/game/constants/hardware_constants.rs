@@ -51,6 +51,8 @@ impl Default for LCDControl {
 pub const MBC3_SRAM_ENABLE: u16 = 0x0000;
 pub const MBC3_LATCH_CLOCK: u16 = 0x6000;
 
+pub const SRAM_DISABLE: u8 = 0x00;
+
 /// Joypad (R/W)
 pub const R_JOYP: u16 = 0xff00;
 

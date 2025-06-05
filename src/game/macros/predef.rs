@@ -87,7 +87,7 @@ macro_rules! predef_call {
         $cpu.pc += 3;
         let pc = $cpu.pc;
         $cpu.cycle(24);
-        $cpu.call(0x3eb4);
+        $cpu.call(0x2d83); // Predef
         $cpu.pc = pc;
     };
 }
