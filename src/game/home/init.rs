@@ -3,7 +3,7 @@ use crate::{
     game::{
         constants::{hardware_constants, serial_constants},
         macros,
-        ram::{hram, vram},
+        ram::{hram, sram, vram},
     },
 };
 
@@ -77,7 +77,7 @@ fn init(cpu: &mut Cpu) {
 
     clear_vram(cpu);
     cpu.call(0x300b); // ClearSprites
-    cpu.call(0x0270); // ClearsScratch
+    clears_scratch(cpu);
 
     cpu.a = 1; // BANK(WriteOAMDMACodeToHRAM) aka BANK(GameInit)
     cpu.call(0x0010); // Bankswitch
@@ -183,4 +183,16 @@ fn clear_wram(cpu: &mut Cpu) {
             cpu.write_byte(WRAMX_START + i, 0);
         }
     }
+}
+
+/// Wipe the first 32 bytes of sScratch
+fn clears_scratch(cpu: &mut Cpu) {
+    cpu.a = sram::SCRATCH.0;
+    cpu.call(0x2fcb); // OpenSRAM
+
+    for i in 0..32 {
+        cpu.write_byte(sram::SCRATCH.1 + i, 0);
+    }
+
+    cpu.call(0x2fe1); // CloseSRAM
 }
