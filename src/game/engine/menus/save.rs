@@ -1,4 +1,7 @@
-use crate::cpu::{Cpu, CpuFlag};
+use crate::{
+    cpu::{Cpu, CpuFlag},
+    game::data::default_options::DEFAULT_OPTIONS,
+};
 
 pub fn try_load_save_data(cpu: &mut Cpu) {
     eprintln!("try_load_save_data()");
@@ -59,10 +62,9 @@ fn try_load_save_data_backup(cpu: &mut Cpu) {
 fn try_load_save_data_corrupt(cpu: &mut Cpu) {
     cpu.pc = 0x4f6c;
 
-    cpu.set_hl(0x4f7c); // DefaultOptions
-    cpu.set_de(0xcfcc); // wOptions
-    cpu.set_bc(0xcfd4 - 0xcfcc); // wOptionsEnd - wOptions
-    cpu.call(0x3026); // CopyBytes
+    for (i, byte) in DEFAULT_OPTIONS.iter().enumerate() {
+        cpu.write_byte(0xcfcc + i as u16, *byte); // wOptions + i
+    }
 
     cpu.call(0x067e); // ClearClock
 
