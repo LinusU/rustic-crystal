@@ -71,7 +71,7 @@ fn init(cpu: &mut Cpu) {
     cpu.write_byte(hram::SYSTEM_BOOTED, saved_system_booted);
     cpu.write_byte(hram::CGB, saved_cgb);
 
-    cpu.call(0x025a); // ClearWRAM
+    clear_wram(cpu);
 
     cpu.write_byte(hardware_constants::R_SVBK, 1);
 
@@ -169,4 +169,18 @@ fn clear_vram(cpu: &mut Cpu) {
 
     clear(cpu, 1);
     clear(cpu, 0);
+}
+
+/// Wipe swappable WRAM banks (1-7)
+fn clear_wram(cpu: &mut Cpu) {
+    const WRAMX_START: u16 = 0xd000; // STARTOF(WRAMX)
+    const WRAMX_SIZE: u16 = 0x1000; // SIZEOF(WRAMX)
+
+    for b in 1..8 {
+        cpu.write_byte(hardware_constants::R_SVBK, b);
+
+        for i in 0..WRAMX_SIZE {
+            cpu.write_byte(WRAMX_START + i, 0);
+        }
+    }
 }

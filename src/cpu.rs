@@ -74,6 +74,7 @@ impl<'a> Cpu<'a> {
                 (_, 0x0100) => crate::game::home::init::start(self),
                 (_, 0x017d) => panic!("init should only be called from Rust"),
                 (_, 0x0245) => panic!("clear_vram should only be called from Rust"),
+                (_, 0x025a) => panic!("clear_wram should only be called from Rust"),
                 (_, 0x3dfe) => crate::game::home::audio::terminate_exp_bar_sound(self),
 
                 (0x3a, 0x4000) => crate::game::audio::engine::init_sound(self),
