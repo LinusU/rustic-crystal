@@ -79,6 +79,7 @@ impl<'a> Cpu<'a> {
                 (_, 0x3dfe) => crate::game::home::audio::terminate_exp_bar_sound(self),
 
                 (0x05, 0x4f1c) => crate::game::engine::menus::save::try_load_save_data(self),
+                (0x05, 0x4f84) => panic!("check_primary_save_file should only be called from Rust"),
 
                 (0x3a, 0x4000) => crate::game::audio::engine::init_sound(self),
                 (0x3a, 0x4b30) => crate::game::audio::engine::play_music(self),

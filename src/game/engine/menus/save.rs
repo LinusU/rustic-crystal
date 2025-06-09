@@ -1,13 +1,17 @@
 use crate::{
     cpu::{Cpu, CpuFlag},
-    game::data::default_options::DEFAULT_OPTIONS,
+    game::{
+        constants::misc_constants,
+        data::default_options::DEFAULT_OPTIONS,
+        ram::{sram, wram},
+    },
 };
 
 pub fn try_load_save_data(cpu: &mut Cpu) {
     eprintln!("try_load_save_data()");
 
     cpu.borrow_wram_mut().set_save_file_exists(false);
-    cpu.call(0x4f84); // CheckPrimarySaveFile
+    check_primary_save_file(cpu);
 
     if !cpu.borrow_wram_mut().save_file_exists() {
         return try_load_save_data_backup(cpu);
@@ -69,4 +73,22 @@ fn try_load_save_data_corrupt(cpu: &mut Cpu) {
     cpu.call(0x067e); // ClearClock
 
     cpu.pc = cpu.stack_pop(); // ret
+}
+
+fn check_primary_save_file(cpu: &mut Cpu) {
+    cpu.a = sram::CHECK_VALUE_BANK;
+    cpu.call(0x2fcb); // OpenSRAM
+
+    if cpu.read_byte(sram::CHECK_VALUE_1) == misc_constants::SAVE_CHECK_VALUE_1
+        && cpu.read_byte(sram::CHECK_VALUE_2) == misc_constants::SAVE_CHECK_VALUE_2
+    {
+        for i in 0..DEFAULT_OPTIONS.len() as u16 {
+            let byte = cpu.read_byte(sram::OPTIONS + i);
+            cpu.write_byte(wram::OPTIONS + i, byte);
+        }
+
+        cpu.borrow_wram_mut().set_save_file_exists(true);
+    }
+
+    cpu.call(0x2fe1); // CloseSRAM
 }
