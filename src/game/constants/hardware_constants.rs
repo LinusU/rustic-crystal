@@ -102,6 +102,9 @@ pub const R_WY: u16 = 0xff4a;
 /// Window X Position minus 7 (R/W)
 pub const R_WX: u16 = 0xff4b;
 
+/// CGB Mode Only - VRAM Bank
+pub const R_VBK: u16 = 0xff4f;
+
 /// CGB Mode Only - Infrared Communications Port
 pub const R_RP: u16 = 0xff56;
 

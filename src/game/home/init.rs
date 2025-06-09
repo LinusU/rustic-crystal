@@ -75,7 +75,7 @@ fn init(cpu: &mut Cpu) {
 
     cpu.write_byte(hardware_constants::R_SVBK, 1);
 
-    cpu.call(0x0245); // ClearVRAM
+    clear_vram(cpu);
     cpu.call(0x300b); // ClearSprites
     cpu.call(0x0270); // ClearsScratch
 
@@ -152,4 +152,21 @@ fn init(cpu: &mut Cpu) {
 
     eprintln!("Jumping to GameInit");
     cpu.pc = 0x642e; // GameInit
+}
+
+/// Wipe VRAM banks 0 and 1
+fn clear_vram(cpu: &mut Cpu) {
+    fn clear(cpu: &mut Cpu, bank: u8) {
+        cpu.write_byte(hardware_constants::R_VBK, bank);
+
+        const VRAM_START: u16 = 0x8000; // STARTOF(VRAM)
+        const VRAM_SIZE: u16 = 0x2000; // SIZEOF(VRAM)
+
+        for i in 0..VRAM_SIZE {
+            cpu.write_byte(VRAM_START + i, 0);
+        }
+    }
+
+    clear(cpu, 1);
+    clear(cpu, 0);
 }
