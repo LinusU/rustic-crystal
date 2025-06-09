@@ -50,6 +50,38 @@ impl GameState {
         self.data[0x02c0] = value.map_or(0, |value| value as u8);
     }
 
+    pub fn disable_text_acceleration(&self) -> bool {
+        self.data[0x02d7] != 0
+    }
+
+    pub fn set_disable_text_acceleration(&mut self, value: bool) {
+        self.data[0x02d7] = if value { 1 } else { 0 };
+    }
+
+    pub fn menu_selection(&self) -> u8 {
+        self.data[0x0f74]
+    }
+
+    pub fn which_index_set(&self) -> u8 {
+        self.data[0x0f76]
+    }
+
+    pub fn set_which_index_set(&mut self, value: u8) {
+        self.data[0x0f76] = value;
+    }
+
+    pub fn game_timer_paused(&self) -> bool {
+        (self.data[0x0fbc] & 1) != 0
+    }
+
+    pub fn set_game_timer_paused(&mut self, value: bool) {
+        if value {
+            self.data[0x0fbc] |= 1;
+        } else {
+            self.data[0x0fbc] &= !1;
+        }
+    }
+
     pub fn save_file_exists(&self) -> bool {
         self.data[0x0fcd] != 0
     }
