@@ -49,4 +49,12 @@ impl GameState {
     pub fn set_map_music(&mut self, value: Option<Music>) {
         self.data[0x02c0] = value.map_or(0, |value| value as u8);
     }
+
+    pub fn save_file_exists(&self) -> bool {
+        self.data[0x0fcd] != 0
+    }
+
+    pub fn set_save_file_exists(&mut self, value: bool) {
+        self.data[0x0fcd] = if value { 1 } else { 0 };
+    }
 }
