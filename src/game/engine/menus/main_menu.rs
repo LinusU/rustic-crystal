@@ -1,7 +1,14 @@
 use crate::{
     cpu::{Cpu, CpuFlag},
-    game::{constants::scgb_constants, ram::hram},
+    game::{
+        constants::scgb_constants,
+        ram::{hram, sram},
+    },
 };
+
+const MAINMENU_NEW_GAME: u8 = 0;
+const MAINMENU_CONTINUE: u8 = 1;
+const MAINMENU_MYSTERY: u8 = 6;
 
 pub fn main_menu(cpu: &mut Cpu) {
     eprintln!("main_menu()");
@@ -19,8 +26,8 @@ pub fn main_menu(cpu: &mut Cpu) {
         cpu.borrow_wram_mut().set_game_timer_paused(false);
 
         {
-            cpu.call(0x5da4); // MainMenu_GetWhichMenu
-            let value = cpu.a;
+            let value = main_menu_get_which_menu(cpu);
+            eprintln!("main_menu_get_which_menu() -> {}", value);
             cpu.borrow_wram_mut().set_which_index_set(value);
         }
 
@@ -43,6 +50,26 @@ pub fn main_menu(cpu: &mut Cpu) {
         cpu.a = cpu.borrow_wram().menu_selection();
         cpu.set_hl(0x5d60); // MainMenu.Jumptable
         cpu.call(0x0028); // JumpTable
+    }
+}
+
+fn main_menu_get_which_menu(cpu: &mut Cpu) -> u8 {
+    if !cpu.borrow_wram().save_file_exists() {
+        return MAINMENU_NEW_GAME;
+    }
+
+    cpu.a = sram::NUM_DAILY_MYSTERY_GIFT_PARTNER_IDS.0;
+    cpu.call(0x2fcb); // OpenSRAM
+
+    let num_daily_mystery_gift_partner_ids =
+        cpu.read_byte(sram::NUM_DAILY_MYSTERY_GIFT_PARTNER_IDS.1);
+
+    cpu.call(0x2fe1); // CloseSRAM
+
+    if num_daily_mystery_gift_partner_ids != 0xff {
+        MAINMENU_MYSTERY
+    } else {
+        MAINMENU_CONTINUE
     }
 }
 

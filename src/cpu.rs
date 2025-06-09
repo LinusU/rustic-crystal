@@ -61,6 +61,7 @@ impl<'a> Cpu<'a> {
         })
     }
 
+    #[rustfmt::skip]
     pub fn call(&mut self, pc: u16) {
         assert_ne!(pc, 0x0000);
 
@@ -83,6 +84,7 @@ impl<'a> Cpu<'a> {
 
                 (0x12, 0x5cdc) => crate::game::engine::menus::main_menu::main_menu(self),
                 (0x12, 0x5ed0) => panic!("clear_tilemap_etc should only be called from Rust"),
+                (0x12, 0x5da4) => panic!("main_menu_get_which_menu should only be called from Rust"),
 
                 (0x3a, 0x4000) => crate::game::audio::engine::init_sound(self),
                 (0x3a, 0x4b30) => crate::game::audio::engine::play_music(self),
