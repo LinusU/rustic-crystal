@@ -1,6 +1,6 @@
 use crate::{
     cpu::{Cpu, CpuFlag},
-    game::constants::scgb_constants,
+    game::{constants::scgb_constants, ram::hram},
 };
 
 pub fn main_menu(cpu: &mut Cpu) {
@@ -9,7 +9,7 @@ pub fn main_menu(cpu: &mut Cpu) {
     loop {
         cpu.borrow_wram_mut().set_disable_text_acceleration(false);
 
-        cpu.call(0x5ed0); // ClearTilemapEtc
+        clear_tilemap_etc(cpu);
 
         cpu.b = scgb_constants::SCGB_DIPLOMA;
         cpu.call(0x3340); // GetSGBLayout
@@ -44,4 +44,12 @@ pub fn main_menu(cpu: &mut Cpu) {
         cpu.set_hl(0x5d60); // MainMenu.Jumptable
         cpu.call(0x0028); // JumpTable
     }
+}
+
+fn clear_tilemap_etc(cpu: &mut Cpu) {
+    cpu.write_byte(hram::MAP_ANIMS, 0);
+    cpu.call(0x0fc8); // ClearTilemap
+    cpu.call(0x0e5f); // LoadFontsExtra
+    cpu.call(0x0e51); // LoadStandardFont
+    cpu.call(0x1fbf); // ClearWindowData
 }

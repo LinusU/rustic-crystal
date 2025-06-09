@@ -82,6 +82,7 @@ impl<'a> Cpu<'a> {
                 (0x05, 0x4f84) => panic!("check_primary_save_file should only be called from Rust"),
 
                 (0x12, 0x5cdc) => crate::game::engine::menus::main_menu::main_menu(self),
+                (0x12, 0x5ed0) => panic!("clear_tilemap_etc should only be called from Rust"),
 
                 (0x3a, 0x4000) => crate::game::audio::engine::init_sound(self),
                 (0x3a, 0x4b30) => crate::game::audio::engine::play_music(self),
