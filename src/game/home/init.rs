@@ -2,6 +2,7 @@ use crate::{
     cpu::Cpu,
     game::{
         constants::{hardware_constants, serial_constants},
+        engine::menus,
         macros,
         ram::{hram, sram, vram},
     },
@@ -150,8 +151,7 @@ fn init(cpu: &mut Cpu) {
 
     cpu.borrow_wram_mut().set_map_music(None);
 
-    eprintln!("Jumping to GameInit");
-    cpu.pc = 0x642e; // GameInit
+    menus::intro_menu::game_init(cpu)
 }
 
 /// Wipe VRAM banks 0 and 1

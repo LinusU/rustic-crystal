@@ -1,3 +1,4 @@
+pub const JOY_DOWN: u16 = 0xffa8;
 pub const SERIAL_CONNECTION_STATUS: u16 = 0xffcb;
 pub const SCX: u16 = 0xffcf;
 pub const SCY: u16 = 0xffd0;
