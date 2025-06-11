@@ -10,6 +10,13 @@ const MAINMENU_NEW_GAME: u8 = 0;
 const MAINMENU_CONTINUE: u8 = 1;
 const MAINMENU_MYSTERY: u8 = 6;
 
+const MAINMENUITEM_CONTINUE: u8 = 0;
+const MAINMENUITEM_NEW_GAME: u8 = 1;
+const MAINMENUITEM_OPTION: u8 = 2;
+const MAINMENUITEM_MYSTERY_GIFT: u8 = 3;
+const MAINMENUITEM_MOBILE: u8 = 4;
+const MAINMENUITEM_MOBILE_STUDIUM: u8 = 5;
+
 pub fn main_menu(cpu: &mut Cpu) {
     eprintln!("main_menu()");
 
@@ -47,9 +54,27 @@ pub fn main_menu(cpu: &mut Cpu) {
 
         cpu.call(0x0fc8); // ClearTilemap
 
-        cpu.a = cpu.borrow_wram().menu_selection();
-        cpu.set_hl(0x5d60); // MainMenu.Jumptable
-        cpu.call(0x0028); // JumpTable
+        match cpu.borrow_wram().menu_selection() {
+            MAINMENUITEM_CONTINUE => {
+                cpu.call(0x5eee); // MainMenu_Continue
+            }
+            MAINMENUITEM_NEW_GAME => {
+                cpu.call(0x5ee0); // MainMenu_NewGame
+            }
+            MAINMENUITEM_OPTION => {
+                cpu.call(0x5ee7); // MainMenu_Option
+            }
+            MAINMENUITEM_MYSTERY_GIFT => {
+                cpu.call(0x5ef5); // MainMenu_MysteryGift
+            }
+            MAINMENUITEM_MOBILE => {
+                cpu.call(0x5efc); // MainMenu_Mobile
+            }
+            MAINMENUITEM_MOBILE_STUDIUM => {
+                cpu.call(0x6496); // MainMenu_MobileStudium
+            }
+            n => panic!("Unknown main menu item: {}", n),
+        }
     }
 }
 
