@@ -1,5 +1,5 @@
 use crate::{
-    cpu::{Cpu, CpuFlag},
+    cpu::Cpu,
     game::{
         constants::{input_constants::JoypadButtons, menu_constants::Menu2DFlags1, scgb_constants},
         ram::{hram, sram, wram},
@@ -31,7 +31,7 @@ pub fn main_menu(cpu: &mut Cpu) {
             cpu.borrow_wram_mut().set_which_index_set(value);
         }
 
-        cpu.call(0x5e09); // MainMenu_PrintCurrentTimeAndDay
+        main_menu_print_current_time_and_day(cpu);
 
         cpu.set_hl(0x5d14); // MainMenu.MenuHeader
         cpu.call(0x1d35); // LoadMenuHeader
@@ -77,7 +77,7 @@ fn main_menu_joypad_loop(cpu: &mut Cpu) -> bool {
     cpu.call(0x1e70); // SetUpMenu
 
     loop {
-        cpu.call(0x5e09); // MainMenu_PrintCurrentTimeAndDay
+        main_menu_print_current_time_and_day(cpu);
 
         let mut flags = cpu.read_byte(wram::MENU_2D_FLAGS_1);
         flags |= Menu2DFlags1::WRAP_UP_DOWN.bits();
@@ -96,6 +96,25 @@ fn main_menu_joypad_loop(cpu: &mut Cpu) -> bool {
             return false;
         }
     }
+}
+
+fn main_menu_print_current_time_and_day(cpu: &mut Cpu) {
+    if !cpu.borrow_wram().save_file_exists() {
+        return;
+    }
+
+    cpu.write_byte(hram::BG_MAP_MODE, 0);
+
+    cpu.call(0x5e27); // MainMenu_PrintCurrentTimeAndDay.PlaceBox
+
+    {
+        let saved_options = cpu.read_byte(wram::OPTIONS);
+        cpu.borrow_wram_mut().set_no_text_scroll(true);
+        cpu.call(0x5e3d); // MainMenu_PrintCurrentTimeAndDay.PlaceTime
+        cpu.write_byte(wram::OPTIONS, saved_options);
+    }
+
+    cpu.write_byte(hram::BG_MAP_MODE, 1);
 }
 
 fn clear_tilemap_etc(cpu: &mut Cpu) {

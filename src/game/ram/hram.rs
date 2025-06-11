@@ -6,5 +6,6 @@ pub const WX: u16 = 0xffd1;
 pub const WY: u16 = 0xffd2;
 pub const CGB: u16 = 0xffe6;
 pub const SYSTEM_BOOTED: u16 = 0xffea;
+pub const BG_MAP_MODE: u16 = 0xffd4;
 pub const BG_MAP_ADDRESS: u16 = 0xffd6;
 pub const MAP_ANIMS: u16 = 0xffde;

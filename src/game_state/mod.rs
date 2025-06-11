@@ -86,6 +86,14 @@ impl GameState {
         }
     }
 
+    pub fn set_no_text_scroll(&mut self, value: bool) {
+        if value {
+            self.data[0x0fcc] |= 1 << 4;
+        } else {
+            self.data[0x0fcc] &= !(1 << 4);
+        }
+    }
+
     pub fn save_file_exists(&self) -> bool {
         self.data[0x0fcd] != 0
     }
