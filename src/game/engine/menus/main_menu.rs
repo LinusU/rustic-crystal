@@ -1,8 +1,8 @@
 use crate::{
     cpu::{Cpu, CpuFlag},
     game::{
-        constants::scgb_constants,
-        ram::{hram, sram},
+        constants::{input_constants::JoypadButtons, menu_constants::Menu2DFlags1, scgb_constants},
+        ram::{hram, sram, wram},
     },
 };
 
@@ -36,11 +36,11 @@ pub fn main_menu(cpu: &mut Cpu) {
         cpu.set_hl(0x5d14); // MainMenu.MenuHeader
         cpu.call(0x1d35); // LoadMenuHeader
 
-        cpu.call(0x5de4); // MainMenuJoypadLoop
+        let should_exit_menu = main_menu_joypad_loop(cpu);
 
         cpu.call(0x1c17); // CloseWindow
 
-        if cpu.flag(CpuFlag::C) {
+        if should_exit_menu {
             cpu.pc = cpu.stack_pop(); // ret
             return;
         }
@@ -70,6 +70,31 @@ fn main_menu_get_which_menu(cpu: &mut Cpu) -> u8 {
         MAINMENU_MYSTERY
     } else {
         MAINMENU_CONTINUE
+    }
+}
+
+fn main_menu_joypad_loop(cpu: &mut Cpu) -> bool {
+    cpu.call(0x1e70); // SetUpMenu
+
+    loop {
+        cpu.call(0x5e09); // MainMenu_PrintCurrentTimeAndDay
+
+        let mut flags = cpu.read_byte(wram::MENU_2D_FLAGS_1);
+        flags |= Menu2DFlags1::WRAP_UP_DOWN.bits();
+        cpu.write_byte(wram::MENU_2D_FLAGS_1, flags);
+
+        cpu.call(0x1f1a); // GetScrollingMenuJoypad
+
+        let buttons = cpu.borrow_wram().menu_joypad();
+
+        if buttons.contains(JoypadButtons::B) {
+            return true;
+        }
+
+        if buttons.contains(JoypadButtons::A) {
+            cpu.call(0x2009); // PlayClickSFX
+            return false;
+        }
     }
 }
 

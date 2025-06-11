@@ -1,4 +1,4 @@
-use crate::game::audio::music::Music;
+use crate::game::{audio::music::Music, constants::input_constants::JoypadButtons};
 
 const WRAM_SIZE: usize = 0x8000;
 
@@ -56,6 +56,10 @@ impl GameState {
 
     pub fn set_disable_text_acceleration(&mut self, value: bool) {
         self.data[0x02d7] = if value { 1 } else { 0 };
+    }
+
+    pub fn menu_joypad(&self) -> JoypadButtons {
+        JoypadButtons::from_bits(self.data[0x0f73]).unwrap()
     }
 
     pub fn menu_selection(&self) -> u8 {
