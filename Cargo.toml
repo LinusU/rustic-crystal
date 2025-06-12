@@ -9,5 +9,6 @@ bitflags = "2.9.1"
 blip_buf = "0.1.4"
 cpal = "0.15.2"
 glium = { version = "0.32.1", default_features = false, features = [ "glutin" ] }
+image = { version = "0.25.6", default-features = false, features = ["png"] }
 pokemon-synthesizer = "0.2.0"
 rodio = { version = "0.17.1", default-features = false, features = ["flac"] }
