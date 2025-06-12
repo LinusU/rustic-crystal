@@ -71,7 +71,7 @@ impl<'a> Mmu<'a> {
             gpu: Gpu::new_cgb(update_screen),
             sound: None,
             sound2: Sound2::new(),
-            mbc: MBC3::new()?,
+            mbc: MBC3::new(),
             gbspeed: GbSpeed::Single,
             speed_switch_req: false,
             hdma_src: 0,

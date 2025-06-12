@@ -1,8 +1,10 @@
+use std::path::PathBuf;
 use std::sync::mpsc::{Receiver, SyncSender};
 
 use crate::game_state::GameState;
 use crate::keypad::KeypadEvent;
 use crate::mmu::Mmu;
+use crate::save_state::SaveState;
 use crate::serial::SerialCallback;
 use crate::StrResult;
 
@@ -117,6 +119,10 @@ impl<'a> Cpu<'a> {
         self.mmu.do_cycle(ticks);
         self.updateime();
         self.handleinterrupt();
+    }
+
+    pub fn replace_sram(&mut self, sram: SaveState, path: PathBuf) {
+        self.mmu.mbc.replace_ram(sram, path);
     }
 
     pub fn borrow_wram(&self) -> &GameState {

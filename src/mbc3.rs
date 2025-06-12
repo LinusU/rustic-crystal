@@ -1,97 +1,30 @@
 use crate::rom::ROM;
-use crate::StrResult;
+use crate::save_state::SaveState;
 
-use std::io::prelude::*;
-use std::path;
-use std::{fs, io, time};
-
-fn ram_banks(v: u8) -> usize {
-    match v {
-        1 =>
-        // "Listed in various unofficial docs as 2 KiB. However, a 2 KiB RAM chip was never
-        // used in a cartridge. The source of this value is unknown."
-        // Needed by some test roms. As we only deal in whole banks, just make it 1 8KiB bank.
-        {
-            1
-        }
-        2 => 1,
-        3 => 4,
-        4 => 16,
-        5 => 8,
-        _ => 0,
-    }
-}
+use std::{path::PathBuf, time};
 
 pub struct MBC3 {
-    ram: Vec<u8>,
+    ram: SaveState,
     pub rombank: usize,
     rambank: usize,
-    rambanks: usize,
     selectrtc: bool,
     ram_on: bool,
-    savepath: Option<path::PathBuf>,
+    savepath: Option<PathBuf>,
     rtc_ram: [u8; 5],
     rtc_ram_latch: [u8; 5],
-    rtc_zero: Option<u64>,
 }
 
 impl MBC3 {
-    pub fn new() -> StrResult<MBC3> {
-        let subtype = ROM[0x147];
-        let svpath = match subtype {
-            0x0F | 0x10 | 0x13 => Some(path::PathBuf::from("pokecrystal11.gbsave")),
-            _ => None,
-        };
-        let rambanks = match subtype {
-            0x10 | 0x12 | 0x13 => ram_banks(ROM[0x149]),
-            _ => 0,
-        };
-        let ramsize = rambanks * 0x2000;
-        let rtc = match subtype {
-            0x0F | 0x10 => Some(0),
-            _ => None,
-        };
-
-        let mut res = MBC3 {
-            ram: ::std::iter::repeat(0u8).take(ramsize).collect(),
+    pub fn new() -> MBC3 {
+        MBC3 {
+            ram: SaveState::new(),
             rombank: 1,
             rambank: 0,
-            rambanks,
             selectrtc: false,
             ram_on: false,
-            savepath: svpath,
+            savepath: None,
             rtc_ram: [0u8; 5],
             rtc_ram_latch: [0u8; 5],
-            rtc_zero: rtc,
-        };
-        res.loadram().map(|_| res)
-    }
-
-    fn loadram(&mut self) -> StrResult<()> {
-        match self.savepath {
-            None => Ok(()),
-            Some(ref savepath) => {
-                let mut file = match fs::File::open(savepath) {
-                    Ok(f) => f,
-                    Err(ref e) if e.kind() == io::ErrorKind::NotFound => return Ok(()),
-                    Err(..) => return Err("Could not read existing save file"),
-                };
-                let mut rtc_bytes = [0; 8];
-                file.read_exact(&mut rtc_bytes)
-                    .map_err(|_| "Could not read RTC")?;
-                let rtc = u64::from_be_bytes(rtc_bytes);
-                if self.rtc_zero.is_some() {
-                    self.rtc_zero = Some(rtc);
-                }
-                let mut data = vec![];
-                match file.read_to_end(&mut data) {
-                    Err(..) => Err("Could not read ROM"),
-                    Ok(..) => {
-                        self.ram = data;
-                        Ok(())
-                    }
-                }
-            }
         }
     }
 
@@ -106,12 +39,9 @@ impl MBC3 {
             return;
         }
 
-        let tzero = match self.rtc_zero {
-            Some(t) => time::UNIX_EPOCH + time::Duration::from_secs(t),
-            None => return,
-        };
+        let tzero = time::UNIX_EPOCH + time::Duration::from_secs(self.ram.rtc_zero());
 
-        if self.compute_difftime() == self.rtc_zero {
+        if self.compute_difftime() == self.ram.rtc_zero() {
             // No time has passed. Do not alter registers
             return;
         }
@@ -132,8 +62,7 @@ impl MBC3 {
         }
     }
 
-    fn compute_difftime(&self) -> Option<u64> {
-        self.rtc_zero?;
+    fn compute_difftime(&self) -> u64 {
         let mut difftime = match time::SystemTime::now().duration_since(time::UNIX_EPOCH) {
             Ok(t) => t.as_secs(),
             Err(_) => panic!("System clock is set to a time before the unix epoch (1970-01-01)"),
@@ -143,38 +72,30 @@ impl MBC3 {
         difftime -= (self.rtc_ram[2] as u64) * 3600;
         let days = ((self.rtc_ram[4] as u64 & 0x1) << 8) | (self.rtc_ram[3] as u64);
         difftime -= days * 3600 * 24;
-        Some(difftime)
+        difftime
     }
 
     fn calc_rtc_zero(&mut self) {
-        self.rtc_zero = self.compute_difftime();
+        self.ram.set_rtc_zero(self.compute_difftime());
     }
 }
 
 impl Drop for MBC3 {
     fn drop(&mut self) {
-        match self.savepath {
-            None => {}
-            Some(ref path) => {
-                let mut file = match fs::File::create(path) {
-                    Ok(f) => f,
-                    Err(..) => return,
-                };
-                let rtc = self.rtc_zero.unwrap_or(0);
-                let mut ok = true;
-                if ok {
-                    let rtc_bytes = rtc.to_be_bytes();
-                    ok = file.write_all(&rtc_bytes).is_ok();
-                };
-                if ok {
-                    let _ = file.write_all(&self.ram);
-                };
+        if let Some(ref path) = self.savepath {
+            if let Err(err) = self.ram.write_to_file(path) {
+                eprintln!("Error saving MBC3 RAM to {}: {}", path.display(), err);
             }
-        };
+        }
     }
 }
 
 impl MBC3 {
+    pub fn replace_ram(&mut self, ram: SaveState, path: PathBuf) {
+        self.ram = ram;
+        self.savepath = Some(path);
+    }
+
     pub fn readrom(&self, a: u16) -> u8 {
         let idx = if a < 0x4000 {
             a as usize
@@ -183,18 +104,22 @@ impl MBC3 {
         };
         *ROM.get(idx).unwrap_or(&0xFF)
     }
+
     pub fn readram(&self, a: u16) -> u8 {
         if !self.ram_on {
             return 0xFF;
         }
-        if !self.selectrtc && self.rambank < self.rambanks {
-            self.ram[(self.rambank * 0x2000) | ((a as usize) & 0x1FFF)]
+
+        if !self.selectrtc && self.rambank < 4 {
+            self.ram
+                .byte((self.rambank * 0x2000) | ((a as usize) & 0x1FFF))
         } else if self.selectrtc && self.rambank < 5 {
             self.rtc_ram_latch[self.rambank]
         } else {
             0xFF
         }
     }
+
     pub fn writerom(&mut self, a: u16, v: u8) {
         match a {
             0x0000..=0x1FFF => self.ram_on = (v & 0x0F) == 0x0A,
@@ -212,12 +137,15 @@ impl MBC3 {
             _ => panic!("Could not write to {:04X} (MBC3)", a),
         }
     }
+
     pub fn writeram(&mut self, a: u16, v: u8) {
         if !self.ram_on {
             return;
         }
-        if !self.selectrtc && self.rambank < self.rambanks {
-            self.ram[(self.rambank * 0x2000) | ((a as usize) & 0x1FFF)] = v;
+
+        if !self.selectrtc && self.rambank < 4 {
+            self.ram
+                .set_byte((self.rambank * 0x2000) | ((a as usize) & 0x1FFF), v);
         } else if self.selectrtc && self.rambank < 5 {
             self.calc_rtc_reg();
             let vmask = match self.rambank {

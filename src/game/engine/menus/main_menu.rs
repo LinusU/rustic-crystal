@@ -2,13 +2,15 @@ use crate::{
     cpu::Cpu,
     game::{
         constants::{input_constants::JoypadButtons, menu_constants::Menu2DFlags1, scgb_constants},
-        ram::{hram, sram, wram},
+        macros::coords::coord,
+        ram::{hram, wram},
     },
+    save_state::SaveState,
+    saves,
 };
 
 const MAINMENU_NEW_GAME: u8 = 0;
 const MAINMENU_CONTINUE: u8 = 1;
-const MAINMENU_MYSTERY: u8 = 6;
 
 const MAINMENUITEM_CONTINUE: u8 = 0;
 const MAINMENUITEM_NEW_GAME: u8 = 1;
@@ -33,8 +35,7 @@ pub fn main_menu(cpu: &mut Cpu) {
         cpu.borrow_wram_mut().set_game_timer_paused(false);
 
         {
-            let value = main_menu_get_which_menu(cpu);
-            eprintln!("main_menu_get_which_menu() -> {}", value);
+            let value = main_menu_get_which_menu();
             cpu.borrow_wram_mut().set_which_index_set(value);
         }
 
@@ -56,7 +57,7 @@ pub fn main_menu(cpu: &mut Cpu) {
 
         match cpu.borrow_wram().menu_selection() {
             MAINMENUITEM_CONTINUE => {
-                cpu.call(0x5eee); // MainMenu_Continue
+                main_menu_select_save(cpu);
             }
             MAINMENUITEM_NEW_GAME => {
                 cpu.call(0x5ee0); // MainMenu_NewGame
@@ -78,23 +79,19 @@ pub fn main_menu(cpu: &mut Cpu) {
     }
 }
 
-fn main_menu_get_which_menu(cpu: &mut Cpu) -> u8 {
-    if !cpu.borrow_wram().save_file_exists() {
-        return MAINMENU_NEW_GAME;
-    }
-
-    cpu.a = sram::NUM_DAILY_MYSTERY_GIFT_PARTNER_IDS.0;
-    cpu.call(0x2fcb); // OpenSRAM
-
-    let num_daily_mystery_gift_partner_ids =
-        cpu.read_byte(sram::NUM_DAILY_MYSTERY_GIFT_PARTNER_IDS.1);
-
-    cpu.call(0x2fe1); // CloseSRAM
-
-    if num_daily_mystery_gift_partner_ids != 0xff {
-        MAINMENU_MYSTERY
-    } else {
-        MAINMENU_CONTINUE
+fn main_menu_get_which_menu() -> u8 {
+    match saves::list_save_files() {
+        Ok(files) => {
+            if files.is_empty() {
+                MAINMENU_NEW_GAME
+            } else {
+                MAINMENU_CONTINUE
+            }
+        }
+        Err(e) => {
+            eprintln!("Error listing save files: {}", e);
+            MAINMENU_NEW_GAME
+        }
     }
 }
 
@@ -148,4 +145,102 @@ fn clear_tilemap_etc(cpu: &mut Cpu) {
     cpu.call(0x0e5f); // LoadFontsExtra
     cpu.call(0x0e51); // LoadStandardFont
     cpu.call(0x1fbf); // ClearWindowData
+}
+
+fn main_menu_select_save(cpu: &mut Cpu) {
+    let list = match saves::list_save_files() {
+        Ok(ref files) if files.is_empty() => {
+            return;
+        }
+        Ok(files) => files,
+        Err(error) => {
+            eprintln!("Error listing save files: {}", error);
+            return;
+        }
+    };
+
+    let height = u8::min(list.len() as u8 * 2, 16);
+
+    let width = u8::min(
+        list.iter()
+            .map(|s| s.name.chars().count() as u8)
+            .max()
+            .unwrap_or(0)
+            + 2,
+        18,
+    );
+
+    let max_menu_item = list.len() - 1;
+
+    let mut selected = 0;
+    let mut scroll_pos = 0;
+
+    loop {
+        cpu.set_hl(coord!(0, 0));
+        cpu.b = height;
+        cpu.c = width;
+        cpu.call(0x0fe8); // Textbox
+
+        for (i, save_file) in list.iter().skip(scroll_pos).take(8).enumerate() {
+            let mut xy = coord!(1, 2 + i as u8 * 2);
+
+            if i + scroll_pos == selected {
+                cpu.write_byte(xy, 0xed); // ▶
+            } else {
+                cpu.write_byte(xy, 0x7f);
+            }
+
+            xy += 2;
+
+            for c in save_file.name.chars() {
+                let value = match c {
+                    'A'..='Z' => 0x80 + (c as u8 - b'A'),
+                    'a'..='z' => 0xa0 + (c as u8 - b'a'),
+                    '0'..='9' => 0xf6 + (c as u8 - b'0'),
+                    ' ' => 0x7f,
+                    _ => 0xe6, // ?
+                };
+                cpu.write_byte(xy, value);
+                xy += 1;
+            }
+        }
+
+        cpu.call(0x0a57); // JoyTextDelay
+        cpu.call(0x1bdd); // GetMenuJoypad
+
+        let btns = JoypadButtons::from_bits(cpu.a).unwrap();
+
+        if btns.contains(JoypadButtons::UP) && selected > 0 {
+            selected -= 1;
+
+            if selected < scroll_pos {
+                scroll_pos = selected;
+            }
+        }
+
+        if btns.contains(JoypadButtons::DOWN) && selected < max_menu_item {
+            selected += 1;
+
+            if selected >= scroll_pos + 8 {
+                scroll_pos = selected - 7;
+            }
+        }
+
+        if btns.contains(JoypadButtons::B) {
+            return;
+        }
+
+        if btns.contains(JoypadButtons::A) {
+            cpu.call(0x2009); // PlayClickSFX
+
+            let save_file = &list[selected];
+            let sram = SaveState::from_file(&save_file.path).unwrap();
+            cpu.replace_sram(sram, save_file.path.clone());
+
+            cpu.call(0x5eee); // MainMenu_Continue
+            return;
+        }
+
+        cpu.call(0x045a); // DelayFrame
+    }
 }

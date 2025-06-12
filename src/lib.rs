@@ -13,6 +13,8 @@ mod keypad;
 mod mbc3;
 mod mmu;
 mod rom;
+mod save_state;
+mod saves;
 mod serial;
 mod sound;
 mod sound2;

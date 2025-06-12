@@ -1,3 +1,4 @@
+pub mod gfx_constants;
 pub mod hardware_constants;
 pub mod input_constants;
 pub mod menu_constants;
