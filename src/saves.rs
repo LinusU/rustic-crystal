@@ -25,6 +25,19 @@ pub struct SaveFile {
     pub name: String,
 }
 
+pub fn create_save_dir() -> Result<()> {
+    fs::create_dir_all(get_save_dir())
+}
+
+pub fn get_save_path(name: &str) -> PathBuf {
+    let ext: OsString = OsString::from("sav");
+    get_save_dir().join(name).with_extension(ext)
+}
+
+pub fn save_is_free(name: &str) -> bool {
+    !get_save_path(name).exists()
+}
+
 pub fn list_save_files() -> Result<Vec<SaveFile>> {
     let ext: OsString = OsString::from("sav");
 

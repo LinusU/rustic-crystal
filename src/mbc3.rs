@@ -96,6 +96,10 @@ impl MBC3 {
         self.savepath = Some(path);
     }
 
+    pub fn set_save_path(&mut self, path: PathBuf) {
+        self.savepath = Some(path);
+    }
+
     pub fn readrom(&self, a: u16) -> u8 {
         let idx = if a < 0x4000 {
             a as usize

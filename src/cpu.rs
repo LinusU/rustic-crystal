@@ -126,6 +126,10 @@ impl<'a> Cpu<'a> {
         self.mmu.mbc.replace_ram(sram, path);
     }
 
+    pub fn set_save_path(&mut self, path: PathBuf) {
+        self.mmu.mbc.set_save_path(path);
+    }
+
     pub fn borrow_wram(&self) -> &GameState {
         self.mmu.borrow_wram()
     }

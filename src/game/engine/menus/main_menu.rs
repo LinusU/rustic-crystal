@@ -1,8 +1,9 @@
 use crate::{
     cpu::Cpu,
     game::{
+        audio::sfx::Sfx,
         constants::{input_constants::JoypadButtons, menu_constants::Menu2DFlags1, scgb_constants},
-        macros::coords::coord,
+        macros::{self, coords::coord},
         ram::{hram, wram},
     },
     save_state::SaveState,
@@ -60,7 +61,7 @@ pub fn main_menu(cpu: &mut Cpu) {
                 main_menu_select_save(cpu);
             }
             MAINMENUITEM_NEW_GAME => {
-                cpu.call(0x5ee0); // MainMenu_NewGame
+                main_menu_create_save(cpu);
             }
             MAINMENUITEM_OPTION => {
                 cpu.call(0x5ee7); // MainMenu_Option
@@ -243,4 +244,36 @@ fn main_menu_select_save(cpu: &mut Cpu) {
 
         cpu.call(0x045a); // DelayFrame
     }
+}
+
+fn main_menu_create_save(cpu: &mut Cpu) {
+    cpu.b = 4; // NAME_BOX
+    cpu.set_de(0xd47d); // wPlayerName
+
+    macros::farcall::farcall(cpu, 0x04, 0x56c1); // NamingScreen
+
+    let mut name = String::new();
+
+    for i in 0..8 {
+        let c = cpu.read_byte(0xd47d + i);
+
+        match c {
+            0x50 => break,                                       // String terminator
+            0x80..=0x99 => name.push((c - 0x80 + b'A') as char), // Uppercase letters
+            0xa0..=0xb9 => name.push((c - 0xa0 + b'a') as char), // Lowercase letters
+            0xf6..=0xff => name.push((c - 0xf6 + b'0') as char), // Digits
+            _ => name.push('_'),                                 // Unknown character
+        }
+    }
+
+    if name.is_empty() || !saves::save_is_free(&name) {
+        cpu.play_sfx(Sfx::new(0x3c, 0x497d)); // Sfx_Wrong
+        return;
+    }
+
+    saves::create_save_dir().unwrap();
+
+    cpu.set_save_path(saves::get_save_path(&name));
+
+    cpu.call(0x5ee0); // MainMenu_NewGame
 }
