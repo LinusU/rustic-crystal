@@ -1165,9 +1165,9 @@ dependencies = [
 
 [[package]]
 name = "pokemon-synthesizer"
-version = "0.2.0"
+version = "0.2.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "432a622e7112639d34e0a79dc1169c84ca0f91ae9080efc98e41ef035df2fede"
+checksum = "d5dc773108efe4074ec4bbe73ebb9881f0fc5501b9f8af9678d73c4cde9b67cf"
 
 [[package]]
 name = "proc-macro-crate"
