@@ -11,3 +11,12 @@ cpal = "0.15.2"
 glium = { version = "0.32.1", default_features = false, features = [ "glutin" ] }
 pokemon-synthesizer = "0.2.0"
 rodio = { version = "0.17.1", default-features = false, features = ["flac"] }
+
+[target.'cfg(target_os = "macos")'.dependencies]
+core-foundation = "0.9.3"
+
+[package.metadata.bundle]
+name = "Rustic Crystal"
+identifier = "com.linusu.rustic-crystal"
+icon = ["AppIcon.icns"]
+resources = ["music"]
