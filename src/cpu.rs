@@ -6,6 +6,7 @@ use crate::keypad::KeypadEvent;
 use crate::mmu::Mmu;
 use crate::save_state::SaveState;
 use crate::serial::SerialCallback;
+use crate::sound2::Sfx;
 use crate::StrResult;
 
 #[derive(Copy, Clone)]
@@ -131,6 +132,16 @@ impl<'a> Cpu<'a> {
 
     pub fn borrow_wram_mut(&mut self) -> &mut GameState {
         self.mmu.borrow_wram_mut()
+    }
+
+    pub fn play_sfx<T, TSource>(&mut self, sfx: T)
+    where
+        T: Sfx<TSource>,
+        TSource: rodio::Source + Send + 'static,
+        f32: cpal::FromSample<TSource::Item>,
+        TSource::Item: rodio::Sample + Send,
+    {
+        self.mmu.sound2.play_sfx(sfx)
     }
 
     fn fetch_byte(&mut self) -> u8 {

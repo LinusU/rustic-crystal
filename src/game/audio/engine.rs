@@ -36,7 +36,7 @@ pub fn play_cry(cpu: &mut Cpu) {
     eprintln!("play_cry({}, pitch = {pitch}, length = {length})", cpu.e);
 
     let sfx = CRIES[cpu.e as usize].tweaked(pitch, length);
-    cpu.mmu.sound2.play_sfx(sfx);
+    cpu.play_sfx(sfx);
 
     // Run GameBoy code as well so that everything works like normally
     // call MusicOff
@@ -49,7 +49,7 @@ pub fn play_sfx(cpu: &mut Cpu) {
     eprintln!("play_sfx(0x{:02x})", cpu.e);
 
     if let Some(sfx) = Sfx::from_sfx_id(cpu.e) {
-        cpu.mmu.sound2.play_sfx(sfx);
+        cpu.play_sfx(sfx);
     }
 
     // Run GameBoy code as well so that everything works like normally
