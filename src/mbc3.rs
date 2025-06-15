@@ -80,16 +80,6 @@ impl MBC3 {
     }
 }
 
-impl Drop for MBC3 {
-    fn drop(&mut self) {
-        if let Some(ref path) = self.savepath {
-            if let Err(err) = self.ram.write_to_file(path) {
-                eprintln!("Error saving MBC3 RAM to {}: {}", path.display(), err);
-            }
-        }
-    }
-}
-
 impl MBC3 {
     pub fn replace_ram(&mut self, ram: SaveState, path: PathBuf) {
         self.ram = ram;
@@ -98,6 +88,12 @@ impl MBC3 {
 
     pub fn set_save_path(&mut self, path: PathBuf) {
         self.savepath = Some(path);
+    }
+
+    pub fn save_to_disk(&mut self) {
+        if let Some(ref path) = self.savepath {
+            self.ram.write_to_file(path).unwrap();
+        }
     }
 
     pub fn readrom(&self, a: u16) -> u8 {

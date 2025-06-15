@@ -82,6 +82,7 @@ impl<'a> Cpu<'a> {
                 (_, 0x0270) => panic!("clears_scratch should only be called from Rust"),
                 (_, 0x3dfe) => crate::game::home::audio::terminate_exp_bar_sound(self),
 
+                (0x05, 0x4c10) => crate::game::engine::menus::save::save_game_data(self),
                 (0x05, 0x4f1c) => crate::game::engine::menus::save::try_load_save_data(self),
                 (0x05, 0x4f84) => panic!("check_primary_save_file should only be called from Rust"),
 
@@ -128,6 +129,10 @@ impl<'a> Cpu<'a> {
 
     pub fn set_save_path(&mut self, path: PathBuf) {
         self.mmu.mbc.set_save_path(path);
+    }
+
+    pub fn save_to_disk(&mut self) {
+        self.mmu.mbc.save_to_disk();
     }
 
     pub fn borrow_wram(&self) -> &GameState {

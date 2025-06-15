@@ -1,0 +1,1 @@
+pub const BATTLETOWER_RECEIVED_REWARD: u8 = 4;

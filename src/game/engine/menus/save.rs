@@ -1,11 +1,51 @@
 use crate::{
     cpu::{Cpu, CpuFlag},
     game::{
-        constants::misc_constants,
+        constants::{battle_tower_constants::BATTLETOWER_RECEIVED_REWARD, misc_constants},
         data::default_options::DEFAULT_OPTIONS,
+        macros,
         ram::{sram, wram},
     },
 };
+
+pub fn save_game_data(cpu: &mut Cpu) {
+    eprintln!("save_game_data()");
+
+    cpu.borrow_wram_mut().set_save_file_exists(true);
+
+    macros::farcall::farcall(cpu, 0x05, 0x4056); // StageRTCTimeForSave
+    macros::farcall::farcall(cpu, 0x41, 0x50d9); // BackupMysteryGift
+
+    cpu.call(0x4da9); // ValidateSave
+    cpu.call(0x4dbb); // SaveOptions
+    cpu.call(0x4dd7); // SavePlayerData
+    cpu.call(0x4df7); // SavePokemonData
+    cpu.call(0x4e0c); // SaveBox
+    cpu.call(0x4e13); // SaveChecksum
+    cpu.call(0x4e2d); // ValidateBackupSave
+    cpu.call(0x4e40); // SaveBackupOptions
+    cpu.call(0x4e55); // SaveBackupPlayerData
+    cpu.call(0x4e76); // SaveBackupPokemonData
+    cpu.call(0x4e8b); // SaveBackupChecksum
+    cpu.call(0x4c6b); // UpdateStackTop
+
+    macros::farcall::farcall(cpu, 0x11, 0x4725); // BackupPartyMonMail
+    macros::farcall::farcall(cpu, 0x41, 0x6187); // BackupGSBallFlag
+    macros::farcall::farcall(cpu, 0x05, 0x406a); // SaveRTC
+
+    cpu.a = sram::BATTLE_TOWER_CHALLENGE_STATE.0;
+    cpu.call(0x2fcb); // OpenSRAM
+
+    if cpu.read_byte(sram::BATTLE_TOWER_CHALLENGE_STATE.1) != BATTLETOWER_RECEIVED_REWARD {
+        cpu.write_byte(sram::BATTLE_TOWER_CHALLENGE_STATE.1, 0);
+    }
+
+    cpu.call(0x2fe1); // CloseSRAM
+
+    cpu.save_to_disk();
+
+    cpu.pc = cpu.stack_pop(); // ret
+}
 
 pub fn try_load_save_data(cpu: &mut Cpu) {
     eprintln!("try_load_save_data()");

@@ -1,3 +1,4 @@
+pub mod battle_tower_constants;
 pub mod gfx_constants;
 pub mod hardware_constants;
 pub mod input_constants;
