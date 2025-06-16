@@ -73,11 +73,6 @@ fn main() -> Result<(), &'static str> {
                 WindowEvent::KeyboardInput { input, .. } => match input {
                     KeyboardInput {
                         state: Pressed,
-                        virtual_keycode: Some(VirtualKeyCode::Escape),
-                        ..
-                    } => stop = true,
-                    KeyboardInput {
-                        state: Pressed,
                         virtual_keycode: Some(VirtualKeyCode::Key1),
                         ..
                     } => render_delay.store(16_743, std::sync::atomic::Ordering::Relaxed), // 59.7 fps
