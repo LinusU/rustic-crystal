@@ -1,7 +1,7 @@
 use crate::cpu::{Cpu, CpuFlag};
 
 pub fn terminate_exp_bar_sound(cpu: &mut Cpu) {
-    eprintln!("terminate_exp_bar_sound()");
+    log::debug!("terminate_exp_bar_sound()");
 
     cpu.mmu.sound2.stop_sfx();
 

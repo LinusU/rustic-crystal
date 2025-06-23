@@ -21,7 +21,7 @@ const MAINMENUITEM_MOBILE: u8 = 4;
 const MAINMENUITEM_MOBILE_STUDIUM: u8 = 5;
 
 pub fn main_menu(cpu: &mut Cpu) {
-    eprintln!("main_menu()");
+    log::debug!("main_menu()");
 
     loop {
         cpu.borrow_wram_mut().set_disable_text_acceleration(false);
@@ -90,7 +90,7 @@ fn main_menu_get_which_menu() -> u8 {
             }
         }
         Err(e) => {
-            eprintln!("Error listing save files: {}", e);
+            log::error!("Error listing save files: {}", e);
             MAINMENU_NEW_GAME
         }
     }
@@ -155,7 +155,7 @@ fn main_menu_select_save(cpu: &mut Cpu) {
         }
         Ok(files) => files,
         Err(error) => {
-            eprintln!("Error listing save files: {}", error);
+            log::error!("Error listing save files: {}", error);
             return;
         }
     };

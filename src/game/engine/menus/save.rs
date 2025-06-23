@@ -9,7 +9,7 @@ use crate::{
 };
 
 pub fn save_game_data(cpu: &mut Cpu) {
-    eprintln!("save_game_data()");
+    log::debug!("save_game_data()");
 
     cpu.borrow_wram_mut().set_save_file_exists(true);
 
@@ -48,7 +48,7 @@ pub fn save_game_data(cpu: &mut Cpu) {
 }
 
 pub fn try_load_save_data(cpu: &mut Cpu) {
-    eprintln!("try_load_save_data()");
+    log::debug!("try_load_save_data()");
 
     cpu.borrow_wram_mut().set_save_file_exists(false);
     check_primary_save_file(cpu);

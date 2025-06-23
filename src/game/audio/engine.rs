@@ -4,7 +4,7 @@ use crate::{
 };
 
 pub fn init_sound(cpu: &mut Cpu) {
-    eprintln!("init_sound()");
+    log::debug!("init_sound()");
 
     cpu.mmu.sound2.stop_music();
 
@@ -16,7 +16,7 @@ pub fn init_sound(cpu: &mut Cpu) {
 }
 
 pub fn play_music(cpu: &mut Cpu) {
-    eprintln!("play_music(0x{:02x})", cpu.e);
+    log::debug!("play_music(0x{:02x})", cpu.e);
 
     if let Some(music) = Music::from_id(cpu.e) {
         cpu.mmu.sound2.start_music(music);
@@ -33,7 +33,7 @@ pub fn play_cry(cpu: &mut Cpu) {
     let pitch = cpu.mmu.borrow_wram().cry_pitch();
     let length = cpu.mmu.borrow_wram().cry_length();
 
-    eprintln!("play_cry({}, pitch = {pitch}, length = {length})", cpu.e);
+    log::debug!("play_cry({}, pitch = {pitch}, length = {length})", cpu.e);
 
     let sfx = CRIES[cpu.e as usize].tweaked(pitch, length);
     cpu.play_sfx(sfx);
@@ -46,7 +46,7 @@ pub fn play_cry(cpu: &mut Cpu) {
 }
 
 pub fn play_sfx(cpu: &mut Cpu) {
-    eprintln!("play_sfx(0x{:02x})", cpu.e);
+    log::debug!("play_sfx(0x{:02x})", cpu.e);
 
     if let Some(sfx) = Sfx::from_sfx_id(cpu.e) {
         cpu.play_sfx(sfx);

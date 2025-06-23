@@ -33,6 +33,8 @@ fn create_window_builder() -> glium::glutin::window::WindowBuilder {
 }
 
 fn main() -> Result<(), &'static str> {
+    env_logger::init();
+
     let scale = 4;
 
     let render_delay = Arc::new(AtomicU64::new(16_743));

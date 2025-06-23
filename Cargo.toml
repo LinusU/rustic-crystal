@@ -8,7 +8,9 @@ description = "A re-implementation of the classic GameBoy Color game Pokemon Cry
 bitflags = "2.9.1"
 blip_buf = "0.1.4"
 cpal = "0.15.2"
+env_logger = "0.11.8"
 glium = { version = "0.32.1", default_features = false, features = [ "glutin" ] }
+log = "0.4.27"
 pokemon-synthesizer = "0.2.1"
 rodio = { version = "0.17.1", default-features = false, features = ["flac"] }
 

@@ -26,6 +26,6 @@ pub fn game_init(cpu: &mut Cpu) {
 
     cpu.call(0x31f6); // WaitBGMap
 
-    eprintln!("Jumping to IntroSequence");
+    log::info!("Jumping to IntroSequence");
     cpu.pc = 0x620b; // IntroSequence
 }

@@ -9,7 +9,7 @@ use crate::{
 };
 
 pub fn start(cpu: &mut Cpu) {
-    eprintln!("start()");
+    log::debug!("start()");
 
     cpu.write_byte(hram::CGB, 1);
     cpu.write_byte(hram::SYSTEM_BOOTED, 1);
@@ -19,7 +19,7 @@ pub fn start(cpu: &mut Cpu) {
 }
 
 fn init(cpu: &mut Cpu) {
-    eprintln!("init()");
+    log::debug!("init()");
 
     cpu.ime = false;
     cpu.write_byte(hardware_constants::R_IF, 0);
