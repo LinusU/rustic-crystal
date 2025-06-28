@@ -1,6 +1,9 @@
 use crate::game::{
     audio::music::Music,
-    constants::{battle_constants::BattleMode, input_constants::JoypadButtons},
+    constants::{
+        battle_constants::{BattleMode, BattleType},
+        input_constants::JoypadButtons,
+    },
 };
 
 const WRAM_SIZE: usize = 0x8000;
@@ -196,8 +199,8 @@ impl GameState {
         }
     }
 
-    pub fn battle_type(&self) -> u8 {
-        self.data[0x1230]
+    pub fn battle_type(&self) -> BattleType {
+        self.data[0x1230].into()
     }
 
     pub fn set_named_object_index(&mut self, value: u8) {

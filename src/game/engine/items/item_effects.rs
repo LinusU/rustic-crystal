@@ -202,7 +202,7 @@ fn poke_ball_effect_room_in_party(cpu: &mut Cpu) {
     cpu.cycle(4);
 
     // ld a, [wBattleType]
-    cpu.a = cpu.borrow_wram().battle_type();
+    cpu.a = cpu.borrow_wram().battle_type().into();
     cpu.pc += 3;
     cpu.cycle(16);
 
@@ -1675,7 +1675,7 @@ fn poke_ball_effect_transformed(cpu: &mut Cpu) {
     cpu.cycle(16);
 
     // ld a, [wBattleType]
-    cpu.a = cpu.borrow_wram().battle_type();
+    cpu.a = cpu.borrow_wram().battle_type().into();
     cpu.pc += 3;
     cpu.cycle(16);
 
@@ -1866,7 +1866,7 @@ fn poke_ball_effect_skip_pokedex(cpu: &mut Cpu) {
     cpu.pc = 0x6ab7;
 
     // ld a, [wBattleType]
-    cpu.a = cpu.borrow_wram().battle_type();
+    cpu.a = cpu.borrow_wram().battle_type().into();
     cpu.pc += 3;
     cpu.cycle(16);
 
@@ -2652,7 +2652,7 @@ fn poke_ball_effect_return_from_capture(cpu: &mut Cpu) {
     cpu.pc = 0x6be2;
 
     // ld a, [wBattleType]
-    cpu.a = cpu.borrow_wram().battle_type();
+    cpu.a = cpu.borrow_wram().battle_type().into();
     cpu.pc += 3;
     cpu.cycle(16);
 
