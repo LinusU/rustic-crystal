@@ -190,7 +190,10 @@ impl GameState {
     }
 
     pub fn battle_mode(&self) -> Option<BattleMode> {
-        BattleMode::from_u8(self.data[0x122d])
+        match self.data[0x122d] {
+            0 => None,
+            n => Some(n.into()),
+        }
     }
 
     pub fn battle_type(&self) -> u8 {

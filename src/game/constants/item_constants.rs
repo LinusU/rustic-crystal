@@ -1,19 +1,11 @@
-pub enum Item {
-    MasterBall,
-    PokeBall,
-    LevelBall,
-    FriendBall,
-    ParkBall,
-}
+use crate::game::macros::r#enum::define_u8_enum;
 
-impl Item {
-    pub fn to_u8(self) -> u8 {
-        match self {
-            Item::MasterBall => 0x01,
-            Item::PokeBall => 0x05,
-            Item::LevelBall => 0x9f,
-            Item::FriendBall => 0xa4,
-            Item::ParkBall => 0xb1,
-        }
+define_u8_enum! {
+    pub enum Item {
+        MasterBall = 0x01,
+        PokeBall = 0x05,
+        LevelBall = 0x9f,
+        FriendBall = 0xa4,
+        ParkBall = 0xb1,
     }
 }

@@ -25,10 +25,7 @@ pub fn poke_ball_effect(cpu: &mut Cpu) {
     cpu.pc = 0x68a2;
 
     // ld a, [wBattleMode]
-    cpu.a = cpu
-        .borrow_wram()
-        .battle_mode()
-        .map_or(0, |mode| mode.to_u8());
+    cpu.a = cpu.borrow_wram().battle_mode().map_or(0, Into::into);
     cpu.pc += 3;
     cpu.cycle(16);
 
@@ -145,10 +142,13 @@ fn poke_ball_effect_room_in_party(cpu: &mut Cpu) {
     cpu.cycle(16);
 
     // cp PARK_BALL
-    cpu.set_flag(CpuFlag::Z, cpu.a == Item::ParkBall.to_u8());
-    cpu.set_flag(CpuFlag::H, (cpu.a & 0x0f) < (Item::ParkBall.to_u8() & 0x0f));
+    cpu.set_flag(CpuFlag::Z, cpu.a == u8::from(Item::ParkBall));
+    cpu.set_flag(
+        CpuFlag::H,
+        (cpu.a & 0x0f) < (u8::from(Item::ParkBall) & 0x0f),
+    );
     cpu.set_flag(CpuFlag::N, true);
-    cpu.set_flag(CpuFlag::C, cpu.a < Item::ParkBall.to_u8());
+    cpu.set_flag(CpuFlag::C, cpu.a < u8::from(Item::ParkBall));
     cpu.pc += 2;
     cpu.cycle(8);
 
@@ -207,13 +207,13 @@ fn poke_ball_effect_room_in_party(cpu: &mut Cpu) {
     cpu.cycle(16);
 
     // cp BATTLETYPE_TUTORIAL
-    cpu.set_flag(CpuFlag::Z, cpu.a == BattleType::Tutorial.to_u8());
+    cpu.set_flag(CpuFlag::Z, cpu.a == u8::from(BattleType::Tutorial));
     cpu.set_flag(
         CpuFlag::H,
-        (cpu.a & 0x0f) < (BattleType::Tutorial.to_u8() & 0x0f),
+        (cpu.a & 0x0f) < (u8::from(BattleType::Tutorial) & 0x0f),
     );
     cpu.set_flag(CpuFlag::N, true);
-    cpu.set_flag(CpuFlag::C, cpu.a < BattleType::Tutorial.to_u8());
+    cpu.set_flag(CpuFlag::C, cpu.a < u8::from(BattleType::Tutorial));
     cpu.pc += 2;
     cpu.cycle(8);
 
@@ -232,13 +232,13 @@ fn poke_ball_effect_room_in_party(cpu: &mut Cpu) {
     cpu.cycle(16);
 
     // cp MASTER_BALL
-    cpu.set_flag(CpuFlag::Z, cpu.a == Item::MasterBall.to_u8());
+    cpu.set_flag(CpuFlag::Z, cpu.a == u8::from(Item::MasterBall));
     cpu.set_flag(
         CpuFlag::H,
-        (cpu.a & 0x0f) < (Item::MasterBall.to_u8() & 0x0f),
+        (cpu.a & 0x0f) < (u8::from(Item::MasterBall) & 0x0f),
     );
     cpu.set_flag(CpuFlag::N, true);
-    cpu.set_flag(CpuFlag::C, cpu.a < Item::MasterBall.to_u8());
+    cpu.set_flag(CpuFlag::C, cpu.a < u8::from(Item::MasterBall));
     cpu.pc += 2;
     cpu.cycle(8);
 
@@ -376,13 +376,13 @@ fn poke_ball_effect_skip_or_return_from_ball_fn(cpu: &mut Cpu) {
     cpu.cycle(16);
 
     // cp LEVEL_BALL
-    cpu.set_flag(CpuFlag::Z, cpu.a == Item::LevelBall.to_u8());
+    cpu.set_flag(CpuFlag::Z, cpu.a == u8::from(Item::LevelBall));
     cpu.set_flag(
         CpuFlag::H,
-        (cpu.a & 0x0f) < (Item::LevelBall.to_u8() & 0x0f),
+        (cpu.a & 0x0f) < (u8::from(Item::LevelBall) & 0x0f),
     );
     cpu.set_flag(CpuFlag::N, true);
-    cpu.set_flag(CpuFlag::C, cpu.a < Item::LevelBall.to_u8());
+    cpu.set_flag(CpuFlag::C, cpu.a < u8::from(Item::LevelBall));
     cpu.pc += 2;
     cpu.cycle(8);
 
@@ -1072,13 +1072,13 @@ fn poke_ball_effect_fail_to_catch(cpu: &mut Cpu) {
 
     // Assumes Master/Ultra/Great come before
     // cp POKE_BALL + 1
-    cpu.set_flag(CpuFlag::Z, cpu.a == (Item::PokeBall.to_u8() + 1));
+    cpu.set_flag(CpuFlag::Z, cpu.a == (u8::from(Item::PokeBall) + 1));
     cpu.set_flag(
         CpuFlag::H,
-        (cpu.a & 0x0f) < ((Item::PokeBall.to_u8() + 1) & 0x0f),
+        (cpu.a & 0x0f) < ((u8::from(Item::PokeBall) + 1) & 0x0f),
     );
     cpu.set_flag(CpuFlag::N, true);
-    cpu.set_flag(CpuFlag::C, cpu.a < (Item::PokeBall.to_u8() + 1));
+    cpu.set_flag(CpuFlag::C, cpu.a < (u8::from(Item::PokeBall) + 1));
     cpu.pc += 2;
     cpu.cycle(8);
 
@@ -1092,7 +1092,7 @@ fn poke_ball_effect_fail_to_catch(cpu: &mut Cpu) {
     }
 
     // ld a, POKE_BALL
-    cpu.a = Item::PokeBall.to_u8();
+    cpu.a = Item::PokeBall.into();
     cpu.pc += 2;
     cpu.cycle(8);
 
@@ -1401,7 +1401,7 @@ fn poke_ball_effect_ditto(cpu: &mut Cpu) {
     cpu.pc = 0x6a13;
 
     // ld a, DITTO
-    cpu.a = PokemonSpecies::Ditto.to_u8();
+    cpu.a = PokemonSpecies::Ditto.into();
     cpu.pc += 2;
     cpu.cycle(8);
 
@@ -1680,13 +1680,13 @@ fn poke_ball_effect_transformed(cpu: &mut Cpu) {
     cpu.cycle(16);
 
     // cp BATTLETYPE_TUTORIAL
-    cpu.set_flag(CpuFlag::Z, cpu.a == BattleType::Tutorial.to_u8());
+    cpu.set_flag(CpuFlag::Z, cpu.a == u8::from(BattleType::Tutorial));
     cpu.set_flag(
         CpuFlag::H,
-        (cpu.a & 0x0f) < (BattleType::Tutorial.to_u8() & 0x0f),
+        (cpu.a & 0x0f) < (u8::from(BattleType::Tutorial) & 0x0f),
     );
     cpu.set_flag(CpuFlag::N, true);
-    cpu.set_flag(CpuFlag::C, cpu.a < BattleType::Tutorial.to_u8());
+    cpu.set_flag(CpuFlag::C, cpu.a < u8::from(BattleType::Tutorial));
     cpu.pc += 2;
     cpu.cycle(8);
 
@@ -1871,13 +1871,13 @@ fn poke_ball_effect_skip_pokedex(cpu: &mut Cpu) {
     cpu.cycle(16);
 
     // cp BATTLETYPE_CONTEST
-    cpu.set_flag(CpuFlag::Z, cpu.a == BattleType::Contest.to_u8());
+    cpu.set_flag(CpuFlag::Z, cpu.a == u8::from(BattleType::Contest));
     cpu.set_flag(
         CpuFlag::H,
-        (cpu.a & 0x0f) < (BattleType::Contest.to_u8() & 0x0f),
+        (cpu.a & 0x0f) < (u8::from(BattleType::Contest) & 0x0f),
     );
     cpu.set_flag(CpuFlag::N, true);
-    cpu.set_flag(CpuFlag::C, cpu.a < BattleType::Contest.to_u8());
+    cpu.set_flag(CpuFlag::C, cpu.a < u8::from(BattleType::Contest));
     cpu.pc += 2;
     cpu.cycle(8);
 
@@ -1891,13 +1891,13 @@ fn poke_ball_effect_skip_pokedex(cpu: &mut Cpu) {
     }
 
     // cp BATTLETYPE_CELEBI
-    cpu.set_flag(CpuFlag::Z, cpu.a == BattleType::Celebi.to_u8());
+    cpu.set_flag(CpuFlag::Z, cpu.a == u8::from(BattleType::Celebi));
     cpu.set_flag(
         CpuFlag::H,
-        (cpu.a & 0x0f) < (BattleType::Celebi.to_u8() & 0x0f),
+        (cpu.a & 0x0f) < (u8::from(BattleType::Celebi) & 0x0f),
     );
     cpu.set_flag(CpuFlag::N, true);
-    cpu.set_flag(CpuFlag::C, cpu.a < BattleType::Celebi.to_u8());
+    cpu.set_flag(CpuFlag::C, cpu.a < u8::from(BattleType::Celebi));
     cpu.pc += 2;
     cpu.cycle(8);
 
@@ -1988,13 +1988,13 @@ fn poke_ball_effect_not_celebi(cpu: &mut Cpu) {
     cpu.cycle(16);
 
     // cp FRIEND_BALL
-    cpu.set_flag(CpuFlag::Z, cpu.a == Item::FriendBall.to_u8());
+    cpu.set_flag(CpuFlag::Z, cpu.a == u8::from(Item::FriendBall));
     cpu.set_flag(
         CpuFlag::H,
-        (cpu.a & 0x0f) < (Item::FriendBall.to_u8() & 0x0f),
+        (cpu.a & 0x0f) < (u8::from(Item::FriendBall) & 0x0f),
     );
     cpu.set_flag(CpuFlag::N, true);
-    cpu.set_flag(CpuFlag::C, cpu.a < Item::FriendBall.to_u8());
+    cpu.set_flag(CpuFlag::C, cpu.a < u8::from(Item::FriendBall));
     cpu.pc += 2;
     cpu.cycle(8);
 
@@ -2309,13 +2309,13 @@ fn poke_ball_effect_box_not_full_yet(cpu: &mut Cpu) {
     cpu.cycle(16);
 
     // cp FRIEND_BALL
-    cpu.set_flag(CpuFlag::Z, cpu.a == Item::FriendBall.to_u8());
+    cpu.set_flag(CpuFlag::Z, cpu.a == u8::from(Item::FriendBall));
     cpu.set_flag(
         CpuFlag::H,
-        (cpu.a & 0x0f) < (Item::FriendBall.to_u8() & 0x0f),
+        (cpu.a & 0x0f) < (u8::from(Item::FriendBall) & 0x0f),
     );
     cpu.set_flag(CpuFlag::N, true);
-    cpu.set_flag(CpuFlag::C, cpu.a < Item::FriendBall.to_u8());
+    cpu.set_flag(CpuFlag::C, cpu.a < u8::from(Item::FriendBall));
     cpu.pc += 2;
     cpu.cycle(8);
 
@@ -2423,7 +2423,7 @@ fn poke_ball_effect_skip_box_mon_friend_ball(cpu: &mut Cpu) {
     cpu.cycle(16);
 
     // ld a, BOXMON
-    cpu.a = MonType::Box.to_u8();
+    cpu.a = MonType::Box.into();
     cpu.pc += 2;
     cpu.cycle(8);
 
@@ -2657,13 +2657,13 @@ fn poke_ball_effect_return_from_capture(cpu: &mut Cpu) {
     cpu.cycle(16);
 
     // cp BATTLETYPE_TUTORIAL
-    cpu.set_flag(CpuFlag::Z, cpu.a == BattleType::Tutorial.to_u8());
+    cpu.set_flag(CpuFlag::Z, cpu.a == u8::from(BattleType::Tutorial));
     cpu.set_flag(
         CpuFlag::H,
-        (cpu.a & 0x0f) < (BattleType::Tutorial.to_u8() & 0x0f),
+        (cpu.a & 0x0f) < (u8::from(BattleType::Tutorial) & 0x0f),
     );
     cpu.set_flag(CpuFlag::N, true);
-    cpu.set_flag(CpuFlag::C, cpu.a < BattleType::Tutorial.to_u8());
+    cpu.set_flag(CpuFlag::C, cpu.a < u8::from(BattleType::Tutorial));
     cpu.pc += 2;
     cpu.cycle(8);
 
@@ -2678,13 +2678,13 @@ fn poke_ball_effect_return_from_capture(cpu: &mut Cpu) {
     }
 
     // cp BATTLETYPE_DEBUG
-    cpu.set_flag(CpuFlag::Z, cpu.a == BattleType::Debug.to_u8());
+    cpu.set_flag(CpuFlag::Z, cpu.a == u8::from(BattleType::Debug));
     cpu.set_flag(
         CpuFlag::H,
-        (cpu.a & 0x0f) < (BattleType::Debug.to_u8() & 0x0f),
+        (cpu.a & 0x0f) < (u8::from(BattleType::Debug) & 0x0f),
     );
     cpu.set_flag(CpuFlag::N, true);
-    cpu.set_flag(CpuFlag::C, cpu.a < BattleType::Debug.to_u8());
+    cpu.set_flag(CpuFlag::C, cpu.a < u8::from(BattleType::Debug));
     cpu.pc += 2;
     cpu.cycle(8);
 
@@ -2699,13 +2699,13 @@ fn poke_ball_effect_return_from_capture(cpu: &mut Cpu) {
     }
 
     // cp BATTLETYPE_CONTEST
-    cpu.set_flag(CpuFlag::Z, cpu.a == BattleType::Contest.to_u8());
+    cpu.set_flag(CpuFlag::Z, cpu.a == u8::from(BattleType::Contest));
     cpu.set_flag(
         CpuFlag::H,
-        (cpu.a & 0x0f) < (BattleType::Contest.to_u8() & 0x0f),
+        (cpu.a & 0x0f) < (u8::from(BattleType::Contest) & 0x0f),
     );
     cpu.set_flag(CpuFlag::N, true);
-    cpu.set_flag(CpuFlag::C, cpu.a < BattleType::Contest.to_u8());
+    cpu.set_flag(CpuFlag::C, cpu.a < u8::from(BattleType::Contest));
     cpu.pc += 2;
     cpu.cycle(8);
 
