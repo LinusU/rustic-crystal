@@ -55,4 +55,8 @@ impl SaveState {
     pub fn set_rtc_zero(&mut self, value: u64) {
         self.rtc_zero = value;
     }
+
+    pub fn box_count(&self) -> u8 {
+        self.data[0x2d10]
+    }
 }

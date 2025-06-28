@@ -1,0 +1,1 @@
+pub const ANIM_THROW_POKE_BALL: u16 = 0x0100;

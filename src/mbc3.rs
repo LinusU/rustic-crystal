@@ -81,6 +81,14 @@ impl MBC3 {
 }
 
 impl MBC3 {
+    pub fn borrow_sram(&self) -> &SaveState {
+        &self.ram
+    }
+
+    pub fn borrow_sram_mut(&mut self) -> &mut SaveState {
+        &mut self.ram
+    }
+
     pub fn replace_ram(&mut self, ram: SaveState, path: PathBuf) {
         self.ram = ram;
         self.savepath = Some(path);

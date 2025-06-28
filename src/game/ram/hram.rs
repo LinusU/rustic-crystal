@@ -1,9 +1,15 @@
 pub const JOY_DOWN: u16 = 0xffa8;
+pub const DIVIDEND: u16 = 0xffb3;
+pub const QUOTIENT: u16 = 0xffb3;
+pub const MULTIPLICAND: u16 = 0xffb4;
+pub const DIVISOR: u16 = 0xffb7;
+pub const MULTIPLIER: u16 = 0xffb7;
 pub const SERIAL_CONNECTION_STATUS: u16 = 0xffcb;
 pub const SCX: u16 = 0xffcf;
 pub const SCY: u16 = 0xffd0;
 pub const WX: u16 = 0xffd1;
 pub const WY: u16 = 0xffd2;
+pub const BATTLE_TURN: u16 = 0xffe4;
 pub const CGB: u16 = 0xffe6;
 pub const SYSTEM_BOOTED: u16 = 0xffea;
 pub const BG_MAP_MODE: u16 = 0xffd4;

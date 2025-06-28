@@ -1,4 +1,7 @@
-use crate::game::{audio::music::Music, constants::input_constants::JoypadButtons};
+use crate::game::{
+    audio::music::Music,
+    constants::{battle_constants::BattleMode, input_constants::JoypadButtons},
+};
 
 const WRAM_SIZE: usize = 0x8000;
 
@@ -58,6 +61,26 @@ impl GameState {
         self.data[0x02d7] = if value { 1 } else { 0 };
     }
 
+    pub fn battle_mon_item(&self) -> u8 {
+        self.data[0x062d]
+    }
+
+    pub fn wild_mon(&self) -> u8 {
+        self.data[0x064e]
+    }
+
+    pub fn set_wild_mon(&mut self, value: u8) {
+        self.data[0x064e] = value;
+    }
+
+    pub fn set_battle_anim_param(&mut self, value: u8) {
+        self.data[0x0689] = value;
+    }
+
+    pub fn set_mon_type(&mut self, value: u8) {
+        self.data[0x0f5f] = value;
+    }
+
     pub fn menu_joypad(&self) -> JoypadButtons {
         JoypadButtons::from_bits(self.data[0x0f73]).unwrap()
     }
@@ -86,6 +109,10 @@ impl GameState {
         }
     }
 
+    pub fn set_num_hits(&mut self, value: u8) {
+        self.data[0x0fca] = value;
+    }
+
     pub fn set_no_text_scroll(&mut self, value: bool) {
         if value {
             self.data[0x0fcc] |= 1 << 4;
@@ -100,5 +127,89 @@ impl GameState {
 
     pub fn set_save_file_exists(&mut self, value: bool) {
         self.data[0x0fcd] = if value { 1 } else { 0 };
+    }
+
+    pub fn cur_item(&self) -> u8 {
+        self.data[0x1106]
+    }
+
+    pub fn cur_party_species(&self) -> u8 {
+        self.data[0x1108]
+    }
+
+    pub fn set_cur_party_species(&mut self, value: u8) {
+        self.data[0x1108] = value;
+    }
+
+    pub fn set_cur_party_mon(&mut self, value: u8) {
+        self.data[0x1109] = value;
+    }
+
+    pub fn set_item_quantity_change(&mut self, value: u8) {
+        self.data[0x110c] = value;
+    }
+
+    pub fn set_cur_party_level(&mut self, value: u8) {
+        self.data[0x1143] = value;
+    }
+
+    pub fn set_final_catch_rate(&mut self, value: u8) {
+        self.data[0x11ea] = value;
+    }
+
+    pub fn thrown_ball_wobble_count(&self) -> u8 {
+        self.data[0x11eb]
+    }
+
+    pub fn set_thrown_ball_wobble_count(&mut self, value: u8) {
+        self.data[0x11eb] = value;
+    }
+
+    pub fn temp_enemy_mon_species(&self) -> u8 {
+        self.data[0x1204]
+    }
+
+    pub fn set_temp_enemy_mon_species(&mut self, value: u8) {
+        self.data[0x1204] = value;
+    }
+
+    pub fn enemy_mon_species(&self) -> u8 {
+        self.data[0x1206]
+    }
+
+    pub fn enemy_mon_level(&self) -> u8 {
+        self.data[0x1213]
+    }
+
+    pub fn enemy_mon_status(&self) -> u8 {
+        self.data[0x1214]
+    }
+
+    pub fn enemy_mon_catch_rate(&self) -> u8 {
+        self.data[0x122b]
+    }
+
+    pub fn battle_mode(&self) -> Option<BattleMode> {
+        BattleMode::from_u8(self.data[0x122d])
+    }
+
+    pub fn battle_type(&self) -> u8 {
+        self.data[0x1230]
+    }
+
+    pub fn set_named_object_index(&mut self, value: u8) {
+        self.data[0x1265] = value;
+    }
+
+    pub fn temp_species(&self) -> u8 {
+        self.data[0x1265]
+    }
+
+    pub fn set_temp_species(&mut self, value: u8) {
+        self.data[0x1265] = value;
+    }
+
+    pub fn party_count(&self) -> u8 {
+        self.data[0x1cd7]
     }
 }

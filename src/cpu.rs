@@ -82,6 +82,8 @@ impl<'a> Cpu<'a> {
                 (_, 0x0270) => panic!("clears_scratch should only be called from Rust"),
                 (_, 0x3dfe) => crate::game::home::audio::terminate_exp_bar_sound(self),
 
+                (0x03, 0x68a2) => crate::game::engine::items::item_effects::poke_ball_effect(self),
+
                 (0x05, 0x4c10) => crate::game::engine::menus::save::save_game_data(self),
                 (0x05, 0x4f1c) => crate::game::engine::menus::save::try_load_save_data(self),
                 (0x05, 0x4f84) => panic!("check_primary_save_file should only be called from Rust"),
@@ -105,6 +107,11 @@ impl<'a> Cpu<'a> {
         }
     }
 
+    pub fn jump(&mut self, pc: u16) {
+        self.call(pc);
+        self.pc = self.stack_pop();
+    }
+
     pub fn bank(&self) -> usize {
         self.mmu.mbc.rombank
     }
@@ -121,6 +128,14 @@ impl<'a> Cpu<'a> {
         self.mmu.do_cycle(ticks);
         self.updateime();
         self.handleinterrupt();
+    }
+
+    pub fn borrow_sram(&self) -> &SaveState {
+        self.mmu.mbc.borrow_sram()
+    }
+
+    pub fn borrow_sram_mut(&mut self) -> &mut SaveState {
+        self.mmu.mbc.borrow_sram_mut()
     }
 
     pub fn replace_sram(&mut self, sram: SaveState, path: PathBuf) {
