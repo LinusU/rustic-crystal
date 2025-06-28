@@ -13,9 +13,18 @@ define_u8_enum! {
 
 define_u8_enum! {
     pub enum BattleType {
+        Normal = 0,
+        CanLose = 1,
         Debug = 2,
         Tutorial = 3,
+        Fish = 4,
+        Roaming = 5,
         Contest = 6,
+        ForceShiny = 7,
+        Tree = 8,
+        Trap = 9,
+        ForceItem = 10,
         Celebi = 11,
+        Suicune = 12,
     }
 }
