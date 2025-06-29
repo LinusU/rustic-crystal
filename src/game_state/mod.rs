@@ -1,10 +1,14 @@
 use crate::game::{
     audio::music::Music,
     constants::{
-        battle_constants::{BattleMode, BattleType},
+        battle_constants::{self, BattleMode, BattleType},
         input_constants::JoypadButtons,
+        item_constants::Item,
+        pokemon_constants::PokemonSpecies,
     },
 };
+
+pub mod battle_mon;
 
 const WRAM_SIZE: usize = 0x8000;
 
@@ -68,16 +72,35 @@ impl GameState {
         self.data[0x062d]
     }
 
-    pub fn wild_mon(&self) -> u8 {
-        self.data[0x064e]
+    pub fn wild_mon(&self) -> Option<PokemonSpecies> {
+        match self.data[0x064e] {
+            0 => None,
+            n => Some(n.into()),
+        }
     }
 
-    pub fn set_wild_mon(&mut self, value: u8) {
-        self.data[0x064e] = value;
+    pub fn set_wild_mon(&mut self, value: Option<PokemonSpecies>) {
+        self.data[0x064e] = value.map_or(0, Into::into);
+    }
+
+    pub fn enemy_sub_status_is_transformed(&self) -> bool {
+        (self.data[0x0671] & (1 << battle_constants::SUBSTATUS_TRANSFORMED)) != 0
+    }
+
+    pub fn set_enemy_sub_status_is_transformed(&mut self, value: bool) {
+        if value {
+            self.data[0x0671] |= 1 << battle_constants::SUBSTATUS_TRANSFORMED;
+        } else {
+            self.data[0x0671] &= !(1 << battle_constants::SUBSTATUS_TRANSFORMED);
+        }
     }
 
     pub fn set_battle_anim_param(&mut self, value: u8) {
         self.data[0x0689] = value;
+    }
+
+    pub fn set_enemy_backup_dvs(&mut self, value: u16) {
+        [self.data[0x06f2], self.data[0x06f3]] = value.to_be_bytes();
     }
 
     pub fn set_mon_type(&mut self, value: u8) {
@@ -112,6 +135,11 @@ impl GameState {
         }
     }
 
+    pub fn set_fx_anim_id(&mut self, value: u16) {
+        self.data[0x0fc2] = (value & 0xff) as u8;
+        self.data[0x0fc3] = (value >> 8) as u8;
+    }
+
     pub fn set_num_hits(&mut self, value: u8) {
         self.data[0x0fca] = value;
     }
@@ -132,16 +160,16 @@ impl GameState {
         self.data[0x0fcd] = if value { 1 } else { 0 };
     }
 
-    pub fn cur_item(&self) -> u8 {
-        self.data[0x1106]
+    pub fn cur_item(&self) -> Item {
+        self.data[0x1106].into()
     }
 
     pub fn cur_party_species(&self) -> u8 {
         self.data[0x1108]
     }
 
-    pub fn set_cur_party_species(&mut self, value: u8) {
-        self.data[0x1108] = value;
+    pub fn set_cur_party_species(&mut self, value: Option<PokemonSpecies>) {
+        self.data[0x1108] = value.map_or(0, Into::into);
     }
 
     pub fn set_cur_party_mon(&mut self, value: u8) {
@@ -168,24 +196,23 @@ impl GameState {
         self.data[0x11eb] = value;
     }
 
-    pub fn temp_enemy_mon_species(&self) -> u8 {
-        self.data[0x1204]
+    pub fn temp_enemy_mon_species(&self) -> Option<PokemonSpecies> {
+        match self.data[0x1204] {
+            0 => None,
+            n => Some(n.into()),
+        }
     }
 
-    pub fn set_temp_enemy_mon_species(&mut self, value: u8) {
-        self.data[0x1204] = value;
+    pub fn set_temp_enemy_mon_species(&mut self, value: Option<PokemonSpecies>) {
+        self.data[0x1204] = value.map_or(0, Into::into);
     }
 
-    pub fn enemy_mon_species(&self) -> u8 {
-        self.data[0x1206]
+    pub fn enemy_mon(&self) -> battle_mon::BattleMon<'_> {
+        battle_mon::BattleMon::new(&self.data[0x1206..])
     }
 
-    pub fn enemy_mon_level(&self) -> u8 {
-        self.data[0x1213]
-    }
-
-    pub fn enemy_mon_status(&self) -> u8 {
-        self.data[0x1214]
+    pub fn enemy_mon_mut(&mut self) -> battle_mon::BattleMonMut<'_> {
+        battle_mon::BattleMonMut::new(&mut self.data[0x1206..])
     }
 
     pub fn enemy_mon_catch_rate(&self) -> u8 {
@@ -207,12 +234,15 @@ impl GameState {
         self.data[0x1265] = value;
     }
 
-    pub fn temp_species(&self) -> u8 {
-        self.data[0x1265]
+    pub fn temp_species(&self) -> Option<PokemonSpecies> {
+        match self.data[0x1265] {
+            0 => None,
+            n => Some(n.into()),
+        }
     }
 
-    pub fn set_temp_species(&mut self, value: u8) {
-        self.data[0x1265] = value;
+    pub fn set_temp_species(&mut self, value: Option<PokemonSpecies>) {
+        self.data[0x1265] = value.map_or(0, Into::into);
     }
 
     pub fn party_count(&self) -> u8 {
