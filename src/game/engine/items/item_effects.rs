@@ -102,10 +102,7 @@ pub fn poke_ball_effect(cpu: &mut Cpu) {
         // Gen 2 Catch Rate Formula
         catch_rate = u8::max((((m3 - h2) * (catch_rate as u32)) / m3) as u8, 1).saturating_add(s);
 
-        // BUG: farcall overwrites a, and GetItemHeldEffect takes b anyway.
-        // This is probably the reason the HELD_CATCH_CHANCE effect is never used.
-        cpu.a = cpu.borrow_wram().battle_mon_item();
-        cpu.b = catch_rate;
+        cpu.b = cpu.borrow_wram().battle_mon().item().map_or(0, Into::into);
         macros::farcall::farcall(cpu, 0x0d, 0x7dd0); // GetItemHeldEffect
 
         let held_catch_chance = cpu.b == HELD_CATCH_CHANCE;

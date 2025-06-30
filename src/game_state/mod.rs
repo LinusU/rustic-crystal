@@ -69,8 +69,8 @@ impl GameState {
         self.data[0x02d7] = if value { 1 } else { 0 };
     }
 
-    pub fn battle_mon_item(&self) -> u8 {
-        self.data[0x062d]
+    pub fn battle_mon(&self) -> battle_mon::BattleMon<'_> {
+        battle_mon::BattleMon::new(&self.data[0x062c..])
     }
 
     pub fn wild_mon(&self) -> Option<PokemonSpecies> {
