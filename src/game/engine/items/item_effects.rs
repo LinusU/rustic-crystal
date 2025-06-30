@@ -57,7 +57,10 @@ pub fn poke_ball_effect(cpu: &mut Cpu) {
             return poke_ball_effect_catch(cpu, Some(cpu.borrow_wram().enemy_mon().species()));
         }
 
-        Item::UltraBall => cpu.call(0x6c29), // UltraBallMultiplier
+        Item::UltraBall => {
+            cpu.b = cpu.b.saturating_mul(2);
+        }
+
         Item::GreatBall => cpu.call(0x6c2f), // GreatBallMultiplier
         SAFARI_BALL => cpu.call(0x6c2f), // SafariBallMultiplier ; Safari Ball, leftover from RBY
         Item::HeavyBall => cpu.call(0x6c50), // HeavyBallMultiplier
