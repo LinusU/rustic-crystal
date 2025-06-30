@@ -73,8 +73,22 @@ pub fn poke_ball_effect(cpu: &mut Cpu) {
             }
         }
 
+        Item::LevelBall => {
+            let our_level = cpu.borrow_wram().battle_mon().level();
+            let enemy_level = cpu.borrow_wram().enemy_mon().level();
+
+            if (our_level / 4) > enemy_level {
+                cpu.b = cpu.b.saturating_mul(8);
+            } else if (our_level / 2) > enemy_level {
+                cpu.b = cpu.b.saturating_mul(4);
+            } else if our_level > enemy_level {
+                cpu.b = cpu.b.saturating_mul(2);
+            } else {
+                log::info!("Level Ball used with no level advantage");
+            }
+        }
+
         Item::HeavyBall => cpu.call(0x6c50), // HeavyBallMultiplier
-        Item::LevelBall => cpu.call(0x6d8c), // LevelBallMultiplier
         Item::FastBall => cpu.call(0x6d68),  // FastBallMultiplier
         Item::MoonBall => cpu.call(0x6cdd),  // MoonBallMultiplier
         Item::LoveBall => cpu.call(0x6d12),  // LoveBallMultiplier
