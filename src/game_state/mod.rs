@@ -1,10 +1,11 @@
 use crate::game::{
     audio::music::Music,
     constants::{
-        battle_constants::{self, BattleMode, BattleType},
+        battle_constants::{self, BattleMode, BattleResult, BattleType},
         input_constants::JoypadButtons,
         item_constants::Item,
         pokemon_constants::PokemonSpecies,
+        ram_constants::MonType,
     },
 };
 
@@ -103,8 +104,8 @@ impl GameState {
         [self.data[0x06f2], self.data[0x06f3]] = value.to_be_bytes();
     }
 
-    pub fn set_mon_type(&mut self, value: u8) {
-        self.data[0x0f5f] = value;
+    pub fn set_mon_type(&mut self, value: MonType) {
+        self.data[0x0f5f] = value.into();
     }
 
     pub fn menu_joypad(&self) -> JoypadButtons {
@@ -160,12 +161,23 @@ impl GameState {
         self.data[0x0fcd] = if value { 1 } else { 0 };
     }
 
+    pub fn battle_result(&self) -> BattleResult {
+        BattleResult::from_bits(self.data[0x10ee]).unwrap()
+    }
+
+    pub fn set_battle_result(&mut self, value: BattleResult) {
+        self.data[0x10ee] = value.bits();
+    }
+
     pub fn cur_item(&self) -> Item {
         self.data[0x1106].into()
     }
 
-    pub fn cur_party_species(&self) -> u8 {
-        self.data[0x1108]
+    pub fn cur_party_species(&self) -> Option<PokemonSpecies> {
+        match self.data[0x1108] {
+            0 => None,
+            n => Some(n.into()),
+        }
     }
 
     pub fn set_cur_party_species(&mut self, value: Option<PokemonSpecies>) {
@@ -243,6 +255,14 @@ impl GameState {
 
     pub fn set_temp_species(&mut self, value: Option<PokemonSpecies>) {
         self.data[0x1265] = value.map_or(0, Into::into);
+    }
+
+    pub fn park_balls_remaining(&self) -> u8 {
+        self.data[0x1c79]
+    }
+
+    pub fn set_park_balls_remaining(&mut self, value: u8) {
+        self.data[0x1c79] = value;
     }
 
     pub fn party_count(&self) -> u8 {
