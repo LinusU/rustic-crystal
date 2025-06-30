@@ -13,6 +13,7 @@ use crate::{
             ram_constants::MonType,
             text_constants,
         },
+        data::wild::flee_mons::SOMETIMES_FLEE_MONS,
         macros,
         ram::{hram, sram, wram},
     },
@@ -73,6 +74,17 @@ pub fn poke_ball_effect(cpu: &mut Cpu) {
             }
         }
 
+        Item::FastBall => {
+            if let Some(enemy) = cpu.borrow_wram().temp_enemy_mon_species() {
+                // BUG: Fast Ball only boosts catch rate for three Pokémon (see docs/bugs_and_glitches.md)
+                if SOMETIMES_FLEE_MONS[0..3].contains(&enemy) {
+                    cpu.b = cpu.b.saturating_mul(4);
+                }
+            } else {
+                log::warn!("Failed to retrieve enemy species")
+            }
+        }
+
         Item::LevelBall => {
             let our_level = cpu.borrow_wram().battle_mon().level();
             let enemy_level = cpu.borrow_wram().enemy_mon().level();
@@ -89,7 +101,6 @@ pub fn poke_ball_effect(cpu: &mut Cpu) {
         }
 
         Item::HeavyBall => cpu.call(0x6c50), // HeavyBallMultiplier
-        Item::FastBall => cpu.call(0x6d68),  // FastBallMultiplier
         Item::MoonBall => cpu.call(0x6cdd),  // MoonBallMultiplier
         Item::LoveBall => cpu.call(0x6d12),  // LoveBallMultiplier
 
