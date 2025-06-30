@@ -35,7 +35,7 @@ pub fn poke_ball_effect(cpu: &mut Cpu) {
     cpu.borrow_wram_mut().set_wild_mon(None);
 
     if cpu.borrow_wram().battle_type() != BattleType::Contest {
-        cpu.call(0x6dfa); // ReturnToBattle_UseBall
+        macros::farcall::farcall(cpu, 0x09, 0x715c); // _ReturnToBattle_UseBall
     }
 
     cpu.borrow_wram_mut().set_no_text_scroll(false);
