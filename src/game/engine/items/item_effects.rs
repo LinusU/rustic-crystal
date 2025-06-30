@@ -13,7 +13,7 @@ use crate::{
             ram_constants::MonType,
             text_constants,
         },
-        data::wild::flee_mons::SOMETIMES_FLEE_MONS,
+        data::wild::flee_mons,
         macros,
         ram::{hram, sram, wram},
     },
@@ -76,9 +76,13 @@ pub fn poke_ball_effect(cpu: &mut Cpu) {
 
         Item::FastBall => {
             if let Some(enemy) = cpu.borrow_wram().temp_enemy_mon_species() {
-                // BUG: Fast Ball only boosts catch rate for three Pokémon (see docs/bugs_and_glitches.md)
-                if SOMETIMES_FLEE_MONS[0..3].contains(&enemy) {
+                if flee_mons::SOMETIMES_FLEE_MONS.contains(&enemy)
+                    || flee_mons::OFTEN_FLEE_MONS.contains(&enemy)
+                    || flee_mons::ALWAYS_FLEE_MONS.contains(&enemy)
+                {
                     cpu.b = cpu.b.saturating_mul(4);
+                } else {
+                    log::info!("Fast Ball used on non-fleeing Pokémon: {enemy:?}");
                 }
             } else {
                 log::warn!("Failed to retrieve enemy species")
