@@ -34,8 +34,7 @@ pub fn poke_ball_effect(cpu: &mut Cpu) {
 
     cpu.borrow_wram_mut().set_wild_mon(None);
 
-    // BUG: Using a Park Ball in non-Contest battles has a corrupt animation (see docs/bugs_and_glitches.md)
-    if cpu.borrow_wram().cur_item() != Item::ParkBall {
+    if cpu.borrow_wram().battle_type() != BattleType::Contest {
         cpu.call(0x6dfa); // ReturnToBattle_UseBall
     }
 
