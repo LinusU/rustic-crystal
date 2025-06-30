@@ -65,9 +65,16 @@ pub fn poke_ball_effect(cpu: &mut Cpu) {
             cpu.b = cpu.b.saturating_add(cpu.b / 2);
         }
 
+        Item::LureBall => {
+            if cpu.borrow_wram().battle_type() == BattleType::Fish {
+                cpu.b = cpu.b.saturating_mul(3);
+            } else {
+                log::info!("Lure Ball used outside of fishing battle");
+            }
+        }
+
         Item::HeavyBall => cpu.call(0x6c50), // HeavyBallMultiplier
         Item::LevelBall => cpu.call(0x6d8c), // LevelBallMultiplier
-        Item::LureBall => cpu.call(0x6ccc),  // LureBallMultiplier
         Item::FastBall => cpu.call(0x6d68),  // FastBallMultiplier
         Item::MoonBall => cpu.call(0x6cdd),  // MoonBallMultiplier
         Item::LoveBall => cpu.call(0x6d12),  // LoveBallMultiplier
