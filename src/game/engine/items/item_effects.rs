@@ -61,15 +61,16 @@ pub fn poke_ball_effect(cpu: &mut Cpu) {
             cpu.b = cpu.b.saturating_mul(2);
         }
 
-        Item::GreatBall => cpu.call(0x6c2f), // GreatBallMultiplier
-        SAFARI_BALL => cpu.call(0x6c2f), // SafariBallMultiplier ; Safari Ball, leftover from RBY
+        Item::GreatBall | Item::ParkBall | SAFARI_BALL => {
+            cpu.b = cpu.b.saturating_add(cpu.b / 2);
+        }
+
         Item::HeavyBall => cpu.call(0x6c50), // HeavyBallMultiplier
         Item::LevelBall => cpu.call(0x6d8c), // LevelBallMultiplier
-        Item::LureBall => cpu.call(0x6ccc), // LureBallMultiplier
-        Item::FastBall => cpu.call(0x6d68), // FastBallMultiplier
-        Item::MoonBall => cpu.call(0x6cdd), // MoonBallMultiplier
-        Item::LoveBall => cpu.call(0x6d12), // LoveBallMultiplier
-        Item::ParkBall => cpu.call(0x6c2f), // ParkBallMultiplier
+        Item::LureBall => cpu.call(0x6ccc),  // LureBallMultiplier
+        Item::FastBall => cpu.call(0x6d68),  // FastBallMultiplier
+        Item::MoonBall => cpu.call(0x6cdd),  // MoonBallMultiplier
+        Item::LoveBall => cpu.call(0x6d12),  // LoveBallMultiplier
 
         Item::PokeBall => {} // no special multiplier
 
