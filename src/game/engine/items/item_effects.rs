@@ -95,10 +95,7 @@ pub fn poke_ball_effect(cpu: &mut Cpu) {
 
         let s = match cpu.borrow_wram().enemy_mon().status() {
             status if status.is_frozen() || status.is_sleeping() => 10,
-
-            // BUG: BRN/PSN/PAR do not affect catch rate (see docs/bugs_and_glitches.md)
-            status if status.is_burned() || status.is_poisoned() || status.is_paralyzed() => 0,
-
+            status if status.is_burned() || status.is_poisoned() || status.is_paralyzed() => 5,
             _ => 0,
         };
 
