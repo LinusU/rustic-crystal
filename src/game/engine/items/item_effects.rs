@@ -172,11 +172,7 @@ fn poke_ball_effect_catch(cpu: &mut Cpu, species: Option<PokemonSpecies>) {
 
     let is_transformed = cpu.borrow_wram().enemy_sub_status_is_transformed();
 
-    // BUG: Catching a Transformed Pokémon always catches a Ditto (see docs/bugs_and_glitches.md)
-    if is_transformed {
-        cpu.borrow_wram_mut()
-            .set_temp_enemy_mon_species(Some(PokemonSpecies::Ditto));
-    } else {
+    if !is_transformed {
         let dvs = cpu.borrow_wram().enemy_mon().dvs();
         cpu.borrow_wram_mut().set_enemy_backup_dvs(dvs);
     }
