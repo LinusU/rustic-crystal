@@ -1,5 +1,6 @@
 pub const JOY_DOWN: u16 = 0xffa8;
 pub const DIVIDEND: u16 = 0xffb3;
+pub const PRODUCT: u16 = 0xffb3;
 pub const QUOTIENT: u16 = 0xffb3;
 pub const MULTIPLICAND: u16 = 0xffb4;
 pub const DIVISOR: u16 = 0xffb7;

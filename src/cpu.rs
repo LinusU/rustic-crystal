@@ -82,6 +82,7 @@ impl<'a> Cpu<'a> {
                 (_, 0x0270) => panic!("clears_scratch should only be called from Rust"),
                 (_, 0x3dfe) => crate::game::home::audio::terminate_exp_bar_sound(self),
 
+                (0x03, 0x5e6e) => crate::game::engine::pokemon::move_mon::send_mon_into_box(self),
                 (0x03, 0x68a2) => crate::game::engine::items::item_effects::poke_ball_effect(self),
                 (0x03, 0x6c29) => panic!("ultra_ball_multiplier should only be called from Rust"),
                 (0x03, 0x6c2f) => panic!("great_ball_multiplier should only be called from Rust"),

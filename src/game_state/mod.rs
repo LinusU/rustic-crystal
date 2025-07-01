@@ -108,6 +108,10 @@ impl GameState {
         self.data[0x0f5f] = value.into();
     }
 
+    pub fn set_cur_species(&mut self, value: Option<PokemonSpecies>) {
+        self.data[0x0f60] = value.map_or(0, Into::into);
+    }
+
     pub fn menu_joypad(&self) -> JoypadButtons {
         JoypadButtons::from_bits(self.data[0x0f73]).unwrap()
     }
@@ -190,6 +194,10 @@ impl GameState {
 
     pub fn set_item_quantity_change(&mut self, value: u8) {
         self.data[0x110c] = value;
+    }
+
+    pub fn cur_party_level(&self) -> u8 {
+        self.data[0x1143]
     }
 
     pub fn set_cur_party_level(&mut self, value: u8) {
