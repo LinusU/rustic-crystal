@@ -242,6 +242,8 @@ fn main_menu_select_save(cpu: &mut Cpu) {
             let sram = SaveState::from_file(&save_file.path).unwrap();
             cpu.replace_sram(sram, save_file.path.clone());
 
+            macros::farcall::farcall(cpu, 0x05, 0x4f1c); // TryLoadSaveData
+
             cpu.call(0x5eee); // MainMenu_Continue
             return;
         }
