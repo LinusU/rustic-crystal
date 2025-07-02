@@ -66,12 +66,12 @@ pub fn ask_overwrite_save_file(cpu: &mut Cpu) {
         cpu.set_hl(0x5297); // AnotherSaveFileText
         cpu.call(0x4baf); // SaveTheGame_yesorno
 
-        if !cpu.flag(CpuFlag::Z) {
-            return true;
+        if cpu.flag(CpuFlag::Z) {
+            cpu.call(0x4cbb); // ErasePreviousSave
+            return false;
         }
 
-        cpu.call(0x4cbb); // ErasePreviousSave
-        false
+        true
     }
 
     let result = ask_overwrite_save_file(cpu);
