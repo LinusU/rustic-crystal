@@ -1,7 +1,10 @@
 use crate::{
     cpu::{Cpu, CpuFlag},
     game::{
-        constants::{battle_tower_constants::BATTLETOWER_RECEIVED_REWARD, misc_constants},
+        constants::{
+            battle_tower_constants::BATTLETOWER_RECEIVED_REWARD, misc_constants,
+            pokemon_data_constants::NUM_BOXES,
+        },
         data::default_options::DEFAULT_OPTIONS,
         macros,
         ram::{sram, wram},
@@ -83,8 +86,8 @@ pub fn save_game_data(cpu: &mut Cpu) {
 }
 
 pub fn save_box(cpu: &mut Cpu) {
-    log::info!("save_box()");
-    cpu.call(0x50d8); // GetBoxAddress
+    log::info!("save_box({})", cpu.borrow_wram().cur_box());
+    get_box_address(cpu);
     cpu.call(0x50f9); // SaveBoxAddress
     cpu.pc = cpu.stack_pop(); // ret
 }
@@ -176,8 +179,27 @@ fn check_primary_save_file(cpu: &mut Cpu) {
 }
 
 pub fn load_box(cpu: &mut Cpu) {
-    log::info!("load_box()");
-    cpu.call(0x50d8); // GetBoxAddress
+    log::info!("load_box({})", cpu.borrow_wram().cur_box());
+    get_box_address(cpu);
     cpu.call(0x517d); // LoadBoxAddress
     cpu.pc = cpu.stack_pop(); // ret
+}
+
+fn get_box_address(cpu: &mut Cpu) {
+    let mut cur_box = cpu.borrow_wram().cur_box();
+
+    if cur_box >= NUM_BOXES {
+        log::warn!("cur_box out of bounds: {cur_box}");
+        cpu.borrow_wram_mut().set_cur_box(0);
+        cur_box = 0;
+    }
+
+    const BASE: u16 = 0x522d; // BoxAddresses
+    let offset = BASE + (cur_box as u16 * 5);
+
+    cpu.a = cpu.read_byte(offset);
+    cpu.e = cpu.read_byte(offset + 1);
+    cpu.d = cpu.read_byte(offset + 2);
+    cpu.l = cpu.read_byte(offset + 3);
+    cpu.h = cpu.read_byte(offset + 4);
 }

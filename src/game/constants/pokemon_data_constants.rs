@@ -4,6 +4,7 @@ use crate::game::macros::r#enum::define_u8_enum;
 pub const PARTY_LENGTH: u8 = 6;
 
 pub const MONS_PER_BOX: u8 = 20;
+pub const NUM_BOXES: u8 = 14;
 
 pub const PARTYMON_STRUCT_LENGTH: u8 = 48;
 

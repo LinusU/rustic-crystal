@@ -98,6 +98,7 @@ impl<'a> Cpu<'a> {
                 (0x05, 0x4f1c) => crate::game::engine::menus::save::try_load_save_data(self),
                 (0x05, 0x4f84) => panic!("check_primary_save_file should only be called from Rust"),
                 (0x05, 0x5021) => crate::game::engine::menus::save::load_box(self),
+                (0x05, 0x50d8) => panic!("get_box_address should only be called from Rust"),
 
                 (0x12, 0x5cdc) => crate::game::engine::menus::main_menu::main_menu(self),
                 (0x12, 0x5ed0) => panic!("clear_tilemap_etc should only be called from Rust"),
