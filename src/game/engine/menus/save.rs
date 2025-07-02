@@ -88,7 +88,7 @@ pub fn save_game_data(cpu: &mut Cpu) {
 pub fn save_box(cpu: &mut Cpu) {
     log::info!("save_box({})", cpu.borrow_wram().cur_box());
     get_box_address(cpu);
-    cpu.call(0x50f9); // SaveBoxAddress
+    save_box_address(cpu);
     cpu.pc = cpu.stack_pop(); // ret
 }
 
@@ -202,4 +202,23 @@ fn get_box_address(cpu: &mut Cpu) {
     cpu.d = cpu.read_byte(offset + 2);
     cpu.l = cpu.read_byte(offset + 3);
     cpu.h = cpu.read_byte(offset + 4);
+}
+
+/// Copies the current box data to the address specified by the A:DE registers.
+pub fn save_box_address(cpu: &mut Cpu) {
+    let bank = cpu.a as usize;
+    let addr = cpu.de() as usize;
+
+    log::info!("save_box_address({bank:02x}:{addr:04x})");
+
+    let offset = (bank * 0x2000) | (addr & 0x1fff);
+    let sram = cpu.borrow_sram_mut();
+
+    const BOX_LENGTH: usize = 0x450;
+    const SOURCE: usize = 0x2d10; // Current Box
+
+    for i in 0..BOX_LENGTH {
+        let byte = sram.byte(SOURCE + i);
+        sram.set_byte(offset + i, byte);
+    }
 }
