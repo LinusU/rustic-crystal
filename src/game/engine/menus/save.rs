@@ -174,3 +174,10 @@ fn check_primary_save_file(cpu: &mut Cpu) {
 
     cpu.call(0x2fe1); // CloseSRAM
 }
+
+pub fn load_box(cpu: &mut Cpu) {
+    log::info!("load_box()");
+    cpu.call(0x50d8); // GetBoxAddress
+    cpu.call(0x517d); // LoadBoxAddress
+    cpu.pc = cpu.stack_pop(); // ret
+}
