@@ -60,9 +60,7 @@ pub fn ask_overwrite_save_file(cpu: &mut Cpu) {
         cpu.call(0x4bcb); // CompareLoadedAndSavedPlayerID
 
         if cpu.flag(CpuFlag::Z) {
-            cpu.set_hl(0x5292); // AlreadyASaveFileText
-            cpu.call(0x4baf); // SaveTheGame_yesorno
-            return !cpu.flag(CpuFlag::Z);
+            return false;
         }
 
         cpu.set_hl(0x5297); // AnotherSaveFileText
