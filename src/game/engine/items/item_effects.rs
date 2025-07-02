@@ -28,7 +28,7 @@ pub fn poke_ball_effect(cpu: &mut Cpu) {
     }
 
     if cpu.borrow_wram().party_count() == PARTY_LENGTH
-        && cpu.borrow_sram().current_box().len() == MONS_PER_BOX
+        && cpu.borrow_sram().current_box().len() == MONS_PER_BOX as usize
     {
         return cpu.jump(0x77dc); // Ball_BoxIsFullMessage
     }

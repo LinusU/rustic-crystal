@@ -1,12 +1,16 @@
-use crate::game::{
-    audio::music::Music,
-    constants::{
-        battle_constants::{self, BattleMode, BattleResult, BattleType},
-        input_constants::JoypadButtons,
-        item_constants::Item,
-        pokemon_constants::PokemonSpecies,
-        ram_constants::MonType,
+use crate::{
+    game::{
+        audio::music::Music,
+        constants::{
+            battle_constants::{self, BattleMode, BattleResult, BattleType},
+            input_constants::JoypadButtons,
+            item_constants::Item,
+            pokemon_constants::PokemonSpecies,
+            ram_constants::MonType,
+            text_constants::NAME_LENGTH,
+        },
     },
+    save_state::string::PokeString,
 };
 
 pub mod battle_mon;
@@ -263,6 +267,14 @@ impl GameState {
 
     pub fn set_temp_species(&mut self, value: Option<PokemonSpecies>) {
         self.data[0x1265] = value.map_or(0, Into::into);
+    }
+
+    pub fn player_id(&self) -> u16 {
+        u16::from_be_bytes([self.data[0x147b], self.data[0x147c]])
+    }
+
+    pub fn player_name(&self) -> PokeString {
+        PokeString::from_bytes(&self.data[0x147d..], NAME_LENGTH)
     }
 
     pub fn park_balls_remaining(&self) -> u8 {

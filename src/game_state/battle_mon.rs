@@ -1,4 +1,6 @@
-use crate::game::constants::{item_constants::Item, pokemon_constants::PokemonSpecies};
+use crate::game::constants::{
+    item_constants::Item, move_constants::Move, pokemon_constants::PokemonSpecies,
+};
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct BattleMonStatus(u8);
@@ -51,8 +53,33 @@ impl<'a> BattleMon<'a> {
         }
     }
 
+    pub fn moves(&self) -> [Option<Move>; 4] {
+        [
+            match self.data[2] {
+                0 => None,
+                n => Some(n.into()),
+            },
+            match self.data[3] {
+                0 => None,
+                n => Some(n.into()),
+            },
+            match self.data[4] {
+                0 => None,
+                n => Some(n.into()),
+            },
+            match self.data[5] {
+                0 => None,
+                n => Some(n.into()),
+            },
+        ]
+    }
+
     pub fn dvs(&self) -> u16 {
         u16::from_be_bytes([self.data[6], self.data[7]])
+    }
+
+    pub fn pp(&self) -> [u8; 4] {
+        [self.data[8], self.data[9], self.data[10], self.data[11]]
     }
 
     pub fn level(&self) -> u8 {

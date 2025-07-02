@@ -4,6 +4,7 @@ use std::{
 };
 
 pub mod r#box;
+pub mod string;
 
 pub struct SaveState {
     data: [u8; 0x8000],
@@ -60,5 +61,9 @@ impl SaveState {
 
     pub fn current_box(&self) -> r#box::Box<'_> {
         r#box::Box::new(&self.data[0x2d10..])
+    }
+
+    pub fn current_box_mut(&mut self) -> r#box::BoxMut<'_> {
+        r#box::BoxMut::new(&mut self.data[0x2d10..])
     }
 }

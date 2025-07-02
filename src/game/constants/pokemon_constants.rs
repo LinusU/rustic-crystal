@@ -1,4 +1,4 @@
-use crate::game::macros::r#enum::define_u8_enum;
+use crate::{game::macros::r#enum::define_u8_enum, rom::ROM, save_state::string::PokeString};
 
 define_u8_enum! {
     pub enum PokemonSpecies {
@@ -26,5 +26,24 @@ define_u8_enum! {
         Phanpy = 0xe7,
         Raikou = 0xf3,
         Entei = 0xf4,
+    }
+}
+
+impl PokemonSpecies {
+    pub fn name(self) -> PokeString {
+        const START: usize = (0x14 * 0x4000) | (0x7384 & 0x3fff);
+        let offset = START + (u8::from(self) as usize - 1) * 10;
+        PokeString::from_bytes(&ROM[offset..], 10)
+    }
+}
+
+#[cfg(test)]
+mod test {
+    use super::*;
+
+    #[test]
+    fn test_name() {
+        assert_eq!(format!("{}", PokemonSpecies::Dragonair.name()), "DRAGONAIR");
+        assert_eq!(format!("{}", PokemonSpecies::Entei.name()), "ENTEI");
     }
 }
