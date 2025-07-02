@@ -46,6 +46,47 @@ pub fn change_box_save_game(cpu: &mut Cpu) {
     cpu.pc = cpu.stack_pop(); // ret
 }
 
+/// Asks the player if they want to overwrite the save file.
+///
+/// Sets carry flag if player refuses. \
+/// Clears carry flag if player accepts or if there is no save file to overwrite.
+pub fn ask_overwrite_save_file(cpu: &mut Cpu) {
+    fn ask_overwrite_save_file(cpu: &mut Cpu) -> bool {
+        if !cpu.borrow_wram().save_file_exists() {
+            cpu.call(0x4cbb); // ErasePreviousSave
+            return false;
+        }
+
+        cpu.call(0x4bcb); // CompareLoadedAndSavedPlayerID
+
+        if cpu.flag(CpuFlag::Z) {
+            cpu.set_hl(0x5292); // AlreadyASaveFileText
+            cpu.call(0x4baf); // SaveTheGame_yesorno
+            return !cpu.flag(CpuFlag::Z);
+        }
+
+        cpu.set_hl(0x5297); // AnotherSaveFileText
+        cpu.call(0x4baf); // SaveTheGame_yesorno
+
+        if !cpu.flag(CpuFlag::Z) {
+            return true;
+        }
+
+        cpu.call(0x4cbb); // ErasePreviousSave
+        false
+    }
+
+    let result = ask_overwrite_save_file(cpu);
+
+    log::info!(
+        "ask_overwrite_save_file() -> {}",
+        if result { "refuse" } else { "accept" }
+    );
+
+    cpu.set_flag(CpuFlag::C, result);
+    cpu.pc = cpu.stack_pop(); // ret
+}
+
 pub fn save_game_data(cpu: &mut Cpu) {
     log::debug!("save_game_data()");
 
