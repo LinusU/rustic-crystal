@@ -132,6 +132,10 @@ impl GameState {
         self.data[0x0f76] = value;
     }
 
+    pub fn menu_cursor_y(&self) -> u8 {
+        self.data[0x0fa9]
+    }
+
     pub fn game_timer_paused(&self) -> bool {
         (self.data[0x0fbc] & 1) != 0
     }
@@ -275,6 +279,10 @@ impl GameState {
 
     pub fn player_name(&self) -> PokeString {
         PokeString::from_bytes(&self.data[0x147d..], NAME_LENGTH)
+    }
+
+    pub fn cur_box(&self) -> u8 {
+        self.data[0x1b72]
     }
 
     pub fn park_balls_remaining(&self) -> u8 {

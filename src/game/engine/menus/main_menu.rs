@@ -2,7 +2,11 @@ use crate::{
     cpu::Cpu,
     game::{
         audio::sfx::Sfx,
-        constants::{input_constants::JoypadButtons, menu_constants::Menu2DFlags1, scgb_constants},
+        constants::{
+            input_constants::JoypadButtons,
+            menu_constants::{Menu2DFlags1, NAME_BOX},
+            scgb_constants,
+        },
         macros::{self, coords::coord},
         ram::{hram, wram},
     },
@@ -247,7 +251,7 @@ fn main_menu_select_save(cpu: &mut Cpu) {
 }
 
 fn main_menu_create_save(cpu: &mut Cpu) {
-    cpu.b = 4; // NAME_BOX
+    cpu.b = NAME_BOX;
     cpu.set_de(0xd47d); // wPlayerName
 
     macros::farcall::farcall(cpu, 0x04, 0x56c1); // NamingScreen
