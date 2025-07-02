@@ -94,6 +94,7 @@ impl<'a> Cpu<'a> {
 
                 (0x05, 0x4a83) => crate::game::engine::menus::save::change_box_save_game(self),
                 (0x05, 0x4c10) => crate::game::engine::menus::save::save_game_data(self),
+                (0x05, 0x4e0c) => crate::game::engine::menus::save::save_box(self),
                 (0x05, 0x4f1c) => crate::game::engine::menus::save::try_load_save_data(self),
                 (0x05, 0x4f84) => panic!("check_primary_save_file should only be called from Rust"),
 

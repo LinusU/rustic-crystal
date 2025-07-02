@@ -82,6 +82,13 @@ pub fn save_game_data(cpu: &mut Cpu) {
     cpu.pc = cpu.stack_pop(); // ret
 }
 
+pub fn save_box(cpu: &mut Cpu) {
+    log::info!("save_box()");
+    cpu.call(0x50d8); // GetBoxAddress
+    cpu.call(0x50f9); // SaveBoxAddress
+    cpu.pc = cpu.stack_pop(); // ret
+}
+
 pub fn try_load_save_data(cpu: &mut Cpu) {
     log::debug!("try_load_save_data()");
 
