@@ -8,6 +8,41 @@ use crate::{
     },
 };
 
+pub fn change_box_save_game(cpu: &mut Cpu) {
+    let target_box_idx = cpu.e;
+    log::info!("change_box_save_game({target_box_idx})");
+
+    cpu.set_hl(0x52a1); // ChangeBoxSaveText
+    cpu.call(0x1d4f); // MenuTextbox
+    cpu.call(0x1dcf); // YesNoBox
+    cpu.call(0x1c07); // ExitMenu
+
+    if cpu.flag(CpuFlag::C) {
+        cpu.pc = cpu.stack_pop(); // ret
+        return;
+    }
+
+    cpu.call(0x4b89); // AskOverwriteSaveFile
+
+    if cpu.flag(CpuFlag::C) {
+        cpu.pc = cpu.stack_pop(); // ret
+        return;
+    }
+
+    cpu.call(0x4b54); // PauseGameLogic
+    cpu.call(0x4c99); // SavingDontTurnOffThePower
+
+    cpu.call(0x4e0c); // SaveBox
+
+    cpu.borrow_wram_mut().set_cur_box(target_box_idx);
+    cpu.call(0x5021); // LoadBox
+
+    cpu.call(0x4be6); // SavedTheGame
+    cpu.call(0x4b5a); // ResumeGameLogic
+
+    cpu.pc = cpu.stack_pop(); // ret
+}
+
 pub fn save_game_data(cpu: &mut Cpu) {
     log::debug!("save_game_data()");
 

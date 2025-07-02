@@ -48,7 +48,7 @@ fn bills_pc_change_box_submenu_switch(cpu: &mut Cpu) {
     cpu.a = cpu.borrow_wram().cur_box();
 
     if cpu.a != cpu.e {
-        macros::farcall::farcall(cpu, 0x05, 0x4a83); // ChangeBoxSaveGame
+        macros::farcall::farcall(cpu, 0x05, 0x4a83); // change_box_save_game
     }
 }
 

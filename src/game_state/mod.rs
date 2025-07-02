@@ -285,6 +285,10 @@ impl GameState {
         self.data[0x1b72]
     }
 
+    pub fn set_cur_box(&mut self, value: u8) {
+        self.data[0x1b72] = value;
+    }
+
     pub fn park_balls_remaining(&self) -> u8 {
         self.data[0x1c79]
     }

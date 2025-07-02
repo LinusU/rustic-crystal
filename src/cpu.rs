@@ -92,6 +92,7 @@ impl<'a> Cpu<'a> {
                 (0x03, 0x6d8c) => panic!("level_ball_multiplier should only be called from Rust"),
                 (0x03, 0x6dfa) => panic!("return_to_battle_use_ball should only be called from Rust"),
 
+                (0x05, 0x4a83) => crate::game::engine::menus::save::change_box_save_game(self),
                 (0x05, 0x4c10) => crate::game::engine::menus::save::save_game_data(self),
                 (0x05, 0x4f1c) => crate::game::engine::menus::save::try_load_save_data(self),
                 (0x05, 0x4f84) => panic!("check_primary_save_file should only be called from Rust"),
