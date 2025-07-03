@@ -33,7 +33,7 @@ impl<'a> Serial<'a> {
                     }
                 }
             }
-            _ => panic!("Serial does not handle address {:4X} (write)", a),
+            _ => panic!("Serial does not handle address {a:4X} (write)"),
         };
     }
 
@@ -41,7 +41,7 @@ impl<'a> Serial<'a> {
         match a {
             0xFF01 => self.data,
             0xFF02 => self.control | 0b01111110,
-            _ => panic!("Serial does not handle address {:4X} (read)", a),
+            _ => panic!("Serial does not handle address {a:4X} (read)"),
         }
     }
 

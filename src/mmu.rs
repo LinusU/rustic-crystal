@@ -122,7 +122,7 @@ impl<'a> Mmu<'a> {
     fn determine_mode(&mut self) {
         match self.rb(0x0143) & 0x80 {
             0x80 => (),
-            mode => panic!("Invalid mode: {}", mode),
+            mode => panic!("Invalid mode: {mode}"),
         }
     }
 
@@ -143,7 +143,9 @@ impl<'a> Mmu<'a> {
         self.intf |= self.gpu.interrupt;
         self.gpu.interrupt = 0;
 
-        self.sound.as_mut().map_or((), |s| s.do_cycle(gputicks));
+        if let Some(sound) = self.sound.as_mut() {
+            sound.do_cycle(gputicks);
+        }
 
         self.intf |= self.serial.interrupt;
         self.serial.interrupt = 0;
@@ -276,7 +278,7 @@ impl<'a> Mmu<'a> {
                         0
                     }
             }
-            _ => panic!("The address {:04X} should not be handled by hdma_read", a),
+            _ => panic!("The address {a:04X} should not be handled by hdma_read"),
         }
     }
 
@@ -296,7 +298,7 @@ impl<'a> Mmu<'a> {
                 let src = ((self.hdma[0] as u16) << 8) | (self.hdma[1] as u16);
                 let dst = ((self.hdma[2] as u16) << 8) | (self.hdma[3] as u16) | 0x8000;
                 if !(src <= 0x7FF0 || (0xA000..=0xDFF0).contains(&src)) {
-                    panic!("HDMA transfer with illegal start address {:04X}", src);
+                    panic!("HDMA transfer with illegal start address {src:04X}");
                 }
 
                 self.hdma_src = src;
@@ -309,7 +311,7 @@ impl<'a> Mmu<'a> {
                     DmaType::Gdma
                 };
             }
-            _ => panic!("The address {:04X} should not be handled by hdma_write", a),
+            _ => panic!("The address {a:04X} should not be handled by hdma_write"),
         };
     }
 

@@ -79,7 +79,7 @@ pub fn main_menu(cpu: &mut Cpu) {
             MAINMENUITEM_MOBILE_STUDIUM => {
                 cpu.call(0x6496); // MainMenu_MobileStudium
             }
-            n => panic!("Unknown main menu item: {}", n),
+            n => panic!("Unknown main menu item: {n}"),
         }
     }
 }
@@ -94,7 +94,7 @@ fn main_menu_get_which_menu() -> u8 {
             }
         }
         Err(e) => {
-            log::error!("Error listing save files: {}", e);
+            log::error!("Error listing save files: {e}");
             MAINMENU_NEW_GAME
         }
     }
@@ -159,7 +159,7 @@ fn main_menu_select_save(cpu: &mut Cpu) {
         }
         Ok(files) => files,
         Err(error) => {
-            log::error!("Error listing save files: {}", error);
+            log::error!("Error listing save files: {error}");
             return;
         }
     };

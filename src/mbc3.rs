@@ -142,7 +142,7 @@ impl MBC3 {
                 self.rambank = (v & 0x7) as usize;
             }
             0x6000..=0x7FFF => self.latch_rtc_reg(),
-            _ => panic!("Could not write to {:04X} (MBC3)", a),
+            _ => panic!("Could not write to {a:04X} (MBC3)"),
         }
     }
 

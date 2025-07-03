@@ -502,7 +502,7 @@ impl<'a> Cpu<'a> {
             0xFB => { self.setei = 2; 1 },
             0xFE => { let v = self.fetch_byte(); self.alu_cp(v); 2 },
             0xFF => { self.stack_push(self.pc); self.pc = 0x38; 4 },
-            other=> panic!("Instruction {:2X} is not implemented", other),
+            other=> panic!("Instruction {other:2X} is not implemented"),
         }
     }
 
@@ -863,7 +863,7 @@ impl<'a> Cpu<'a> {
         self.set_flag(C, false);
         self.set_flag(H, false);
         self.set_flag(N, false);
-        (a >> 4) | (a << 4)
+        a.rotate_left(4)
     }
 
     fn alu_srflagupdate(&mut self, r: u8, c: bool) {
