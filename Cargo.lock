@@ -1280,9 +1280,9 @@ dependencies = [
 
 [[package]]
 name = "pokemon-synthesizer"
-version = "0.2.1"
+version = "0.2.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "d5dc773108efe4074ec4bbe73ebb9881f0fc5501b9f8af9678d73c4cde9b67cf"
+checksum = "a0a13ec9b1af1cc02e7167ffbc5599447c33aa53971b320c2d2750497223879e"
 
 [[package]]
 name = "portable-atomic"
