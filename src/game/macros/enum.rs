@@ -10,6 +10,15 @@ macro_rules! define_u8_enum {
             Unknown(u8),
         }
 
+        impl $name {
+            /// Number of known variants (excluding `Unknown`)
+            pub const fn count() -> usize {
+                // Count the number of variant definitions using a dummy array
+                const COUNT: usize = <[()]>::len(&[$(define_u8_enum!(@unit $variant)),*]);
+                COUNT
+            }
+        }
+
         impl From<u8> for $name {
             fn from(value: u8) -> Self {
                 match value {
@@ -31,6 +40,9 @@ macro_rules! define_u8_enum {
             }
         }
     };
+
+    // Helper arm to turn each variant into a unit `()`
+    (@unit $variant:ident) => { () };
 }
 
 pub(crate) use define_u8_enum;

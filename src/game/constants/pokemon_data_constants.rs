@@ -42,6 +42,16 @@ impl GrowthRate {
     }
 }
 
+define_u8_enum! {
+    pub enum EvolutionType {
+        Level = 1,
+        Item = 2,
+        Trade = 3,
+        Happiness = 4,
+        Stat = 5,
+    }
+}
+
 #[cfg(test)]
 mod test {
     use super::*;

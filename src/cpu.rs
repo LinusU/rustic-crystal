@@ -103,6 +103,8 @@ impl<'a> Cpu<'a> {
                 (0x05, 0x50f9) => panic!("save_box_address should only be called from Rust"),
                 (0x05, 0x517d) => panic!("load_box_address should only be called from Rust"),
 
+                (0x10, 0x6581) => crate::game::engine::pokemon::evolve::get_pre_evolution(self),
+
                 (0x12, 0x5cdc) => crate::game::engine::menus::main_menu::main_menu(self),
                 (0x12, 0x5ed0) => panic!("clear_tilemap_etc should only be called from Rust"),
                 (0x12, 0x5da4) => panic!("main_menu_get_which_menu should only be called from Rust"),

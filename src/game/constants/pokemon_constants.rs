@@ -273,4 +273,9 @@ mod test {
         assert_eq!(format!("{}", PokemonSpecies::Dragonair.name()), "DRAGONAIR");
         assert_eq!(format!("{}", PokemonSpecies::Entei.name()), "ENTEI");
     }
+
+    #[test]
+    fn test_count() {
+        assert_eq!(PokemonSpecies::count(), 251);
+    }
 }
