@@ -47,6 +47,14 @@ impl Default for LCDControl {
     }
 }
 
+bitflags! {
+    pub struct SerialTransferControl: u8 {
+        const CLOCK = (1 << 0);
+        const CGB = (1 << 1);
+        const ON = (1 << 7);
+    }
+}
+
 // MBC3
 pub const MBC3_SRAM_ENABLE: u16 = 0x0000;
 pub const MBC3_LATCH_CLOCK: u16 = 0x6000;
@@ -56,6 +64,9 @@ pub const SRAM_DISABLE: u8 = 0x00;
 /// Joypad (R/W)
 pub const R_JOYP: u16 = 0xff00;
 
+/// Serial Transfer Data (R/W)
+pub const R_SB: u16 = 0xff01;
+
 /// Serial Transfer Control (R/W)
 pub const R_SC: u16 = 0xff02;
 
@@ -64,9 +75,6 @@ pub const R_TMA: u16 = 0xff06;
 
 /// Timer Control (R/W)
 pub const R_TAC: u16 = 0xff07;
-
-/// Serial transfer data (R/W)
-pub const R_SB: u16 = 0xff01;
 
 /// Interrupt Flag (R/W)
 pub const R_IF: u16 = 0xff0f;

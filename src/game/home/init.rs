@@ -113,7 +113,7 @@ fn init(cpu: &mut Cpu) {
 
     cpu.write_byte(
         hram::SERIAL_CONNECTION_STATUS,
-        serial_constants::SerialConnectionStatus::NotEstablished as u8,
+        serial_constants::SerialConnectionStatus::NotEstablished.into(),
     );
 
     macros::farcall::farcall(cpu, 0x02, 0x5890); // InitCGBPals

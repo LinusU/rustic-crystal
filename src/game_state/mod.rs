@@ -73,6 +73,10 @@ impl GameState {
         self.data[0x02d7] = if value { 1 } else { 0 };
     }
 
+    pub fn set_script_var(&mut self, value: u8) {
+        self.data[0x02dd] = value;
+    }
+
     pub fn battle_mon(&self) -> battle_mon::BattleMon<'_> {
         battle_mon::BattleMon::new(&self.data[0x062c..])
     }
@@ -108,8 +112,20 @@ impl GameState {
         [self.data[0x06f2], self.data[0x06f3]] = value.to_be_bytes();
     }
 
+    pub fn player_link_action(&self) -> u8 {
+        self.data[0x0f56]
+    }
+
     pub fn set_player_link_action(&mut self, value: u8) {
         self.data[0x0f56] = value;
+    }
+
+    pub fn link_timeout_frames(&self) -> u16 {
+        u16::from_le_bytes([self.data[0x0f5b], self.data[0x0f5c]])
+    }
+
+    pub fn set_link_timeout_frames(&mut self, value: u16) {
+        [self.data[0x0f5b], self.data[0x0f5c]] = value.to_le_bytes();
     }
 
     pub fn set_mon_type(&mut self, value: MonType) {

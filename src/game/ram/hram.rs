@@ -6,6 +6,7 @@ pub const MULTIPLICAND: u16 = 0xffb4;
 pub const DIVISOR: u16 = 0xffb7;
 pub const MULTIPLIER: u16 = 0xffb7;
 pub const SERIAL_CONNECTION_STATUS: u16 = 0xffcb;
+pub const SERIAL_RECEIVE: u16 = 0xffce;
 pub const SCX: u16 = 0xffcf;
 pub const SCY: u16 = 0xffd0;
 pub const WX: u16 = 0xffd1;
