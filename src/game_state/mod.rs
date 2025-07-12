@@ -108,6 +108,10 @@ impl GameState {
         [self.data[0x06f2], self.data[0x06f3]] = value.to_be_bytes();
     }
 
+    pub fn set_player_link_action(&mut self, value: u8) {
+        self.data[0x0f56] = value;
+    }
+
     pub fn set_mon_type(&mut self, value: MonType) {
         self.data[0x0f5f] = value.into();
     }
@@ -256,6 +260,10 @@ impl GameState {
 
     pub fn battle_type(&self) -> BattleType {
         self.data[0x1230].into()
+    }
+
+    pub fn set_chosen_cable_club_room(&mut self, value: u8) {
+        self.data[0x1265] = value;
     }
 
     pub fn set_named_object_index(&mut self, value: u8) {
