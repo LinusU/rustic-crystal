@@ -261,13 +261,11 @@ fn wait_for_linked_friend_loop(cpu: &mut Cpu) {
     cpu.pc += 2;
     cpu.cycle(8);
 
-    // This vc_hook causes the Virtual Console to set [hSerialConnectionStatus] to
-    // USING_INTERNAL_CLOCK, which allows the player to proceed past the link
-    // receptionist's "Please wait." It assumes that hSerialConnectionStatus is at
-    // its original address.
-    // vc_hook Link_fake_connection_status
-    // vc_assert hSerialConnectionStatus == $ffcb, "hSerialConnectionStatus is no longer located at 00:ffcb."
-    // vc_assert USING_INTERNAL_CLOCK == $02, "USING_INTERNAL_CLOCK is no longer equal to $02."
+    // This write allows the player to proceed past the link receptionist's "Please wait."
+    cpu.write_byte(
+        hram::SERIAL_CONNECTION_STATUS,
+        SerialConnectionStatus::UsingInternalClock.into(),
+    );
 
     // ldh [rSC], a
     cpu.write_byte(hardware_constants::R_SC, cpu.a);
