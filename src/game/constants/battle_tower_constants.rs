@@ -1,1 +1,3 @@
+pub const GS_BALL_AVAILABLE: u8 = 0xb;
+
 pub const BATTLETOWER_RECEIVED_REWARD: u8 = 4;

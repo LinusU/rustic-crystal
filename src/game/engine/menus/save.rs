@@ -2,7 +2,7 @@ use crate::{
     cpu::{Cpu, CpuFlag},
     game::{
         constants::{
-            battle_tower_constants::BATTLETOWER_RECEIVED_REWARD,
+            battle_tower_constants::{BATTLETOWER_RECEIVED_REWARD, GS_BALL_AVAILABLE},
             misc_constants,
             pokemon_data_constants::{NUM_BOXES, NUM_HOF_TEAMS, PARTY_LENGTH},
             text_constants::MON_NAME_LENGTH,
@@ -74,6 +74,10 @@ pub fn add_hall_of_fame_entry(cpu: &mut Cpu) {
         let byte = cpu.read_byte(wram::HALL_OF_FAME_POKEMON_LIST + i);
         cpu.write_byte(sram::HALL_OF_FAME.1 + i, byte);
     }
+
+    // Enable GS Ball event
+    cpu.write_byte(0xbe3c, GS_BALL_AVAILABLE); // sGSBallFlag
+    cpu.write_byte(0xbe44, GS_BALL_AVAILABLE); // sGSBallFlagBackup
 
     cpu.call(0x2fe1); // CloseSRAM
 
