@@ -81,6 +81,8 @@ pub fn add_hall_of_fame_entry(cpu: &mut Cpu) {
 
     cpu.call(0x2fe1); // CloseSRAM
 
+    cpu.save_to_disk();
+
     cpu.pc = cpu.stack_pop(); // ret
 }
 
