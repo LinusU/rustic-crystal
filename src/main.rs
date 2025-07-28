@@ -105,6 +105,11 @@ fn main() -> Result<(), &'static str> {
                     } => render_delay.store(2_500, std::sync::atomic::Ordering::Relaxed), // 400 fps
                     KeyboardInput {
                         state: Pressed,
+                        virtual_keycode: Some(VirtualKeyCode::Key7),
+                        ..
+                    } => render_delay.store(1_000, std::sync::atomic::Ordering::Relaxed), // 1000 fps
+                    KeyboardInput {
+                        state: Pressed,
                         virtual_keycode: Some(VirtualKeyCode::T),
                         ..
                     } => {
