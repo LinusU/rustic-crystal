@@ -6,6 +6,8 @@ pub const PARTY_LENGTH: u8 = 6;
 pub const MONS_PER_BOX: u8 = 20;
 pub const NUM_BOXES: u8 = 14;
 
+pub const NUM_HOF_TEAMS: u8 = 30;
+
 pub const PARTYMON_STRUCT_LENGTH: u8 = 48;
 
 pub const BASE_HAPPINESS: u8 = 70;

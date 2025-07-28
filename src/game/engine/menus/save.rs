@@ -2,8 +2,10 @@ use crate::{
     cpu::{Cpu, CpuFlag},
     game::{
         constants::{
-            battle_tower_constants::BATTLETOWER_RECEIVED_REWARD, misc_constants,
-            pokemon_data_constants::NUM_BOXES,
+            battle_tower_constants::BATTLETOWER_RECEIVED_REWARD,
+            misc_constants,
+            pokemon_data_constants::{NUM_BOXES, NUM_HOF_TEAMS, PARTY_LENGTH},
+            text_constants::MON_NAME_LENGTH,
         },
         data::default_options::DEFAULT_OPTIONS,
         macros,
@@ -42,6 +44,38 @@ pub fn change_box_save_game(cpu: &mut Cpu) {
 
     cpu.call(0x4be6); // SavedTheGame
     cpu.call(0x4b5a); // ResumeGameLogic
+
+    cpu.pc = cpu.stack_pop(); // ret
+}
+
+pub fn add_hall_of_fame_entry(cpu: &mut Cpu) {
+    log::debug!("add_hall_of_fame_entry()");
+
+    cpu.a = sram::HALL_OF_FAME.0;
+    cpu.call(0x2fcb); // OpenSRAM
+
+    // hof_mon: species, id, dvs, level, nicknames
+    const HOF_MON_LENGTH: u16 = 1 + 2 + 2 + 1 + (MON_NAME_LENGTH as u16 - 1);
+
+    // hall_of_fame: win count, party, terminator
+    const HOF_LENGTH: u16 = 1 + HOF_MON_LENGTH * (PARTY_LENGTH as u16) + 1;
+
+    // Shift existing Hall of Fame entries
+    for i in 0..(HOF_LENGTH * (NUM_HOF_TEAMS as u16 - 1)) {
+        const READ_START: u16 = sram::HALL_OF_FAME.1 + HOF_LENGTH * (NUM_HOF_TEAMS as u16 - 1) - 1;
+        const WRITE_START: u16 = sram::HALL_OF_FAME.1 + HOF_LENGTH * (NUM_HOF_TEAMS as u16) - 1;
+
+        let byte = cpu.read_byte(READ_START - i);
+        cpu.write_byte(WRITE_START - i, byte);
+    }
+
+    // Add new Hall of Fame entry from WRAM
+    for i in 0..HOF_LENGTH {
+        let byte = cpu.read_byte(wram::HALL_OF_FAME_POKEMON_LIST + i);
+        cpu.write_byte(sram::HALL_OF_FAME.1 + i, byte);
+    }
+
+    cpu.call(0x2fe1); // CloseSRAM
 
     cpu.pc = cpu.stack_pop(); // ret
 }
