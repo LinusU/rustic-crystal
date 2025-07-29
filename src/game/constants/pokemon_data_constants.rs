@@ -32,7 +32,7 @@ impl GrowthRate {
             Self::MediumFast => level.pow(3),
             Self::SlightlyFast => (level.pow(3) * 3 / 4) + (level.pow(2) * 10) - 30,
             Self::SlightlySlow => (level.pow(3) * 3 / 4) + (level.pow(2) * 20) - 70,
-            Self::MediumSlow => (level.pow(3) * 6 / 5) - (level.pow(2) * 15) + (level * 100) - 140,
+            Self::MediumSlow => (level.pow(3) * 6 / 5) + (level * 100) - (level.pow(2) * 15) - 140,
             Self::Fast => level.pow(3) * 4 / 5,
             Self::Slow => level.pow(3) * 5 / 4,
 
@@ -60,6 +60,11 @@ mod test {
 
     #[test]
     fn test_exp_at_level() {
+        assert_eq!(GrowthRate::Fast.exp_at_level(2), 6);
+        assert_eq!(GrowthRate::MediumFast.exp_at_level(2), 8);
+        assert_eq!(GrowthRate::MediumSlow.exp_at_level(2), 9);
+        assert_eq!(GrowthRate::Slow.exp_at_level(2), 10);
+
         assert_eq!(GrowthRate::Fast.exp_at_level(13), 1_757);
         assert_eq!(GrowthRate::MediumFast.exp_at_level(13), 2_197);
         assert_eq!(GrowthRate::MediumSlow.exp_at_level(13), 1_261);
