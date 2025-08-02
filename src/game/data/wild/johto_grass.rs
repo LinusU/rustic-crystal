@@ -1,0 +1,1 @@
+pub const JOHTO_GRASS_WILD_MONS: u16 = 0x65e9;

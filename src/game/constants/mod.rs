@@ -10,6 +10,7 @@ pub mod misc_constants;
 pub mod move_constants;
 pub mod pokemon_constants;
 pub mod pokemon_data_constants;
+pub mod radio_constants;
 pub mod ram_constants;
 pub mod scgb_constants;
 pub mod serial_constants;
