@@ -66,7 +66,7 @@ impl Sfx {
             0x27 => Some(Sfx::new(0x3c, 0x49fb)), // Sfx_ElevatorEnd
             0x28 => Some(Sfx::new(0x3c, 0x49fe)), // Sfx_ThrowBall
             0x29 => Some(Sfx::new(0x3c, 0x4a04)), // Sfx_BallPoof
-            0x2a => Some(Sfx::new(0x3c, 0x4a0a)), // Sfx_Unknown3A
+            0x2a => Some(Sfx::new(0x3c, 0x4a0a)), // Sfx_Faint
             0x2b => Some(Sfx::new(0x3c, 0x4a10)), // Sfx_Run
             0x2c => Some(Sfx::new(0x3c, 0x4a13)), // Sfx_SlotMachineStart
             0x2d => None, // Sfx_Fanfare
@@ -151,7 +151,7 @@ impl Sfx {
             0x7c => Some(Sfx::new(0x3c, 0x5469)), // Sfx_SweetKiss
             0x7d => Some(Sfx::new(0x3c, 0x547f)), // Sfx_SweetKiss2
             0x7e => Some(Sfx::new(0x3c, 0x54a5)), // Sfx_BellyDrum
-            0x7f => Some(Sfx::new(0x3c, 0x54ba)), // Sfx_Unknown7F
+            0x7f => Some(Sfx::new(0x3c, 0x54ba)), // Sfx_Toxic
             0x80 => Some(Sfx::new(0x3c, 0x54d0)), // Sfx_SludgeBomb
             0x81 => Some(Sfx::new(0x3c, 0x54f5)), // Sfx_Foresight
             0x82 => None, // Sfx_Spite
