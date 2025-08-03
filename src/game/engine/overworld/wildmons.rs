@@ -68,8 +68,8 @@ pub fn random_unseen_wild_mon(cpu: &mut Cpu) {
     // Species index of the most common Pokemon on that route
 
     for i in 0..4 {
-        // BUG: This is missing time of day offset.
         cpu.set_hl(map_wildmons_addr + 5); // Skip header
+        cpu.set_hl(cpu.hl() + u8::from(time_of_day) as u16 * NUM_GRASSMON as u16 * 2); // Skip to the correct time of day
         cpu.set_hl(cpu.hl() + i * 2); // Skip to the correct pokemon
         cpu.set_hl(cpu.hl() + 1); // Skip level
         let common_species = cpu.read_byte(cpu.hl());
