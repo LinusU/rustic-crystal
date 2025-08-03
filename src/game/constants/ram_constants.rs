@@ -6,3 +6,11 @@ define_u8_enum! {
         Box = 2,
     }
 }
+
+define_u8_enum! {
+    pub enum TimeOfDay {
+        Morn = 0,
+        Day = 1,
+        Nite = 2,
+    }
+}

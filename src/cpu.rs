@@ -106,6 +106,7 @@ impl<'a> Cpu<'a> {
 
                 (0x0a, 0x5ce8) => crate::game::engine::link::link::set_bits_for_link_trade_request(self),
                 (0x0a, 0x5d11) => crate::game::engine::link::link::wait_for_linked_friend(self),
+                (0x0a, 0x651f) => crate::game::engine::overworld::wildmons::random_phone_wild_mon(self),
 
                 (0x10, 0x6581) => crate::game::engine::pokemon::evolve::get_pre_evolution(self),
 

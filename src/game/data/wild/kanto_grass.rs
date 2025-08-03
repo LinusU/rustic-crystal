@@ -1,0 +1,1 @@
+pub const KANTO_GRASS_WILD_MONS: u16 = 0x7274;

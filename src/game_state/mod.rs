@@ -6,7 +6,7 @@ use crate::{
             input_constants::JoypadButtons,
             item_constants::Item,
             pokemon_constants::PokemonSpecies,
-            ram_constants::MonType,
+            ram_constants::{MonType, TimeOfDay},
             text_constants::NAME_LENGTH,
         },
     },
@@ -295,6 +295,10 @@ impl GameState {
 
     pub fn set_temp_species(&mut self, value: Option<PokemonSpecies>) {
         self.data[0x1265] = value.map_or(0, Into::into);
+    }
+
+    pub fn time_of_day(&self) -> TimeOfDay {
+        self.data[0x1269].into()
     }
 
     pub fn player_id(&self) -> u16 {
