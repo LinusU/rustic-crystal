@@ -282,6 +282,10 @@ impl GameState {
         self.data[0x1265] = value;
     }
 
+    pub fn named_object_index(&self) -> u8 {
+        self.data[0x1265]
+    }
+
     pub fn set_named_object_index(&mut self, value: u8) {
         self.data[0x1265] = value;
     }
@@ -327,5 +331,35 @@ impl GameState {
 
     pub fn party_count(&self) -> u8 {
         self.data[0x1cd7]
+    }
+
+    pub fn roam_mon_1_species(&self) -> Option<PokemonSpecies> {
+        match self.data[0x1fcf] {
+            0 => None,
+            n => Some(n.into()),
+        }
+    }
+
+    pub fn roam_mon_1_map_group(&self) -> u8 {
+        self.data[0x1fd1]
+    }
+
+    pub fn roam_mon_1_map_number(&self) -> u8 {
+        self.data[0x1fd2]
+    }
+
+    pub fn roam_mon_2_species(&self) -> Option<PokemonSpecies> {
+        match self.data[0x1fd6] {
+            0 => None,
+            n => Some(n.into()),
+        }
+    }
+
+    pub fn roam_mon_2_map_group(&self) -> u8 {
+        self.data[0x1fd8]
+    }
+
+    pub fn roam_mon_2_map_number(&self) -> u8 {
+        self.data[0x1fd9]
     }
 }

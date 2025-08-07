@@ -1,0 +1,1 @@
+pub const KANTO_WATER_WILD_MONS: u16 = 0x77f7;

@@ -2,14 +2,134 @@ use crate::{
     cpu::{Cpu, CpuFlag},
     game::{
         constants::{
-            pokemon_data_constants::{GRASS_WILDDATA_LENGTH, NUM_GRASSMON},
+            gfx_constants,
+            landmark_constants::Region,
+            pokemon_constants::PokemonSpecies,
+            pokemon_data_constants::{
+                GRASS_WILDDATA_LENGTH, NUM_GRASSMON, NUM_WATERMON, WATER_WILDDATA_LENGTH,
+            },
             text_constants::MON_NAME_LENGTH,
         },
-        data::wild::{johto_grass::JOHTO_GRASS_WILD_MONS, kanto_grass::KANTO_GRASS_WILD_MONS},
+        data::wild::{
+            johto_grass::JOHTO_GRASS_WILD_MONS, johto_water::JOHTO_WATER_WILD_MONS,
+            kanto_grass::KANTO_GRASS_WILD_MONS, kanto_water::KANTO_WATER_WILD_MONS,
+        },
         macros,
         ram::wram,
     },
 };
+
+pub fn find_nest(cpu: &mut Cpu) {
+    let region = Region::from(cpu.e);
+    let species = PokemonSpecies::from(cpu.borrow_wram().named_object_index());
+
+    log::info!("find_nest({region:?}, {species:?})");
+
+    cpu.a = 0;
+    cpu.set_hl(macros::coords::coord!(0, 0));
+    cpu.set_bc(gfx_constants::SCREEN_WIDTH as u16 * gfx_constants::SCREEN_HEIGHT as u16);
+    cpu.call(0x3041); // ByteFill
+
+    // Start of array to fill up with nests
+    cpu.set_de(macros::coords::coord!(0, 0));
+
+    match region {
+        Region::Johto => {
+            find_nest_find_grass(cpu, species, JOHTO_GRASS_WILD_MONS);
+            find_nest_find_water(cpu, species, JOHTO_WATER_WILD_MONS);
+
+            find_nest_roam_mon_1(cpu, species);
+            find_nest_roam_mon_2(cpu, species);
+        }
+
+        // Kanto
+        _ => {
+            find_nest_find_grass(cpu, species, KANTO_GRASS_WILD_MONS);
+            find_nest_find_water(cpu, species, KANTO_WATER_WILD_MONS);
+        }
+    }
+
+    cpu.pc = cpu.stack_pop(); // ret
+}
+
+fn find_nest_find_grass(cpu: &mut Cpu, species: PokemonSpecies, mons_addr: u16) {
+    for i in 0.. {
+        let base = mons_addr + i * GRASS_WILDDATA_LENGTH as u16;
+
+        if cpu.read_byte(base) == 0xff {
+            break;
+        }
+
+        let map_group = cpu.read_byte(base);
+        let map_id = cpu.read_byte(base + 1);
+
+        find_nest_search_map_for_mon(cpu, species, map_group, map_id, base + 5, NUM_GRASSMON * 3);
+    }
+}
+
+fn find_nest_find_water(cpu: &mut Cpu, species: PokemonSpecies, mons_addr: u16) {
+    for i in 0.. {
+        let base = mons_addr + i * WATER_WILDDATA_LENGTH as u16;
+
+        if cpu.read_byte(base) == 0xff {
+            break;
+        }
+
+        let map_group = cpu.read_byte(base);
+        let map_id = cpu.read_byte(base + 1);
+
+        find_nest_search_map_for_mon(cpu, species, map_group, map_id, base + 3, NUM_WATERMON);
+    }
+}
+
+fn find_nest_search_map_for_mon(
+    cpu: &mut Cpu,
+    species: PokemonSpecies,
+    map_group: u8,
+    map_id: u8,
+    addr: u16,
+    size: usize,
+) {
+    for i in 0..(size as u16) {
+        if PokemonSpecies::from(cpu.read_byte(addr + 1 + i * 2)) == species {
+            return find_nest_append_nest(cpu, map_group, map_id);
+        }
+    }
+}
+
+fn find_nest_roam_mon_1(cpu: &mut Cpu, species: PokemonSpecies) {
+    if cpu.borrow_wram().roam_mon_1_species() == Some(species) {
+        let map_group = cpu.borrow_wram().roam_mon_1_map_group();
+        let map_id = cpu.borrow_wram().roam_mon_1_map_number();
+
+        find_nest_append_nest(cpu, map_group, map_id)
+    }
+}
+
+fn find_nest_roam_mon_2(cpu: &mut Cpu, species: PokemonSpecies) {
+    if cpu.borrow_wram().roam_mon_2_species() == Some(species) {
+        let map_group = cpu.borrow_wram().roam_mon_2_map_group();
+        let map_id = cpu.borrow_wram().roam_mon_2_map_number();
+
+        find_nest_append_nest(cpu, map_group, map_id)
+    }
+}
+
+fn find_nest_append_nest(cpu: &mut Cpu, map_group: u8, map_id: u8) {
+    cpu.b = map_group;
+    cpu.c = map_id;
+    cpu.call(0x2caf); // GetWorldMapLocation
+    let pokegear_location = cpu.a;
+
+    for i in 0..(gfx_constants::SCREEN_WIDTH as u16 * gfx_constants::SCREEN_HEIGHT as u16) {
+        if cpu.read_byte(macros::coords::coord!(0, 0) + i) == pokegear_location {
+            return; // Already found this location
+        }
+    }
+
+    cpu.write_byte(cpu.de(), pokegear_location);
+    cpu.set_de(cpu.de() + 1);
+}
 
 /// Finds a rare wild Pokemon in the route of the trainer calling, then checks if it's been Seen already.
 /// The trainer will then tell you about the Pokemon if you haven't seen it.
