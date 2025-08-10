@@ -278,6 +278,22 @@ impl GameState {
         self.data[0x1230].into()
     }
 
+    pub fn set_morn_encounter_rate(&mut self, value: u8) {
+        self.data[0x125a] = value;
+    }
+
+    pub fn set_day_encounter_rate(&mut self, value: u8) {
+        self.data[0x125b] = value;
+    }
+
+    pub fn set_nite_encounter_rate(&mut self, value: u8) {
+        self.data[0x125c] = value;
+    }
+
+    pub fn set_water_encounter_rate(&mut self, value: u8) {
+        self.data[0x125d] = value;
+    }
+
     pub fn set_chosen_cable_club_room(&mut self, value: u8) {
         self.data[0x1265] = value;
     }

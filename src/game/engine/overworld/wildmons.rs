@@ -19,6 +19,37 @@ use crate::{
     },
 };
 
+pub fn load_wild_mon_data(cpu: &mut Cpu) {
+    log::debug!("load_wild_mon_data()");
+
+    cpu.call(0x6205); // _GrassWildmonLookup
+
+    let grass = if cpu.flag(CpuFlag::C) {
+        let morn = cpu.read_byte(cpu.hl() + 2);
+        let day = cpu.read_byte(cpu.hl() + 3);
+        let nite = cpu.read_byte(cpu.hl() + 4);
+        (morn, day, nite)
+    } else {
+        (0, 0, 0)
+    };
+
+    cpu.call(0x621d); // _WaterWildmonLookup
+
+    let water = if cpu.flag(CpuFlag::C) {
+        cpu.set_hl(cpu.hl() + 2);
+        cpu.read_byte(cpu.hl())
+    } else {
+        0
+    };
+
+    cpu.borrow_wram_mut().set_morn_encounter_rate(grass.0);
+    cpu.borrow_wram_mut().set_day_encounter_rate(grass.1);
+    cpu.borrow_wram_mut().set_nite_encounter_rate(grass.2);
+    cpu.borrow_wram_mut().set_water_encounter_rate(water);
+
+    cpu.pc = cpu.stack_pop(); // ret
+}
+
 pub fn find_nest(cpu: &mut Cpu) {
     let region = Region::from(cpu.e);
     let species = PokemonSpecies::from(cpu.borrow_wram().named_object_index());
