@@ -115,6 +115,7 @@ impl<'a> Cpu<'a> {
                 (0x0a, 0x623d) => panic!("swarm_wildmon_check should only be called from Rust"),
                 (0x0a, 0x627a) => panic!("normal_wildmon_ok should only be called from Rust"),
                 (0x0a, 0x627f) => crate::game::engine::overworld::wildmons::copy_curr_map_de(self),
+                (0x0a, 0x6288) => crate::game::engine::overworld::wildmons::look_up_wildmons_for_map_de(self),
                 (0x0a, 0x64ab) => crate::game::engine::overworld::wildmons::random_unseen_wild_mon(self),
                 (0x0a, 0x651f) => crate::game::engine::overworld::wildmons::random_phone_wild_mon(self),
 

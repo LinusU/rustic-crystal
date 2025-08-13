@@ -262,6 +262,26 @@ pub fn copy_curr_map_de(cpu: &mut Cpu) {
     cpu.pc = cpu.stack_pop(); // ret
 }
 
+pub fn look_up_wildmons_for_map_de(cpu: &mut Cpu) {
+    let result = loop {
+        if cpu.read_byte(cpu.hl()) == 0xff {
+            break false; // End of wildmons data
+        }
+
+        let map_group = cpu.read_byte(cpu.hl());
+        let map_id = cpu.read_byte(cpu.hl() + 1);
+
+        if map_group == cpu.d && map_id == cpu.e {
+            break true; // Found matching wildmons at HL
+        }
+
+        cpu.set_hl(cpu.hl() + cpu.bc());
+    };
+
+    cpu.set_flag(CpuFlag::C, result);
+    cpu.pc = cpu.stack_pop(); // ret
+}
+
 /// Finds a rare wild Pokemon in the route of the trainer calling, then checks if it's been Seen already.
 /// The trainer will then tell you about the Pokemon if you haven't seen it.
 pub fn random_unseen_wild_mon(cpu: &mut Cpu) {
