@@ -357,6 +357,14 @@ impl GameState {
         self.data[0x1c79] = value;
     }
 
+    pub fn map_group(&self) -> u8 {
+        self.data[0x1cb5]
+    }
+
+    pub fn map_number(&self) -> u8 {
+        self.data[0x1cb6]
+    }
+
     pub fn party_count(&self) -> u8 {
         self.data[0x1cd7]
     }

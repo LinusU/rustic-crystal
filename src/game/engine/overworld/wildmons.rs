@@ -256,6 +256,12 @@ fn normal_wildmon_ok(cpu: &mut Cpu, wild_data_len: usize) {
     cpu.call(0x6288); // LookUpWildmonsForMapDE
 }
 
+pub fn copy_curr_map_de(cpu: &mut Cpu) {
+    cpu.d = cpu.borrow_wram().map_group();
+    cpu.e = cpu.borrow_wram().map_number();
+    cpu.pc = cpu.stack_pop(); // ret
+}
+
 /// Finds a rare wild Pokemon in the route of the trainer calling, then checks if it's been Seen already.
 /// The trainer will then tell you about the Pokemon if you haven't seen it.
 pub fn random_unseen_wild_mon(cpu: &mut Cpu) {
