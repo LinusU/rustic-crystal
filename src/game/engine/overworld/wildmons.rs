@@ -22,7 +22,7 @@ use crate::{
 pub fn load_wild_mon_data(cpu: &mut Cpu) {
     log::debug!("load_wild_mon_data()");
 
-    cpu.call(0x6205); // _GrassWildmonLookup
+    grass_wildmon_lookup(cpu);
 
     let grass = if cpu.flag(CpuFlag::C) {
         let morn = cpu.read_byte(cpu.hl() + 2);
@@ -166,9 +166,26 @@ pub fn load_wild_mon_data_pointer(cpu: &mut Cpu) {
     cpu.call(0x1852); // CheckOnWater
 
     if cpu.flag(CpuFlag::Z) {
-        cpu.jump(0x621d) // _WaterWildmonLookup
+        return cpu.jump(0x621d); // _WaterWildmonLookup
     } else {
-        cpu.jump(0x6205) // _GrassWildmonLookup
+        grass_wildmon_lookup(cpu);
+    }
+
+    cpu.pc = cpu.stack_pop(); // ret
+}
+
+fn grass_wildmon_lookup(cpu: &mut Cpu) {
+    cpu.set_hl(0x78d0); // SwarmGrassWildMons
+    cpu.set_bc(GRASS_WILDDATA_LENGTH as u16);
+    cpu.call(0x623d); // _SwarmWildmonCheck
+
+    if !cpu.flag(CpuFlag::C) {
+        cpu.set_hl(JOHTO_GRASS_WILD_MONS);
+        cpu.set_de(KANTO_GRASS_WILD_MONS);
+        cpu.call(0x6235); // _JohtoWildmonCheck
+
+        cpu.set_bc(GRASS_WILDDATA_LENGTH as u16);
+        cpu.call(0x627a); // _NormalWildmonOK
     }
 }
 
