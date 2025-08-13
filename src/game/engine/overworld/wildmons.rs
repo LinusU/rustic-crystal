@@ -33,7 +33,7 @@ pub fn load_wild_mon_data(cpu: &mut Cpu) {
         (0, 0, 0)
     };
 
-    cpu.call(0x621d); // _WaterWildmonLookup
+    water_wildmon_lookup(cpu);
 
     let water = if cpu.flag(CpuFlag::C) {
         cpu.set_hl(cpu.hl() + 2);
@@ -166,7 +166,7 @@ pub fn load_wild_mon_data_pointer(cpu: &mut Cpu) {
     cpu.call(0x1852); // CheckOnWater
 
     if cpu.flag(CpuFlag::Z) {
-        return cpu.jump(0x621d); // _WaterWildmonLookup
+        water_wildmon_lookup(cpu);
     } else {
         grass_wildmon_lookup(cpu);
     }
@@ -185,6 +185,21 @@ fn grass_wildmon_lookup(cpu: &mut Cpu) {
         cpu.call(0x6235); // _JohtoWildmonCheck
 
         cpu.set_bc(GRASS_WILDDATA_LENGTH as u16);
+        cpu.call(0x627a); // _NormalWildmonOK
+    }
+}
+
+fn water_wildmon_lookup(cpu: &mut Cpu) {
+    cpu.set_hl(0x792f); // SwarmWaterWildMons
+    cpu.set_bc(WATER_WILDDATA_LENGTH as u16);
+    cpu.call(0x623d); // _SwarmWildmonCheck
+
+    if !cpu.flag(CpuFlag::C) {
+        cpu.set_hl(JOHTO_WATER_WILD_MONS);
+        cpu.set_de(KANTO_WATER_WILD_MONS);
+        cpu.call(0x6235); // _JohtoWildmonCheck
+
+        cpu.set_bc(WATER_WILDDATA_LENGTH as u16);
         cpu.call(0x627a); // _NormalWildmonOK
     }
 }
