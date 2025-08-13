@@ -6,7 +6,7 @@ use crate::{
             input_constants::JoypadButtons,
             item_constants::Item,
             pokemon_constants::PokemonSpecies,
-            ram_constants::{MonType, TimeOfDay},
+            ram_constants::{MonType, SwarmFlags, TimeOfDay},
             text_constants::NAME_LENGTH,
         },
     },
@@ -337,6 +337,18 @@ impl GameState {
         self.data[0x1b72] = value;
     }
 
+    pub fn swarm_flags(&self) -> SwarmFlags {
+        SwarmFlags::from_bits_retain(self.data[0x1c20])
+    }
+
+    pub fn yanma_map_group(&self) -> u8 {
+        self.data[0x1c5a]
+    }
+
+    pub fn yanma_map_number(&self) -> u8 {
+        self.data[0x1c5b]
+    }
+
     pub fn park_balls_remaining(&self) -> u8 {
         self.data[0x1c79]
     }
@@ -347,6 +359,14 @@ impl GameState {
 
     pub fn party_count(&self) -> u8 {
         self.data[0x1cd7]
+    }
+
+    pub fn dunsparce_map_group(&self) -> u8 {
+        self.data[0x1fcc]
+    }
+
+    pub fn dunsparce_map_number(&self) -> u8 {
+        self.data[0x1fcd]
     }
 
     pub fn roam_mon_1_species(&self) -> Option<PokemonSpecies> {

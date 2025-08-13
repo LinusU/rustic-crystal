@@ -8,6 +8,7 @@ use crate::{
             pokemon_data_constants::{
                 GRASS_WILDDATA_LENGTH, NUM_GRASSMON, NUM_WATERMON, WATER_WILDDATA_LENGTH,
             },
+            ram_constants::SwarmFlags,
             text_constants::MON_NAME_LENGTH,
         },
         data::wild::{
@@ -177,9 +178,8 @@ pub fn load_wild_mon_data_pointer(cpu: &mut Cpu) {
 fn grass_wildmon_lookup(cpu: &mut Cpu) {
     cpu.set_hl(0x78d0); // SwarmGrassWildMons
     cpu.set_bc(GRASS_WILDDATA_LENGTH as u16);
-    cpu.call(0x623d); // _SwarmWildmonCheck
 
-    if !cpu.flag(CpuFlag::C) {
+    if !swarm_wildmon_check(cpu) {
         cpu.set_hl(JOHTO_GRASS_WILD_MONS);
         cpu.set_de(KANTO_GRASS_WILD_MONS);
         johto_wildmon_check(cpu);
@@ -192,9 +192,8 @@ fn grass_wildmon_lookup(cpu: &mut Cpu) {
 fn water_wildmon_lookup(cpu: &mut Cpu) {
     cpu.set_hl(0x792f); // SwarmWaterWildMons
     cpu.set_bc(WATER_WILDDATA_LENGTH as u16);
-    cpu.call(0x623d); // _SwarmWildmonCheck
 
-    if !cpu.flag(CpuFlag::C) {
+    if !swarm_wildmon_check(cpu) {
         cpu.set_hl(JOHTO_WATER_WILD_MONS);
         cpu.set_de(KANTO_WATER_WILD_MONS);
         johto_wildmon_check(cpu);
@@ -211,6 +210,46 @@ fn johto_wildmon_check(cpu: &mut Cpu) {
         cpu.h = cpu.d;
         cpu.l = cpu.e;
     }
+}
+
+fn swarm_wildmon_check(cpu: &mut Cpu) -> bool {
+    cpu.call(0x627f); // CopyCurrMapDE
+
+    let swarm_flags = cpu.borrow_wram().swarm_flags();
+
+    if !swarm_flags.contains(SwarmFlags::DUNSPARCE_SWARM) {
+        return swarm_wildmon_check_check_yanma(cpu);
+    }
+
+    if cpu.borrow_wram().dunsparce_map_group() != cpu.d {
+        return swarm_wildmon_check_check_yanma(cpu);
+    }
+
+    if cpu.borrow_wram().dunsparce_map_number() != cpu.e {
+        return swarm_wildmon_check_check_yanma(cpu);
+    }
+
+    cpu.call(0x6288); // LookUpWildmonsForMapDE
+    cpu.flag(CpuFlag::C)
+}
+
+fn swarm_wildmon_check_check_yanma(cpu: &mut Cpu) -> bool {
+    let value = cpu.borrow_wram().swarm_flags();
+
+    if !value.contains(SwarmFlags::YANMA_SWARM) {
+        return false;
+    }
+
+    if cpu.borrow_wram().yanma_map_group() != cpu.d {
+        return false;
+    }
+
+    if cpu.borrow_wram().yanma_map_number() != cpu.e {
+        return false;
+    }
+
+    cpu.call(0x6288); // LookUpWildmonsForMapDE
+    cpu.flag(CpuFlag::C)
 }
 
 /// Finds a rare wild Pokemon in the route of the trainer calling, then checks if it's been Seen already.

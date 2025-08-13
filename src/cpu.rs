@@ -112,6 +112,7 @@ impl<'a> Cpu<'a> {
                 (0x0a, 0x6205) => panic!("grass_wildmon_lookup should only be called from Rust"),
                 (0x0a, 0x621d) => panic!("water_wildmon_lookup should only be called from Rust"),
                 (0x0a, 0x6235) => panic!("johto_wildmon_check should only be called from Rust"),
+                (0x0a, 0x623d) => panic!("swarm_wildmon_check should only be called from Rust"),
                 (0x0a, 0x64ab) => crate::game::engine::overworld::wildmons::random_unseen_wild_mon(self),
                 (0x0a, 0x651f) => crate::game::engine::overworld::wildmons::random_phone_wild_mon(self),
 
