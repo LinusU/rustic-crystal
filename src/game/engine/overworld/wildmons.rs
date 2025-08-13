@@ -184,8 +184,7 @@ fn grass_wildmon_lookup(cpu: &mut Cpu) {
         cpu.set_de(KANTO_GRASS_WILD_MONS);
         johto_wildmon_check(cpu);
 
-        cpu.set_bc(GRASS_WILDDATA_LENGTH as u16);
-        cpu.call(0x627a); // _NormalWildmonOK
+        normal_wildmon_ok(cpu, GRASS_WILDDATA_LENGTH);
     }
 }
 
@@ -198,8 +197,7 @@ fn water_wildmon_lookup(cpu: &mut Cpu) {
         cpu.set_de(KANTO_WATER_WILD_MONS);
         johto_wildmon_check(cpu);
 
-        cpu.set_bc(WATER_WILDDATA_LENGTH as u16);
-        cpu.call(0x627a); // _NormalWildmonOK
+        normal_wildmon_ok(cpu, WATER_WILDDATA_LENGTH);
     }
 }
 
@@ -250,6 +248,12 @@ fn swarm_wildmon_check_check_yanma(cpu: &mut Cpu) -> bool {
 
     cpu.call(0x6288); // LookUpWildmonsForMapDE
     cpu.flag(CpuFlag::C)
+}
+
+fn normal_wildmon_ok(cpu: &mut Cpu, wild_data_len: usize) {
+    cpu.call(0x627f); // CopyCurrMapDE
+    cpu.set_bc(wild_data_len as u16);
+    cpu.call(0x6288); // LookUpWildmonsForMapDE
 }
 
 /// Finds a rare wild Pokemon in the route of the trainer calling, then checks if it's been Seen already.
