@@ -182,7 +182,7 @@ fn grass_wildmon_lookup(cpu: &mut Cpu) {
     if !cpu.flag(CpuFlag::C) {
         cpu.set_hl(JOHTO_GRASS_WILD_MONS);
         cpu.set_de(KANTO_GRASS_WILD_MONS);
-        cpu.call(0x6235); // _JohtoWildmonCheck
+        johto_wildmon_check(cpu);
 
         cpu.set_bc(GRASS_WILDDATA_LENGTH as u16);
         cpu.call(0x627a); // _NormalWildmonOK
@@ -197,10 +197,19 @@ fn water_wildmon_lookup(cpu: &mut Cpu) {
     if !cpu.flag(CpuFlag::C) {
         cpu.set_hl(JOHTO_WATER_WILD_MONS);
         cpu.set_de(KANTO_WATER_WILD_MONS);
-        cpu.call(0x6235); // _JohtoWildmonCheck
+        johto_wildmon_check(cpu);
 
         cpu.set_bc(WATER_WILDDATA_LENGTH as u16);
         cpu.call(0x627a); // _NormalWildmonOK
+    }
+}
+
+fn johto_wildmon_check(cpu: &mut Cpu) {
+    cpu.call(0x2f17); // IsInJohto
+
+    if Region::from(cpu.a) != Region::Johto {
+        cpu.h = cpu.d;
+        cpu.l = cpu.e;
     }
 }
 
