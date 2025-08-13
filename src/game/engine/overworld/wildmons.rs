@@ -162,6 +162,16 @@ fn find_nest_append_nest(cpu: &mut Cpu, map_group: u8, map_id: u8) {
     cpu.set_de(cpu.de() + 1);
 }
 
+pub fn load_wild_mon_data_pointer(cpu: &mut Cpu) {
+    cpu.call(0x1852); // CheckOnWater
+
+    if cpu.flag(CpuFlag::Z) {
+        cpu.jump(0x621d) // _WaterWildmonLookup
+    } else {
+        cpu.jump(0x6205) // _GrassWildmonLookup
+    }
+}
+
 /// Finds a rare wild Pokemon in the route of the trainer calling, then checks if it's been Seen already.
 /// The trainer will then tell you about the Pokemon if you haven't seen it.
 pub fn random_unseen_wild_mon(cpu: &mut Cpu) {
