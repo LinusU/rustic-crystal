@@ -14,6 +14,7 @@ use crate::{
         data::wild::{
             johto_grass::JOHTO_GRASS_WILD_MONS, johto_water::JOHTO_WATER_WILD_MONS,
             kanto_grass::KANTO_GRASS_WILD_MONS, kanto_water::KANTO_WATER_WILD_MONS,
+            swarm_grass::SWARM_GRASS_WILD_MONS, swarm_water::SWARM_WATER_WILD_MONS,
         },
         macros,
         ram::wram,
@@ -23,22 +24,17 @@ use crate::{
 pub fn load_wild_mon_data(cpu: &mut Cpu) {
     log::debug!("load_wild_mon_data()");
 
-    grass_wildmon_lookup(cpu);
-
-    let grass = if cpu.flag(CpuFlag::C) {
-        let morn = cpu.read_byte(cpu.hl() + 2);
-        let day = cpu.read_byte(cpu.hl() + 3);
-        let nite = cpu.read_byte(cpu.hl() + 4);
+    let grass = if let Some(hl) = grass_wildmon_lookup(cpu) {
+        let morn = cpu.read_byte(hl + 2);
+        let day = cpu.read_byte(hl + 3);
+        let nite = cpu.read_byte(hl + 4);
         (morn, day, nite)
     } else {
         (0, 0, 0)
     };
 
-    water_wildmon_lookup(cpu);
-
-    let water = if cpu.flag(CpuFlag::C) {
-        cpu.set_hl(cpu.hl() + 2);
-        cpu.read_byte(cpu.hl())
+    let water = if let Some(hl) = water_wildmon_lookup(cpu) {
+        cpu.read_byte(hl + 2)
     } else {
         0
     };
@@ -166,94 +162,71 @@ fn find_nest_append_nest(cpu: &mut Cpu, map_group: u8, map_id: u8) {
 pub fn load_wild_mon_data_pointer(cpu: &mut Cpu) {
     cpu.call(0x1852); // CheckOnWater
 
-    if cpu.flag(CpuFlag::Z) {
-        water_wildmon_lookup(cpu);
+    let result = if cpu.flag(CpuFlag::Z) {
+        water_wildmon_lookup(cpu)
     } else {
-        grass_wildmon_lookup(cpu);
+        grass_wildmon_lookup(cpu)
+    };
+
+    if let Some(hl) = result {
+        cpu.set_hl(hl);
+        cpu.set_flag(CpuFlag::C, true);
+    } else {
+        cpu.set_flag(CpuFlag::C, false);
     }
 
     cpu.pc = cpu.stack_pop(); // ret
 }
 
-fn grass_wildmon_lookup(cpu: &mut Cpu) {
-    cpu.set_hl(0x78d0); // SwarmGrassWildMons
-    cpu.set_bc(GRASS_WILDDATA_LENGTH as u16);
-
-    if !swarm_wildmon_check(cpu) {
-        cpu.set_hl(JOHTO_GRASS_WILD_MONS);
-        cpu.set_de(KANTO_GRASS_WILD_MONS);
-        johto_wildmon_check(cpu);
-
-        normal_wildmon_ok(cpu, GRASS_WILDDATA_LENGTH);
-    }
+fn grass_wildmon_lookup(cpu: &mut Cpu) -> Option<u16> {
+    swarm_wildmon_check(cpu, SWARM_GRASS_WILD_MONS, GRASS_WILDDATA_LENGTH).or_else(|| {
+        let wild_data = johto_wildmon_check(cpu, JOHTO_GRASS_WILD_MONS, KANTO_GRASS_WILD_MONS);
+        normal_wildmon_ok(cpu, wild_data, GRASS_WILDDATA_LENGTH)
+    })
 }
 
-fn water_wildmon_lookup(cpu: &mut Cpu) {
-    cpu.set_hl(0x792f); // SwarmWaterWildMons
-    cpu.set_bc(WATER_WILDDATA_LENGTH as u16);
-
-    if !swarm_wildmon_check(cpu) {
-        cpu.set_hl(JOHTO_WATER_WILD_MONS);
-        cpu.set_de(KANTO_WATER_WILD_MONS);
-        johto_wildmon_check(cpu);
-
-        normal_wildmon_ok(cpu, WATER_WILDDATA_LENGTH);
-    }
+fn water_wildmon_lookup(cpu: &mut Cpu) -> Option<u16> {
+    swarm_wildmon_check(cpu, SWARM_WATER_WILD_MONS, WATER_WILDDATA_LENGTH).or_else(|| {
+        let wild_data = johto_wildmon_check(cpu, JOHTO_WATER_WILD_MONS, KANTO_WATER_WILD_MONS);
+        normal_wildmon_ok(cpu, wild_data, WATER_WILDDATA_LENGTH)
+    })
 }
 
-fn johto_wildmon_check(cpu: &mut Cpu) {
+fn johto_wildmon_check(cpu: &mut Cpu, johto: u16, kanto: u16) -> u16 {
     cpu.call(0x2f17); // IsInJohto
 
-    if Region::from(cpu.a) != Region::Johto {
-        cpu.h = cpu.d;
-        cpu.l = cpu.e;
+    if Region::from(cpu.a) == Region::Johto {
+        johto
+    } else {
+        kanto
     }
 }
 
-fn swarm_wildmon_check(cpu: &mut Cpu) -> bool {
+fn swarm_wildmon_check(cpu: &mut Cpu, wild_data: u16, wild_data_len: usize) -> Option<u16> {
     cpu.call(0x627f); // CopyCurrMapDE
 
     let swarm_flags = cpu.borrow_wram().swarm_flags();
 
-    if !swarm_flags.contains(SwarmFlags::DUNSPARCE_SWARM) {
-        return swarm_wildmon_check_check_yanma(cpu);
+    if swarm_flags.contains(SwarmFlags::DUNSPARCE_SWARM)
+        && cpu.borrow_wram().dunsparce_map_group() == cpu.d
+        && cpu.borrow_wram().dunsparce_map_number() == cpu.e
+    {
+        return look_up_wildmons_for_map_de(cpu, wild_data, wild_data_len);
     }
 
-    if cpu.borrow_wram().dunsparce_map_group() != cpu.d {
-        return swarm_wildmon_check_check_yanma(cpu);
+    if swarm_flags.contains(SwarmFlags::YANMA_SWARM)
+        && cpu.borrow_wram().yanma_map_group() == cpu.d
+        && cpu.borrow_wram().yanma_map_number() == cpu.e
+    {
+        return look_up_wildmons_for_map_de(cpu, wild_data, wild_data_len);
     }
 
-    if cpu.borrow_wram().dunsparce_map_number() != cpu.e {
-        return swarm_wildmon_check_check_yanma(cpu);
-    }
-
-    cpu.call(0x6288); // LookUpWildmonsForMapDE
-    cpu.flag(CpuFlag::C)
+    None
 }
 
-fn swarm_wildmon_check_check_yanma(cpu: &mut Cpu) -> bool {
-    let value = cpu.borrow_wram().swarm_flags();
-
-    if !value.contains(SwarmFlags::YANMA_SWARM) {
-        return false;
-    }
-
-    if cpu.borrow_wram().yanma_map_group() != cpu.d {
-        return false;
-    }
-
-    if cpu.borrow_wram().yanma_map_number() != cpu.e {
-        return false;
-    }
-
-    cpu.call(0x6288); // LookUpWildmonsForMapDE
-    cpu.flag(CpuFlag::C)
-}
-
-fn normal_wildmon_ok(cpu: &mut Cpu, wild_data_len: usize) {
+fn normal_wildmon_ok(cpu: &mut Cpu, wild_data: u16, wild_data_len: usize) -> Option<u16> {
     cpu.call(0x627f); // CopyCurrMapDE
-    cpu.set_bc(wild_data_len as u16);
-    cpu.call(0x6288); // LookUpWildmonsForMapDE
+    look_up_wildmons_for_map_de(cpu, wild_data, wild_data_len)
 }
 
 pub fn copy_curr_map_de(cpu: &mut Cpu) {
@@ -262,24 +235,23 @@ pub fn copy_curr_map_de(cpu: &mut Cpu) {
     cpu.pc = cpu.stack_pop(); // ret
 }
 
-pub fn look_up_wildmons_for_map_de(cpu: &mut Cpu) {
-    let result = loop {
-        if cpu.read_byte(cpu.hl()) == 0xff {
-            break false; // End of wildmons data
+fn look_up_wildmons_for_map_de(cpu: &mut Cpu, wild_data: u16, wild_data_len: usize) -> Option<u16> {
+    let mut addr = wild_data;
+
+    loop {
+        if cpu.read_byte(addr) == 0xff {
+            return None;
         }
 
-        let map_group = cpu.read_byte(cpu.hl());
-        let map_id = cpu.read_byte(cpu.hl() + 1);
+        let map_group = cpu.read_byte(addr);
+        let map_id = cpu.read_byte(addr + 1);
 
         if map_group == cpu.d && map_id == cpu.e {
-            break true; // Found matching wildmons at HL
+            return Some(addr);
         }
 
-        cpu.set_hl(cpu.hl() + cpu.bc());
-    };
-
-    cpu.set_flag(CpuFlag::C, result);
-    cpu.pc = cpu.stack_pop(); // ret
+        addr += wild_data_len as u16;
+    }
 }
 
 /// Finds a rare wild Pokemon in the route of the trainer calling, then checks if it's been Seen already.
@@ -298,23 +270,25 @@ pub fn random_unseen_wild_mon(cpu: &mut Cpu) {
     cpu.d = cpu.b;
     cpu.e = cpu.c;
 
-    cpu.set_hl(JOHTO_GRASS_WILD_MONS);
-    cpu.set_bc(GRASS_WILDDATA_LENGTH as u16);
-    cpu.call(0x6288); // LookUpWildmonsForMapDE
+    if let Some(hl) = look_up_wildmons_for_map_de(cpu, JOHTO_GRASS_WILD_MONS, GRASS_WILDDATA_LENGTH)
+    {
+        cpu.set_hl(hl);
+        cpu.set_flag(CpuFlag::C, true);
+    } else if let Some(hl) =
+        look_up_wildmons_for_map_de(cpu, KANTO_GRASS_WILD_MONS, GRASS_WILDDATA_LENGTH)
+    {
+        cpu.set_hl(hl);
+        cpu.set_flag(CpuFlag::C, true);
+    } else {
+        cpu.set_flag(CpuFlag::C, false);
 
-    if !cpu.flag(CpuFlag::C) {
-        cpu.set_hl(KANTO_GRASS_WILD_MONS);
-        cpu.call(0x6288); // LookUpWildmonsForMapDE
+        log::warn!(
+            "No matching wildmons found for group_id {:#02x}, map_id {:#02x}",
+            cpu.d,
+            cpu.e
+        );
 
-        if !cpu.flag(CpuFlag::C) {
-            log::warn!(
-                "No matching wildmons found for group_id {:#02x}, map_id {:#02x}",
-                cpu.d,
-                cpu.e
-            );
-
-            return random_unseen_wild_mon_done(cpu);
-        }
+        return random_unseen_wild_mon_done(cpu);
     }
 
     let map_wildmons_addr = cpu.hl();
@@ -396,13 +370,17 @@ pub fn random_phone_wild_mon(cpu: &mut Cpu) {
     cpu.d = cpu.b;
     cpu.e = cpu.c;
 
-    cpu.set_hl(JOHTO_GRASS_WILD_MONS);
-    cpu.set_bc(GRASS_WILDDATA_LENGTH as u16);
-    cpu.call(0x6288); // LookUpWildmonsForMapDE
-
-    if !cpu.flag(CpuFlag::C) {
-        cpu.set_hl(KANTO_GRASS_WILD_MONS);
-        cpu.call(0x6288); // LookUpWildmonsForMapDE
+    if let Some(hl) = look_up_wildmons_for_map_de(cpu, JOHTO_GRASS_WILD_MONS, GRASS_WILDDATA_LENGTH)
+    {
+        cpu.set_hl(hl);
+        cpu.set_flag(CpuFlag::C, true);
+    } else if let Some(hl) =
+        look_up_wildmons_for_map_de(cpu, KANTO_GRASS_WILD_MONS, GRASS_WILDDATA_LENGTH)
+    {
+        cpu.set_hl(hl);
+        cpu.set_flag(CpuFlag::C, true);
+    } else {
+        cpu.set_flag(CpuFlag::C, false);
     }
 
     let time_of_day = cpu.borrow_wram().time_of_day();

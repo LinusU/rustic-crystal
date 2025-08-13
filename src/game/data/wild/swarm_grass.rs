@@ -1,0 +1,1 @@
+pub const SWARM_GRASS_WILD_MONS: u16 = 0x78d0;

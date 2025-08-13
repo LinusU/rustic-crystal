@@ -3,3 +3,5 @@ pub mod johto_grass;
 pub mod johto_water;
 pub mod kanto_grass;
 pub mod kanto_water;
+pub mod swarm_grass;
+pub mod swarm_water;

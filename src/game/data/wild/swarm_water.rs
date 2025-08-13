@@ -1,0 +1,1 @@
+pub const SWARM_WATER_WILD_MONS: u16 = 0x792f;
