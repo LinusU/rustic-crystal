@@ -208,29 +208,15 @@ pub fn choose_wild_encounter(cpu: &mut Cpu) {
         }
     };
 
-    cpu.set_de(prob_table);
-    cpu.set_hl(prob_table);
-
-    // This next loop chooses which mon to load up.
-    loop {
-        cpu.a = cpu.read_byte(cpu.hl());
-        cpu.set_hl(cpu.hl() + 1);
-
-        if cpu.a >= rng {
-            break;
-        }
-
-        cpu.set_hl(cpu.hl() + 1);
-    }
-
-    cpu.b = 0;
-    cpu.c = cpu.read_byte(cpu.hl());
+    let index = prob_table
+        .iter()
+        .position(|&threshold| rng <= threshold)
+        .expect("No valid mon found for this RNG value");
 
     // this selects our mon
-    cpu.set_hl(wild_mon_data + cpu.bc());
-    let mut level = cpu.read_byte(cpu.hl());
-    let species = PokemonSpecies::from(cpu.read_byte(cpu.hl() + 1));
-    cpu.set_hl(cpu.hl() + 1);
+    let mon_ptr = wild_mon_data + index as u16 * 2;
+    let mut level = cpu.read_byte(mon_ptr);
+    let species = PokemonSpecies::from(cpu.read_byte(mon_ptr + 1));
 
     // If the Pokemon is encountered by surfing, we need to give the levels some variety.
     cpu.call(0x1852); // CheckOnWater
