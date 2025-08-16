@@ -212,7 +212,6 @@ pub fn choose_wild_encounter(cpu: &mut Cpu) {
     // this selects our mon
     let mon_ptr = wild_mon_data + index as u16 * 2;
     let mut level = cpu.read_byte(mon_ptr);
-    let species = PokemonSpecies::from(cpu.read_byte(mon_ptr + 1));
 
     // If the Pokemon is encountered by surfing, we need to give the levels some variety.
     cpu.call(0x1852); // CheckOnWater
@@ -232,14 +231,9 @@ pub fn choose_wild_encounter(cpu: &mut Cpu) {
 
     cpu.borrow_wram_mut().set_cur_party_level(level);
 
-    // BUG: ChooseWildEncounter doesn't really validate the wild Pokemon species (see docs/bugs_and_glitches.md)
-    cpu.a = level;
-    cpu.b = species.into();
-    cpu.call(0x64a0); // ValidateTempWildMonSpecies
-
-    if cpu.flag(CpuFlag::C) {
+    let Some(species) = validate_temp_wild_mon_species(cpu.read_byte(mon_ptr + 1)) else {
         return return_value(cpu, false);
-    }
+    };
 
     if species == PokemonSpecies::Unown && cpu.borrow_wram().unlocked_unowns().is_empty() {
         return return_value(cpu, false);
@@ -337,15 +331,11 @@ fn look_up_wildmons_for_map_de(cpu: &mut Cpu, wild_data: u16, wild_data_len: usi
     }
 }
 
-// Due to a development oversight, this function is called with the wild Pokemon's level, not its species, in a.
-pub fn validate_temp_wild_mon_species(cpu: &mut Cpu) {
-    if cpu.a == 0 || cpu.a > PokemonSpecies::count() as u8 {
-        cpu.set_flag(CpuFlag::C, true);
-    } else {
-        cpu.set_flag(CpuFlag::C, false);
+fn validate_temp_wild_mon_species(input: u8) -> Option<PokemonSpecies> {
+    match PokemonSpecies::from(input) {
+        PokemonSpecies::Unknown(_) => None,
+        valid_species => Some(valid_species),
     }
-
-    cpu.pc = cpu.stack_pop(); // ret
 }
 
 /// Finds a rare wild Pokemon in the route of the trainer calling, then checks if it's been Seen already.
