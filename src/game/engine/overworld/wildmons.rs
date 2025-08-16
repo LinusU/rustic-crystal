@@ -337,6 +337,17 @@ fn look_up_wildmons_for_map_de(cpu: &mut Cpu, wild_data: u16, wild_data_len: usi
     }
 }
 
+// Due to a development oversight, this function is called with the wild Pokemon's level, not its species, in a.
+pub fn validate_temp_wild_mon_species(cpu: &mut Cpu) {
+    if cpu.a == 0 || cpu.a > PokemonSpecies::count() as u8 {
+        cpu.set_flag(CpuFlag::C, true);
+    } else {
+        cpu.set_flag(CpuFlag::C, false);
+    }
+
+    cpu.pc = cpu.stack_pop(); // ret
+}
+
 /// Finds a rare wild Pokemon in the route of the trainer calling, then checks if it's been Seen already.
 /// The trainer will then tell you about the Pokemon if you haven't seen it.
 pub fn random_unseen_wild_mon(cpu: &mut Cpu) {
