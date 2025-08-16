@@ -8,7 +8,7 @@ use crate::{
             pokemon_data_constants::{
                 GRASS_WILDDATA_LENGTH, NUM_GRASSMON, NUM_WATERMON, WATER_WILDDATA_LENGTH,
             },
-            ram_constants::SwarmFlags,
+            ram_constants::{SwarmFlags, TimeOfDay},
             text_constants::MON_NAME_LENGTH,
         },
         data::wild::{
@@ -170,11 +170,9 @@ pub fn choose_wild_encounter(cpu: &mut Cpu) {
         cpu.pc = cpu.stack_pop(); // ret
     }
 
-    cpu.call(0x6200); // LoadWildMonDataPointer
-
-    if !cpu.flag(CpuFlag::C) {
+    let Some(mut wild_mon_data) = load_wild_mon_data_pointer(cpu) else {
         return return_value(cpu, false);
-    }
+    };
 
     cpu.call(0x62ce); // CheckEncounterRoamMon
 
@@ -182,23 +180,21 @@ pub fn choose_wild_encounter(cpu: &mut Cpu) {
         return return_value(cpu, true);
     }
 
-    cpu.set_hl(cpu.hl() + 3);
     cpu.call(0x1852); // CheckOnWater
 
     let prob_table = if cpu.flag(CpuFlag::Z) {
+        wild_mon_data += 3;
         WATER_MON_PROB_TABLE
     } else {
-        cpu.set_hl(cpu.hl() + 2);
-
-        cpu.a = cpu.borrow_wram().time_of_day().into();
-        cpu.set_bc(NUM_GRASSMON as u16 * 2);
-        cpu.call(0x30fe); // AddNTimes
+        match cpu.borrow_wram().time_of_day() {
+            TimeOfDay::Morn => wild_mon_data += 5,
+            TimeOfDay::Day => wild_mon_data += 5 + NUM_GRASSMON as u16 * 2,
+            TimeOfDay::Nite => wild_mon_data += 5 + NUM_GRASSMON as u16 * 4,
+            _ => panic!("Invalid time of day for wild mon encounter"),
+        }
 
         GRASS_MON_PROB_TABLE
     };
-
-    // hl contains the pointer to the wild mon data, let's save that
-    let wild_mon_data = cpu.hl();
 
     let rng = loop {
         cpu.call(0x2f8c); // Random
@@ -255,23 +251,14 @@ pub fn choose_wild_encounter(cpu: &mut Cpu) {
     return_value(cpu, true)
 }
 
-pub fn load_wild_mon_data_pointer(cpu: &mut Cpu) {
+fn load_wild_mon_data_pointer(cpu: &mut Cpu) -> Option<u16> {
     cpu.call(0x1852); // CheckOnWater
 
-    let result = if cpu.flag(CpuFlag::Z) {
+    if cpu.flag(CpuFlag::Z) {
         water_wildmon_lookup(cpu)
     } else {
         grass_wildmon_lookup(cpu)
-    };
-
-    if let Some(hl) = result {
-        cpu.set_hl(hl);
-        cpu.set_flag(CpuFlag::C, true);
-    } else {
-        cpu.set_flag(CpuFlag::C, false);
     }
-
-    cpu.pc = cpu.stack_pop(); // ret
 }
 
 fn grass_wildmon_lookup(cpu: &mut Cpu) -> Option<u16> {
