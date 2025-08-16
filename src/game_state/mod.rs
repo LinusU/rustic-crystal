@@ -283,6 +283,10 @@ impl GameState {
         self.data[0x1230].into()
     }
 
+    pub fn set_battle_type(&mut self, value: BattleType) {
+        self.data[0x1230] = value.into();
+    }
+
     pub fn set_morn_encounter_rate(&mut self, value: u8) {
         self.data[0x125a] = value;
     }
