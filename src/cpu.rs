@@ -108,6 +108,7 @@ impl<'a> Cpu<'a> {
                 (0x0a, 0x5d11) => crate::game::engine::link::link::wait_for_linked_friend(self),
                 (0x0a, 0x5ff8) => crate::game::engine::overworld::wildmons::load_wild_mon_data(self),
                 (0x0a, 0x601f) => crate::game::engine::overworld::wildmons::find_nest(self),
+                (0x0a, 0x614f) => crate::game::engine::overworld::wildmons::choose_wild_encounter(self),
                 (0x0a, 0x6200) => crate::game::engine::overworld::wildmons::load_wild_mon_data_pointer(self),
                 (0x0a, 0x6205) => panic!("grass_wildmon_lookup should only be called from Rust"),
                 (0x0a, 0x621d) => panic!("water_wildmon_lookup should only be called from Rust"),

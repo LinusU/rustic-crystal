@@ -3,6 +3,7 @@ use crate::{
         audio::music::Music,
         constants::{
             battle_constants::{self, BattleMode, BattleResult, BattleType},
+            engine_flags::UnlockedUnowns,
             input_constants::JoypadButtons,
             item_constants::Item,
             pokemon_constants::PokemonSpecies,
@@ -274,6 +275,10 @@ impl GameState {
         }
     }
 
+    pub fn set_temp_wild_mon_species(&mut self, value: Option<PokemonSpecies>) {
+        self.data[0x122e] = value.map_or(0, Into::into);
+    }
+
     pub fn battle_type(&self) -> BattleType {
         self.data[0x1230].into()
     }
@@ -367,6 +372,10 @@ impl GameState {
 
     pub fn party_count(&self) -> u8 {
         self.data[0x1cd7]
+    }
+
+    pub fn unlocked_unowns(&self) -> UnlockedUnowns {
+        UnlockedUnowns::from_bits_retain(self.data[0x1ef3])
     }
 
     pub fn dunsparce_map_group(&self) -> u8 {

@@ -1,5 +1,6 @@
 pub mod battle_constants;
 pub mod battle_tower_constants;
+pub mod engine_flags;
 pub mod gfx_constants;
 pub mod hardware_constants;
 pub mod input_constants;

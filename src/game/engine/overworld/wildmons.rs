@@ -12,9 +12,13 @@ use crate::{
             text_constants::MON_NAME_LENGTH,
         },
         data::wild::{
-            johto_grass::JOHTO_GRASS_WILD_MONS, johto_water::JOHTO_WATER_WILD_MONS,
-            kanto_grass::KANTO_GRASS_WILD_MONS, kanto_water::KANTO_WATER_WILD_MONS,
-            swarm_grass::SWARM_GRASS_WILD_MONS, swarm_water::SWARM_WATER_WILD_MONS,
+            johto_grass::JOHTO_GRASS_WILD_MONS,
+            johto_water::JOHTO_WATER_WILD_MONS,
+            kanto_grass::KANTO_GRASS_WILD_MONS,
+            kanto_water::KANTO_WATER_WILD_MONS,
+            probabilities::{GRASS_MON_PROB_TABLE, WATER_MON_PROB_TABLE},
+            swarm_grass::SWARM_GRASS_WILD_MONS,
+            swarm_water::SWARM_WATER_WILD_MONS,
         },
         macros,
         ram::wram,
@@ -157,6 +161,112 @@ fn find_nest_append_nest(cpu: &mut Cpu, map_group: u8, map_id: u8) {
 
     cpu.write_byte(cpu.de(), pokegear_location);
     cpu.set_de(cpu.de() + 1);
+}
+
+pub fn choose_wild_encounter(cpu: &mut Cpu) {
+    fn return_value(cpu: &mut Cpu, value: bool) {
+        cpu.set_flag(CpuFlag::Z, value);
+        cpu.set_flag(CpuFlag::C, false);
+        cpu.pc = cpu.stack_pop(); // ret
+    }
+
+    cpu.call(0x6200); // LoadWildMonDataPointer
+
+    if !cpu.flag(CpuFlag::C) {
+        return return_value(cpu, false);
+    }
+
+    cpu.call(0x62ce); // CheckEncounterRoamMon
+
+    if cpu.flag(CpuFlag::C) {
+        return return_value(cpu, true);
+    }
+
+    cpu.set_hl(cpu.hl() + 3);
+    cpu.call(0x1852); // CheckOnWater
+
+    let prob_table = if cpu.flag(CpuFlag::Z) {
+        WATER_MON_PROB_TABLE
+    } else {
+        cpu.set_hl(cpu.hl() + 2);
+
+        cpu.a = cpu.borrow_wram().time_of_day().into();
+        cpu.set_bc(NUM_GRASSMON as u16 * 2);
+        cpu.call(0x30fe); // AddNTimes
+
+        GRASS_MON_PROB_TABLE
+    };
+
+    // hl contains the pointer to the wild mon data, let's save that
+    let wild_mon_data = cpu.hl();
+
+    let rng = loop {
+        cpu.call(0x2f8c); // Random
+
+        if cpu.a < 100 {
+            break cpu.a + 1;
+        }
+    };
+
+    cpu.set_de(prob_table);
+    cpu.set_hl(prob_table);
+
+    // This next loop chooses which mon to load up.
+    loop {
+        cpu.a = cpu.read_byte(cpu.hl());
+        cpu.set_hl(cpu.hl() + 1);
+
+        if cpu.a >= rng {
+            break;
+        }
+
+        cpu.set_hl(cpu.hl() + 1);
+    }
+
+    cpu.b = 0;
+    cpu.c = cpu.read_byte(cpu.hl());
+
+    // this selects our mon
+    cpu.set_hl(wild_mon_data + cpu.bc());
+    let mut level = cpu.read_byte(cpu.hl());
+    let species = PokemonSpecies::from(cpu.read_byte(cpu.hl() + 1));
+    cpu.set_hl(cpu.hl() + 1);
+
+    // If the Pokemon is encountered by surfing, we need to give the levels some variety.
+    cpu.call(0x1852); // CheckOnWater
+
+    if cpu.flag(CpuFlag::Z) {
+        // Check if we buff the wild mon, and by how much.
+        cpu.call(0x2f8c); // Random
+
+        match cpu.a {
+            0..=89 => {}             // ~35% chance
+            90..=165 => level += 1,  // ~30% chance
+            166..=216 => level += 2, // ~20% chance
+            217..=242 => level += 3, // ~10% chance
+            243..=255 => level += 4, //  ~5% chance
+        }
+    }
+
+    cpu.borrow_wram_mut().set_cur_party_level(level);
+
+    // BUG: ChooseWildEncounter doesn't really validate the wild Pokemon species (see docs/bugs_and_glitches.md)
+    cpu.a = level;
+    cpu.b = species.into();
+    cpu.call(0x64a0); // ValidateTempWildMonSpecies
+
+    if cpu.flag(CpuFlag::C) {
+        return return_value(cpu, false);
+    }
+
+    if species == PokemonSpecies::Unown && cpu.borrow_wram().unlocked_unowns().is_empty() {
+        return return_value(cpu, false);
+    }
+
+    cpu.borrow_wram_mut()
+        .set_temp_wild_mon_species(Some(species));
+
+    return_value(cpu, true)
 }
 
 pub fn load_wild_mon_data_pointer(cpu: &mut Cpu) {
