@@ -175,9 +175,7 @@ pub fn choose_wild_encounter(cpu: &mut Cpu) {
         return return_value(cpu, false);
     };
 
-    cpu.call(0x62ce); // CheckEncounterRoamMon
-
-    if cpu.flag(CpuFlag::C) {
+    if check_encounter_roam_mon(cpu) {
         return return_value(cpu, true);
     }
 
@@ -332,278 +330,76 @@ fn look_up_wildmons_for_map_de(cpu: &mut Cpu, wild_data: u16, wild_data_len: usi
     }
 }
 
-pub fn check_encounter_roam_mon(cpu: &mut Cpu) {
-    cpu.pc = 0x62ce;
-
-    // push hl
-    cpu.stack_push(cpu.hl());
-    cpu.pc += 1;
-    cpu.cycle(16);
-
+fn check_encounter_roam_mon(cpu: &mut Cpu) -> bool {
     // Don't trigger an encounter if we're on water.
-    // call CheckOnWater
-    {
-        cpu.pc += 3;
-        let pc = cpu.pc;
-        cpu.cycle(24);
-        cpu.call(0x1852); // CheckOnWater
-        cpu.pc = pc;
-    }
+    cpu.call(0x1852); // CheckOnWater
 
-    // jr z, .DontEncounterRoamMon
     if cpu.flag(CpuFlag::Z) {
-        cpu.cycle(12);
-        return check_encounter_roam_mon_dont_encounter_roam_mon(cpu);
-    } else {
-        cpu.pc += 2;
-        cpu.cycle(8);
+        return false;
     }
 
     // Load the current map group and number to de
-    // call CopyCurrMapDE
-    {
-        cpu.pc += 3;
-        let pc = cpu.pc;
-        cpu.cycle(24);
-        cpu.call(0x627f); // CopyCurrMapDE
-        cpu.pc = pc;
-    }
+    cpu.call(0x627f); // CopyCurrMapDE
 
     // Randomly select a beast.
-    // call Random
-    {
-        cpu.pc += 3;
-        let pc = cpu.pc;
-        cpu.cycle(24);
-        cpu.call(0x2f8c); // Random
-        cpu.pc = pc;
-    }
+    cpu.call(0x2f8c); // Random
 
     // 25/64 chance
-    // cp 100
-    cpu.set_flag(CpuFlag::Z, cpu.a == 100);
-    cpu.set_flag(CpuFlag::H, (cpu.a & 0x0f) < (100 & 0x0f));
-    cpu.set_flag(CpuFlag::N, true);
-    cpu.set_flag(CpuFlag::C, cpu.a < 100);
-    cpu.pc += 2;
-    cpu.cycle(8);
-
-    // jr nc, .DontEncounterRoamMon
-    if !cpu.flag(CpuFlag::C) {
-        cpu.cycle(12);
-        return check_encounter_roam_mon_dont_encounter_roam_mon(cpu);
-    } else {
-        cpu.pc += 2;
-        cpu.cycle(8);
+    if cpu.a >= 100 {
+        return false;
     }
 
     // Of that, a 3/4 chance.  Running total: 75/256, or around 29.3%.
-    // and a, %00000011
     cpu.a &= 0b00000011;
-    cpu.set_flag(CpuFlag::Z, cpu.a == 0);
-    cpu.set_flag(CpuFlag::N, false);
-    cpu.set_flag(CpuFlag::H, true);
-    cpu.set_flag(CpuFlag::C, false);
-    cpu.pc += 2;
-    cpu.cycle(8);
 
-    // jr z, .DontEncounterRoamMon
-    if cpu.flag(CpuFlag::Z) {
-        cpu.cycle(12);
-        return check_encounter_roam_mon_dont_encounter_roam_mon(cpu);
-    } else {
-        cpu.pc += 2;
-        cpu.cycle(8);
+    if cpu.a == 0 {
+        return false;
     }
 
     // 1/3 chance that it's Entei, 1/3 chance that it's Raikou
-    // dec a
-    cpu.set_flag(CpuFlag::H, (cpu.a & 0x0f) == 0x00);
-    cpu.a = cpu.a.wrapping_sub(1);
-    cpu.set_flag(CpuFlag::Z, cpu.a == 0);
-    cpu.set_flag(CpuFlag::N, true);
-    cpu.pc += 1;
-    cpu.cycle(4);
+    let roam_mon = cpu.a;
 
     // Compare its current location with yours
-    // ld hl, wRoamMon1MapGroup
-    cpu.set_hl(0xdfd1); // wRoamMon1MapGroup
-    cpu.pc += 3;
-    cpu.cycle(12);
 
-    // ld c, a
-    cpu.c = cpu.a;
-    cpu.pc += 1;
-    cpu.cycle(4);
+    let roam_mon_map_group = match roam_mon {
+        1 => cpu.borrow_wram().roam_mon_1_map_group(),
+        2 => cpu.borrow_wram().roam_mon_2_map_group(),
+        3 => cpu.borrow_wram().roam_mon_3_map_group(),
+        n => panic!("Invalid roam mon index: {n}"),
+    };
 
-    // ld b, 0
-    cpu.b = 0;
-    cpu.pc += 2;
-    cpu.cycle(8);
+    let roam_mon_map_number = match roam_mon {
+        1 => cpu.borrow_wram().roam_mon_1_map_number(),
+        2 => cpu.borrow_wram().roam_mon_2_map_number(),
+        3 => cpu.borrow_wram().roam_mon_3_map_number(),
+        n => panic!("Invalid roam mon index: {n}"),
+    };
 
-    // length of the roam_struct
-    // ld a, 7
-    cpu.a = 7;
-    cpu.pc += 2;
-    cpu.cycle(8);
-
-    // call AddNTimes
-    {
-        cpu.pc += 3;
-        let pc = cpu.pc;
-        cpu.cycle(24);
-        cpu.call(0x30fe); // AddNTimes
-        cpu.pc = pc;
-    }
-
-    // ld a, d
-    cpu.a = cpu.d;
-    cpu.pc += 1;
-    cpu.cycle(4);
-
-    // cp a, [hl]
-    {
-        let value = cpu.read_byte(cpu.hl());
-        cpu.set_flag(CpuFlag::Z, cpu.a == value);
-        cpu.set_flag(CpuFlag::H, (cpu.a & 0x0f) < (value & 0x0f));
-        cpu.set_flag(CpuFlag::N, true);
-        cpu.set_flag(CpuFlag::C, cpu.a < value);
-    }
-    cpu.pc += 1;
-    cpu.cycle(8);
-
-    // jr nz, .DontEncounterRoamMon
-    if !cpu.flag(CpuFlag::Z) {
-        cpu.cycle(12);
-        return check_encounter_roam_mon_dont_encounter_roam_mon(cpu);
-    } else {
-        cpu.pc += 2;
-        cpu.cycle(8);
-    }
-
-    // inc hl
-    cpu.set_hl(cpu.hl().wrapping_add(1));
-    cpu.pc += 1;
-    cpu.cycle(8);
-
-    // ld a, e
-    cpu.a = cpu.e;
-    cpu.pc += 1;
-    cpu.cycle(4);
-
-    // cp a, [hl]
-    {
-        let value = cpu.read_byte(cpu.hl());
-        cpu.set_flag(CpuFlag::Z, cpu.a == value);
-        cpu.set_flag(CpuFlag::H, (cpu.a & 0x0f) < (value & 0x0f));
-        cpu.set_flag(CpuFlag::N, true);
-        cpu.set_flag(CpuFlag::C, cpu.a < value);
-    }
-    cpu.pc += 1;
-    cpu.cycle(8);
-
-    // jr nz, .DontEncounterRoamMon
-    if !cpu.flag(CpuFlag::Z) {
-        cpu.cycle(12);
-        return check_encounter_roam_mon_dont_encounter_roam_mon(cpu);
-    } else {
-        cpu.pc += 2;
-        cpu.cycle(8);
+    if roam_mon_map_group != cpu.d || roam_mon_map_number != cpu.e {
+        return false;
     }
 
     // We've decided to take on a beast, so stage its information for battle.
-    // dec hl
-    cpu.set_hl(cpu.hl().wrapping_sub(1));
-    cpu.pc += 1;
-    cpu.cycle(8);
 
-    // dec hl
-    cpu.set_hl(cpu.hl().wrapping_sub(1));
-    cpu.pc += 1;
-    cpu.cycle(8);
+    let species = match roam_mon {
+        1 => cpu.borrow_wram().roam_mon_1_species(),
+        2 => cpu.borrow_wram().roam_mon_2_species(),
+        3 => cpu.borrow_wram().roam_mon_3_species(),
+        n => panic!("Invalid roam mon index: {n}"),
+    };
 
-    // dec hl
-    cpu.set_hl(cpu.hl().wrapping_sub(1));
-    cpu.pc += 1;
-    cpu.cycle(8);
+    let level = match roam_mon {
+        1 => cpu.borrow_wram().roam_mon_1_level(),
+        2 => cpu.borrow_wram().roam_mon_2_level(),
+        3 => cpu.borrow_wram().roam_mon_3_level(),
+        n => panic!("Invalid roam mon index: {n}"),
+    };
 
-    // ld a, [hli]
-    cpu.a = cpu.read_byte(cpu.hl());
-    cpu.set_hl(cpu.hl() + 1);
-    cpu.pc += 1;
-    cpu.cycle(8);
+    cpu.borrow_wram_mut().set_temp_wild_mon_species(species);
+    cpu.borrow_wram_mut().set_cur_party_level(level);
+    cpu.borrow_wram_mut().set_battle_type(BattleType::Roaming);
 
-    // ld [wTempWildMonSpecies], a
-    let temp_wild_mon_species = cpu.a;
-    cpu.borrow_wram_mut()
-        .set_temp_wild_mon_species(Some(temp_wild_mon_species.into()));
-    cpu.pc += 3;
-    cpu.cycle(16);
-
-    // ld a, [hl]
-    cpu.a = cpu.read_byte(cpu.hl());
-    cpu.pc += 1;
-    cpu.cycle(8);
-
-    // ld [wCurPartyLevel], a
-    let cur_party_level = cpu.a;
-    cpu.borrow_wram_mut().set_cur_party_level(cur_party_level);
-    cpu.pc += 3;
-    cpu.cycle(16);
-
-    // ld a, BATTLETYPE_ROAMING
-    cpu.a = BattleType::Roaming.into();
-    cpu.pc += 2;
-    cpu.cycle(8);
-
-    // ld [wBattleType], a
-    let battle_type = cpu.a;
-    cpu.borrow_wram_mut().set_battle_type(battle_type.into());
-    cpu.pc += 3;
-    cpu.cycle(16);
-
-    // pop hl
-    {
-        let hl = cpu.stack_pop();
-        cpu.set_hl(hl);
-        cpu.pc += 1;
-        cpu.cycle(12);
-    }
-
-    // scf
-    cpu.set_flag(CpuFlag::N, false);
-    cpu.set_flag(CpuFlag::H, false);
-    cpu.set_flag(CpuFlag::C, true);
-    cpu.pc += 1;
-    cpu.cycle(4);
-
-    // ret
-    cpu.pc = cpu.stack_pop();
-    cpu.cycle(16);
-}
-
-fn check_encounter_roam_mon_dont_encounter_roam_mon(cpu: &mut Cpu) {
-    cpu.pc = 0x630a;
-
-    // pop hl
-    {
-        let hl = cpu.stack_pop();
-        cpu.set_hl(hl);
-        cpu.pc += 1;
-        cpu.cycle(12);
-    }
-
-    // and a, a
-    cpu.set_flag(CpuFlag::Z, cpu.a == 0);
-    cpu.set_flag(CpuFlag::N, false);
-    cpu.set_flag(CpuFlag::H, true);
-    cpu.set_flag(CpuFlag::C, false);
-    cpu.pc += 1;
-    cpu.cycle(4);
-
-    // ret
-    cpu.pc = cpu.stack_pop();
-    cpu.cycle(16);
+    true
 }
 
 fn validate_temp_wild_mon_species(input: u8) -> Option<PokemonSpecies> {

@@ -397,6 +397,10 @@ impl GameState {
         }
     }
 
+    pub fn roam_mon_1_level(&self) -> u8 {
+        self.data[0x1fd0]
+    }
+
     pub fn roam_mon_1_map_group(&self) -> u8 {
         self.data[0x1fd1]
     }
@@ -412,11 +416,34 @@ impl GameState {
         }
     }
 
+    pub fn roam_mon_2_level(&self) -> u8 {
+        self.data[0x1fd7]
+    }
+
     pub fn roam_mon_2_map_group(&self) -> u8 {
         self.data[0x1fd8]
     }
 
     pub fn roam_mon_2_map_number(&self) -> u8 {
         self.data[0x1fd9]
+    }
+
+    pub fn roam_mon_3_species(&self) -> Option<PokemonSpecies> {
+        match self.data[0x1fdd] {
+            0 => None,
+            n => Some(n.into()),
+        }
+    }
+
+    pub fn roam_mon_3_level(&self) -> u8 {
+        self.data[0x1fde]
+    }
+
+    pub fn roam_mon_3_map_group(&self) -> u8 {
+        self.data[0x1fdf]
+    }
+
+    pub fn roam_mon_3_map_number(&self) -> u8 {
+        self.data[0x1fe0]
     }
 }
