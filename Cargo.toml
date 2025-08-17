@@ -9,13 +9,14 @@ bitflags = "2.9.1"
 blip_buf = "0.1.4"
 cpal = "0.16.0"
 env_logger = "0.11.8"
-glium = { version = "0.32.1", default_features = false, features = [ "glutin" ] }
+glium = { version = "0.36.0", default_features = false, features = ["glutin", "simple_window_builder"] }
 log = "0.4.27"
 pokemon-synthesizer = "0.2.2"
 rodio = { version = "0.21.1", default-features = false, features = ["flac", "playback"] }
+winit = "0.30.12"
 
 [target.'cfg(target_os = "macos")'.dependencies]
-core-foundation = "0.9.3"
+core-foundation = "0.10.1"
 
 [package.metadata.bundle]
 name = "Rustic Crystal"
