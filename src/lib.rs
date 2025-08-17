@@ -1,4 +1,5 @@
 #![allow(clippy::new_without_default)]
+#![recursion_limit = "192"]
 
 pub use crate::gpu::{SCREEN_H, SCREEN_W};
 pub use crate::keypad::{KeypadEvent, KeypadKey};

@@ -2,14 +2,8 @@ use crate::{
     cpu::{Cpu, CpuFlag},
     game::{
         constants::{
-            battle_constants::BattleType,
-            gfx_constants,
-            landmark_constants::Region,
-            pokemon_constants::PokemonSpecies,
-            pokemon_data_constants::{
-                GRASS_WILDDATA_LENGTH, NUM_GRASSMON, NUM_WATERMON, WATER_WILDDATA_LENGTH,
-            },
-            ram_constants::{SwarmFlags, TimeOfDay},
+            battle_constants::BattleType, gfx_constants, landmark_constants::Region,
+            map_constants::Map, pokemon_constants::PokemonSpecies, ram_constants::SwarmFlags,
             text_constants::MON_NAME_LENGTH,
         },
         data::wild::{
@@ -21,7 +15,10 @@ use crate::{
             swarm_grass::SWARM_GRASS_WILD_MONS,
             swarm_water::SWARM_WATER_WILD_MONS,
         },
-        macros,
+        macros::{
+            self,
+            asserts::{GrassWildmons, WaterWildmons, Wildmons},
+        },
         ram::wram,
     },
 };
@@ -29,24 +26,12 @@ use crate::{
 pub fn load_wild_mon_data(cpu: &mut Cpu) {
     log::debug!("load_wild_mon_data()");
 
-    let grass = if let Some(hl) = grass_wildmon_lookup(cpu) {
-        let morn = cpu.read_byte(hl + 2);
-        let day = cpu.read_byte(hl + 3);
-        let nite = cpu.read_byte(hl + 4);
-        (morn, day, nite)
-    } else {
-        (0, 0, 0)
-    };
+    let grass = grass_wildmon_lookup(cpu).map_or([0, 0, 0], |g| g.encounter_rates);
+    let water = water_wildmon_lookup(cpu).map_or(0, |w| w.encounter_rate);
 
-    let water = if let Some(hl) = water_wildmon_lookup(cpu) {
-        cpu.read_byte(hl + 2)
-    } else {
-        0
-    };
-
-    cpu.borrow_wram_mut().set_morn_encounter_rate(grass.0);
-    cpu.borrow_wram_mut().set_day_encounter_rate(grass.1);
-    cpu.borrow_wram_mut().set_nite_encounter_rate(grass.2);
+    cpu.borrow_wram_mut().set_morn_encounter_rate(grass[0]);
+    cpu.borrow_wram_mut().set_day_encounter_rate(grass[1]);
+    cpu.borrow_wram_mut().set_nite_encounter_rate(grass[2]);
     cpu.borrow_wram_mut().set_water_encounter_rate(water);
 
     cpu.pc = cpu.stack_pop(); // ret
@@ -85,47 +70,30 @@ pub fn find_nest(cpu: &mut Cpu) {
     cpu.pc = cpu.stack_pop(); // ret
 }
 
-fn find_nest_find_grass(cpu: &mut Cpu, species: PokemonSpecies, mons_addr: u16) {
-    for i in 0.. {
-        let base = mons_addr + i * GRASS_WILDDATA_LENGTH as u16;
-
-        if cpu.read_byte(base) == 0xff {
-            break;
-        }
-
-        let map_group = cpu.read_byte(base);
-        let map_id = cpu.read_byte(base + 1);
-
-        find_nest_search_map_for_mon(cpu, species, map_group, map_id, base + 5, NUM_GRASSMON * 3);
-    }
-}
-
-fn find_nest_find_water(cpu: &mut Cpu, species: PokemonSpecies, mons_addr: u16) {
-    for i in 0.. {
-        let base = mons_addr + i * WATER_WILDDATA_LENGTH as u16;
-
-        if cpu.read_byte(base) == 0xff {
-            break;
-        }
-
-        let map_group = cpu.read_byte(base);
-        let map_id = cpu.read_byte(base + 1);
-
-        find_nest_search_map_for_mon(cpu, species, map_group, map_id, base + 3, NUM_WATERMON);
-    }
-}
-
-fn find_nest_search_map_for_mon(
+fn find_nest_find_grass(
     cpu: &mut Cpu,
     species: PokemonSpecies,
-    map_group: u8,
-    map_id: u8,
-    addr: u16,
-    size: usize,
+    grass: &'static [(Map, GrassWildmons)],
 ) {
-    for i in 0..(size as u16) {
-        if PokemonSpecies::from(cpu.read_byte(addr + 1 + i * 2)) == species {
-            return find_nest_append_nest(cpu, map_group, map_id);
+    for (map, wildmons) in grass {
+        find_nest_search_map_for_mon(cpu, species, *map, Wildmons::Grass(wildmons));
+    }
+}
+
+fn find_nest_find_water(
+    cpu: &mut Cpu,
+    species: PokemonSpecies,
+    water: &'static [(Map, WaterWildmons)],
+) {
+    for (map, wildmons) in water {
+        find_nest_search_map_for_mon(cpu, species, *map, Wildmons::Water(wildmons));
+    }
+}
+
+fn find_nest_search_map_for_mon(cpu: &mut Cpu, species: PokemonSpecies, map: Map, mons: Wildmons) {
+    for (_, encounter) in mons.all_encounters() {
+        if encounter == species {
+            find_nest_append_nest(cpu, map);
         }
     }
 }
@@ -135,7 +103,7 @@ fn find_nest_roam_mon_1(cpu: &mut Cpu, species: PokemonSpecies) {
         let map_group = cpu.borrow_wram().roam_mon_1_map_group();
         let map_id = cpu.borrow_wram().roam_mon_1_map_number();
 
-        find_nest_append_nest(cpu, map_group, map_id)
+        find_nest_append_nest(cpu, (map_group, map_id).into())
     }
 }
 
@@ -144,13 +112,12 @@ fn find_nest_roam_mon_2(cpu: &mut Cpu, species: PokemonSpecies) {
         let map_group = cpu.borrow_wram().roam_mon_2_map_group();
         let map_id = cpu.borrow_wram().roam_mon_2_map_number();
 
-        find_nest_append_nest(cpu, map_group, map_id)
+        find_nest_append_nest(cpu, (map_group, map_id).into())
     }
 }
 
-fn find_nest_append_nest(cpu: &mut Cpu, map_group: u8, map_id: u8) {
-    cpu.b = map_group;
-    cpu.c = map_id;
+fn find_nest_append_nest(cpu: &mut Cpu, map: Map) {
+    (cpu.b, cpu.c) = map.into();
     cpu.call(0x2caf); // GetWorldMapLocation
     let pokegear_location = cpu.a;
 
@@ -171,7 +138,7 @@ pub fn choose_wild_encounter(cpu: &mut Cpu) {
         cpu.pc = cpu.stack_pop(); // ret
     }
 
-    let Some(mut wild_mon_data) = load_wild_mon_data_pointer(cpu) else {
+    let Some(wildmons) = load_wild_mon_data_pointer(cpu) else {
         return return_value(cpu, false);
     };
 
@@ -179,20 +146,14 @@ pub fn choose_wild_encounter(cpu: &mut Cpu) {
         return return_value(cpu, true);
     }
 
-    cpu.call(0x1852); // CheckOnWater
+    let encounters = match wildmons {
+        Wildmons::Grass(data) => data.encounters(cpu.borrow_wram().time_of_day()),
+        Wildmons::Water(data) => &data.encounters,
+    };
 
-    let prob_table = if cpu.flag(CpuFlag::Z) {
-        wild_mon_data += 3;
-        WATER_MON_PROB_TABLE
-    } else {
-        match cpu.borrow_wram().time_of_day() {
-            TimeOfDay::Morn => wild_mon_data += 5,
-            TimeOfDay::Day => wild_mon_data += 5 + NUM_GRASSMON as u16 * 2,
-            TimeOfDay::Nite => wild_mon_data += 5 + NUM_GRASSMON as u16 * 4,
-            _ => panic!("Invalid time of day for wild mon encounter"),
-        }
-
-        GRASS_MON_PROB_TABLE
+    let prob_table = match wildmons {
+        Wildmons::Grass(_) => GRASS_MON_PROB_TABLE,
+        Wildmons::Water(_) => WATER_MON_PROB_TABLE,
     };
 
     let rng = loop {
@@ -209,13 +170,15 @@ pub fn choose_wild_encounter(cpu: &mut Cpu) {
         .expect("No valid mon found for this RNG value");
 
     // this selects our mon
-    let mon_ptr = wild_mon_data + index as u16 * 2;
-    let mut level = cpu.read_byte(mon_ptr);
+    let mut level = encounters[index].0;
+    let species = encounters[index].1;
+
+    if species == PokemonSpecies::Unown && cpu.borrow_wram().unlocked_unowns().is_empty() {
+        return return_value(cpu, false);
+    }
 
     // If the Pokemon is encountered by surfing, we need to give the levels some variety.
-    cpu.call(0x1852); // CheckOnWater
-
-    if cpu.flag(CpuFlag::Z) {
+    if matches!(wildmons, Wildmons::Water(_)) {
         // Check if we buff the wild mon, and by how much.
         cpu.call(0x2f8c); // Random
 
@@ -230,45 +193,37 @@ pub fn choose_wild_encounter(cpu: &mut Cpu) {
 
     cpu.borrow_wram_mut().set_cur_party_level(level);
 
-    let Some(species) = validate_temp_wild_mon_species(cpu.read_byte(mon_ptr + 1)) else {
-        return return_value(cpu, false);
-    };
-
-    if species == PokemonSpecies::Unown && cpu.borrow_wram().unlocked_unowns().is_empty() {
-        return return_value(cpu, false);
-    }
-
     cpu.borrow_wram_mut()
         .set_temp_wild_mon_species(Some(species));
 
     return_value(cpu, true)
 }
 
-fn load_wild_mon_data_pointer(cpu: &mut Cpu) -> Option<u16> {
+fn load_wild_mon_data_pointer(cpu: &mut Cpu) -> Option<Wildmons> {
     cpu.call(0x1852); // CheckOnWater
 
     if cpu.flag(CpuFlag::Z) {
-        water_wildmon_lookup(cpu)
+        water_wildmon_lookup(cpu).map(Wildmons::Water)
     } else {
-        grass_wildmon_lookup(cpu)
+        grass_wildmon_lookup(cpu).map(Wildmons::Grass)
     }
 }
 
-fn grass_wildmon_lookup(cpu: &mut Cpu) -> Option<u16> {
-    swarm_wildmon_check(cpu, SWARM_GRASS_WILD_MONS, GRASS_WILDDATA_LENGTH).or_else(|| {
+fn grass_wildmon_lookup(cpu: &mut Cpu) -> Option<&'static GrassWildmons> {
+    swarm_wildmon_check(cpu, SWARM_GRASS_WILD_MONS).or_else(|| {
         let wild_data = johto_wildmon_check(cpu, JOHTO_GRASS_WILD_MONS, KANTO_GRASS_WILD_MONS);
-        normal_wildmon_ok(cpu, wild_data, GRASS_WILDDATA_LENGTH)
+        normal_wildmon_ok(cpu, wild_data)
     })
 }
 
-fn water_wildmon_lookup(cpu: &mut Cpu) -> Option<u16> {
-    swarm_wildmon_check(cpu, SWARM_WATER_WILD_MONS, WATER_WILDDATA_LENGTH).or_else(|| {
+fn water_wildmon_lookup(cpu: &mut Cpu) -> Option<&'static WaterWildmons> {
+    swarm_wildmon_check(cpu, SWARM_WATER_WILD_MONS).or_else(|| {
         let wild_data = johto_wildmon_check(cpu, JOHTO_WATER_WILD_MONS, KANTO_WATER_WILD_MONS);
-        normal_wildmon_ok(cpu, wild_data, WATER_WILDDATA_LENGTH)
+        normal_wildmon_ok(cpu, wild_data)
     })
 }
 
-fn johto_wildmon_check(cpu: &mut Cpu, johto: u16, kanto: u16) -> u16 {
+fn johto_wildmon_check<T>(cpu: &mut Cpu, johto: T, kanto: T) -> T {
     cpu.call(0x2f17); // IsInJohto
 
     if Region::from(cpu.a) == Region::Johto {
@@ -278,7 +233,7 @@ fn johto_wildmon_check(cpu: &mut Cpu, johto: u16, kanto: u16) -> u16 {
     }
 }
 
-fn swarm_wildmon_check(cpu: &mut Cpu, wild_data: u16, wild_data_len: usize) -> Option<u16> {
+fn swarm_wildmon_check<'a, T>(cpu: &mut Cpu, wildmons: &'a [(Map, T)]) -> Option<&'a T> {
     cpu.call(0x627f); // CopyCurrMapDE
 
     let swarm_flags = cpu.borrow_wram().swarm_flags();
@@ -287,22 +242,22 @@ fn swarm_wildmon_check(cpu: &mut Cpu, wild_data: u16, wild_data_len: usize) -> O
         && cpu.borrow_wram().dunsparce_map_group() == cpu.d
         && cpu.borrow_wram().dunsparce_map_number() == cpu.e
     {
-        return look_up_wildmons_for_map_de(cpu, wild_data, wild_data_len);
+        return look_up_wildmons_for_map_de(cpu, wildmons);
     }
 
     if swarm_flags.contains(SwarmFlags::YANMA_SWARM)
         && cpu.borrow_wram().yanma_map_group() == cpu.d
         && cpu.borrow_wram().yanma_map_number() == cpu.e
     {
-        return look_up_wildmons_for_map_de(cpu, wild_data, wild_data_len);
+        return look_up_wildmons_for_map_de(cpu, wildmons);
     }
 
     None
 }
 
-fn normal_wildmon_ok(cpu: &mut Cpu, wild_data: u16, wild_data_len: usize) -> Option<u16> {
+fn normal_wildmon_ok<'a, T>(cpu: &mut Cpu, wildmons: &'a [(Map, T)]) -> Option<&'a T> {
     cpu.call(0x627f); // CopyCurrMapDE
-    look_up_wildmons_for_map_de(cpu, wild_data, wild_data_len)
+    look_up_wildmons_for_map_de(cpu, wildmons)
 }
 
 pub fn copy_curr_map_de(cpu: &mut Cpu) {
@@ -311,23 +266,13 @@ pub fn copy_curr_map_de(cpu: &mut Cpu) {
     cpu.pc = cpu.stack_pop(); // ret
 }
 
-fn look_up_wildmons_for_map_de(cpu: &mut Cpu, wild_data: u16, wild_data_len: usize) -> Option<u16> {
-    let mut addr = wild_data;
+fn look_up_wildmons_for_map_de<'a, T>(cpu: &mut Cpu, wildmons: &'a [(Map, T)]) -> Option<&'a T> {
+    let de = Map::from((cpu.d, cpu.e));
 
-    loop {
-        if cpu.read_byte(addr) == 0xff {
-            return None;
-        }
-
-        let map_group = cpu.read_byte(addr);
-        let map_id = cpu.read_byte(addr + 1);
-
-        if map_group == cpu.d && map_id == cpu.e {
-            return Some(addr);
-        }
-
-        addr += wild_data_len as u16;
-    }
+    wildmons
+        .iter()
+        .find(|(map, _)| *map == de)
+        .map(|(_, data)| data)
 }
 
 fn check_encounter_roam_mon(cpu: &mut Cpu) -> bool {
@@ -402,16 +347,15 @@ fn check_encounter_roam_mon(cpu: &mut Cpu) -> bool {
     true
 }
 
-fn validate_temp_wild_mon_species(input: u8) -> Option<PokemonSpecies> {
-    match PokemonSpecies::from(input) {
-        PokemonSpecies::Unknown(_) => None,
-        valid_species => Some(valid_species),
-    }
-}
-
 /// Finds a rare wild Pokemon in the route of the trainer calling, then checks if it's been Seen already.
 /// The trainer will then tell you about the Pokemon if you haven't seen it.
 pub fn random_unseen_wild_mon(cpu: &mut Cpu) {
+    fn return_value(cpu: &mut Cpu, value: u8) {
+        cpu.borrow_wram_mut().set_script_var(value);
+        cpu.a = value;
+        cpu.pc = cpu.stack_pop(); // ret
+    }
+
     log::debug!("random_unseen_wild_mon()");
 
     macros::farcall::farcall(cpu, 0x24, 0x4439); // GetCallerLocation
@@ -425,66 +369,45 @@ pub fn random_unseen_wild_mon(cpu: &mut Cpu) {
     cpu.d = cpu.b;
     cpu.e = cpu.c;
 
-    if let Some(hl) = look_up_wildmons_for_map_de(cpu, JOHTO_GRASS_WILD_MONS, GRASS_WILDDATA_LENGTH)
-    {
-        cpu.set_hl(hl);
-        cpu.set_flag(CpuFlag::C, true);
-    } else if let Some(hl) =
-        look_up_wildmons_for_map_de(cpu, KANTO_GRASS_WILD_MONS, GRASS_WILDDATA_LENGTH)
-    {
-        cpu.set_hl(hl);
-        cpu.set_flag(CpuFlag::C, true);
-    } else {
-        cpu.set_flag(CpuFlag::C, false);
+    let wildmons = look_up_wildmons_for_map_de(cpu, JOHTO_GRASS_WILD_MONS)
+        .or(look_up_wildmons_for_map_de(cpu, KANTO_GRASS_WILD_MONS));
 
+    let Some(wildmons) = wildmons else {
         log::warn!(
             "No matching wildmons found for group_id {:#02x}, map_id {:#02x}",
             cpu.d,
             cpu.e
         );
 
-        return random_unseen_wild_mon_done(cpu);
-    }
+        return return_value(cpu, 1);
+    };
 
-    let map_wildmons_addr = cpu.hl();
-
-    let time_of_day = cpu.borrow_wram().time_of_day();
+    let encounters = wildmons.encounters(cpu.borrow_wram().time_of_day());
 
     let pokemon_idx = loop {
         cpu.call(0x2f8c); // Random
         cpu.a &= 0b11;
 
         if cpu.a != 0 {
-            break 4 + cpu.a - 1; // Random int 4..=6
+            break (4 + cpu.a - 1) as usize; // Random int 4..=6
         }
     };
 
-    cpu.set_hl(map_wildmons_addr + 5); // Skip header
-    cpu.set_hl(cpu.hl() + u8::from(time_of_day) as u16 * NUM_GRASSMON as u16 * 2); // Skip to the correct time of day
-    cpu.set_hl(cpu.hl() + pokemon_idx as u16 * 2); // Skip to the correct pokemon
-    cpu.set_hl(cpu.hl() + 1); // Skip level
-    let possibly_rare_species = cpu.read_byte(cpu.hl());
+    let possibly_rare_species = encounters[pokemon_idx].1;
 
-    // Species index of the most common Pokemon on that route
-
-    for i in 0..4 {
-        cpu.set_hl(map_wildmons_addr + 5); // Skip header
-        cpu.set_hl(cpu.hl() + u8::from(time_of_day) as u16 * NUM_GRASSMON as u16 * 2); // Skip to the correct time of day
-        cpu.set_hl(cpu.hl() + i * 2); // Skip to the correct pokemon
-        cpu.set_hl(cpu.hl() + 1); // Skip level
-        let common_species = cpu.read_byte(cpu.hl());
-
-        if possibly_rare_species == common_species {
-            return random_unseen_wild_mon_done(cpu);
+    // Check that the possibly rare species is actually rare.
+    for encounter in encounters.iter().take(4) {
+        if possibly_rare_species == encounter.1 {
+            return return_value(cpu, 1);
         }
     }
 
-    cpu.a = possibly_rare_species.wrapping_sub(1);
+    cpu.a = u8::from(possibly_rare_species) - 1;
     cpu.call(0x339b); // CheckSeenMon
     let is_seen = !cpu.flag(CpuFlag::Z);
 
     if is_seen {
-        return random_unseen_wild_mon_done(cpu);
+        return return_value(cpu, 1);
     }
 
     // Since we haven't seen it, have the caller tell us about it.
@@ -492,23 +415,13 @@ pub fn random_unseen_wild_mon(cpu: &mut Cpu) {
     cpu.call(0x30d6); // CopyName1
 
     cpu.borrow_wram_mut()
-        .set_named_object_index(possibly_rare_species);
+        .set_named_object_index(possibly_rare_species.into());
     cpu.call(0x343b); // GetPokemonName
 
     cpu.set_hl(0x651a); // RandomUnseenWildMon.JustSawSomeRareMonText
     cpu.call(0x1057); // PrintText
 
-    cpu.borrow_wram_mut().set_script_var(0);
-    cpu.a = 0;
-
-    cpu.pc = cpu.stack_pop(); // ret
-}
-
-fn random_unseen_wild_mon_done(cpu: &mut Cpu) {
-    cpu.borrow_wram_mut().set_script_var(1);
-    cpu.a = 1;
-
-    cpu.pc = cpu.stack_pop(); // ret
+    return_value(cpu, 0)
 }
 
 pub fn random_phone_wild_mon(cpu: &mut Cpu) {
@@ -525,33 +438,22 @@ pub fn random_phone_wild_mon(cpu: &mut Cpu) {
     cpu.d = cpu.b;
     cpu.e = cpu.c;
 
-    if let Some(hl) = look_up_wildmons_for_map_de(cpu, JOHTO_GRASS_WILD_MONS, GRASS_WILDDATA_LENGTH)
-    {
-        cpu.set_hl(hl);
-        cpu.set_flag(CpuFlag::C, true);
-    } else if let Some(hl) =
-        look_up_wildmons_for_map_de(cpu, KANTO_GRASS_WILD_MONS, GRASS_WILDDATA_LENGTH)
-    {
-        cpu.set_hl(hl);
-        cpu.set_flag(CpuFlag::C, true);
-    } else {
-        cpu.set_flag(CpuFlag::C, false);
-    }
-
-    let time_of_day = cpu.borrow_wram().time_of_day();
+    let wildmons = look_up_wildmons_for_map_de(cpu, JOHTO_GRASS_WILD_MONS)
+        .or(look_up_wildmons_for_map_de(cpu, KANTO_GRASS_WILD_MONS))
+        .unwrap_or_else(|| {
+            panic!(
+                "No matching wildmons found for group_id {:#02x}, map_id {:#02x}",
+                cpu.d, cpu.e
+            )
+        });
 
     cpu.call(0x2f8c); // Random
     cpu.a &= 0b11;
-    let pokemon_idx = cpu.a;
+    let pokemon_idx = cpu.a as usize;
 
-    cpu.set_hl(cpu.hl() + 5); // Skip header
-    cpu.set_hl(cpu.hl() + u8::from(time_of_day) as u16 * NUM_GRASSMON as u16 * 2); // Skip to the correct time of day
-    cpu.set_hl(cpu.hl() + pokemon_idx as u16 * 2); // Skip to the correct pokemon
-    cpu.set_hl(cpu.hl() + 1); // Skip level
+    let species = wildmons.encounters(cpu.borrow_wram().time_of_day())[pokemon_idx].1;
 
-    let species = cpu.read_byte(cpu.hl());
-
-    cpu.borrow_wram_mut().set_named_object_index(species);
+    cpu.borrow_wram_mut().set_named_object_index(species.into());
     cpu.call(0x343b); // GetPokemonName
 
     cpu.set_hl(wram::STRING_BUFFER_1);

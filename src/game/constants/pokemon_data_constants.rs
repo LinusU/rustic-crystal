@@ -11,8 +11,6 @@ pub const NUM_HOF_TEAMS: u8 = 30;
 pub const NUM_GRASSMON: usize = 7; // data/wild/*_grass.asm table size
 pub const NUM_WATERMON: usize = 3; // data/wild/*_water.asm table size
 
-pub const GRASS_WILDDATA_LENGTH: usize = 2 + 3 + NUM_GRASSMON * 2 * 3;
-pub const WATER_WILDDATA_LENGTH: usize = 2 + 1 + NUM_WATERMON * 2;
 pub const FISHGROUP_DATA_LENGTH: usize = 1 + 2 * 3;
 
 pub const PARTYMON_STRUCT_LENGTH: u8 = 48;

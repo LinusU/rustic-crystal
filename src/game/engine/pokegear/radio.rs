@@ -2,9 +2,7 @@ use crate::{
     cpu::Cpu,
     game::{
         constants::{
-            pokemon_constants::PokemonSpecies,
-            pokemon_data_constants::{GRASS_WILDDATA_LENGTH, NUM_GRASSMON},
-            radio_constants::RadioChannelId,
+            radio_constants::RadioChannelId, ram_constants::TimeOfDay,
             text_constants::MON_NAME_LENGTH,
         },
         data::{
@@ -29,40 +27,28 @@ pub fn oaks_pkmn_talk_4(cpu: &mut Cpu) {
         }
     };
 
-    let (group_id, map_id) = OAKS_PKMN_TALK_ROUTES[route_idx as usize];
+    let map = OAKS_PKMN_TALK_ROUTES[route_idx as usize];
 
-    // Search the JohtoGrassWildMons array for the chosen map.
-    for i in 0.. {
-        cpu.a = 0x0a; // BANK(JohtoGrassWildMons)
-        cpu.set_hl(JOHTO_GRASS_WILD_MONS + i * GRASS_WILDDATA_LENGTH as u16);
-        cpu.call(0x304d); // GetFarByte
+    let wildmons = JOHTO_GRASS_WILD_MONS
+        .iter()
+        .find(|(m, _)| *m == map)
+        .map(|(_, d)| d);
 
-        if cpu.a == 0xff {
-            log::warn!("No matching JohtoGrassWildMons found for group_id {group_id:#02x}, map_id {map_id:#02x}");
-            cpu.a = RadioChannelId::OaksPokemonTalk.into();
-            return cpu.jump(0x46ea); // PrintRadioLine
-        }
+    let Some(wildmons) = wildmons else {
+        log::warn!("No JohtoGrassWildMons found for map {map:?}");
+        cpu.a = RadioChannelId::OaksPokemonTalk.into();
+        return cpu.jump(0x46ea); // PrintRadioLine
+    };
 
-        if cpu.a == group_id {
-            cpu.a = 0x0a; // BANK(JohtoGrassWildMons)
-            cpu.set_hl(cpu.hl() + 1);
-            cpu.call(0x304d); // GetFarByte
-
-            if cpu.a == map_id {
-                break;
-            }
-        }
-    }
-
-    let johto_grass_wildmons_addr = cpu.hl();
-
-    // Generate a number, either 0, 1, or 2, to choose a time of day.
+    // Generate a random time of day.
     let time_of_day = loop {
         cpu.call(0x2f8c); // Random
-        cpu.a &= 0b11;
 
-        if cpu.a != 0b11 {
-            break cpu.a;
+        match cpu.a & 0b11 {
+            0b00 => break TimeOfDay::Morn,
+            0b01 => break TimeOfDay::Day,
+            0b10 => break TimeOfDay::Nite,
+            _ => continue,
         }
     };
 
@@ -72,18 +58,11 @@ pub fn oaks_pkmn_talk_4(cpu: &mut Cpu) {
         cpu.a &= 0b111;
 
         if cpu.a >= 2 && cpu.a < 5 {
-            break cpu.a;
+            break cpu.a as usize;
         }
     };
 
-    cpu.set_hl(johto_grass_wildmons_addr + 4); // Skipping percentages
-    cpu.set_hl(cpu.hl() + (time_of_day as u16 * 2 * NUM_GRASSMON as u16)); // Skip to the time of day
-    cpu.set_hl(cpu.hl() + (pokemon_idx as u16 * 2)); // Skip to the chosen Pokémon
-    cpu.set_hl(cpu.hl() + 1); // Skip level
-
-    cpu.a = 0x0a; // BANK(JohtoGrassWildMons)
-    cpu.call(0x304d); // GetFarByte
-    let species = PokemonSpecies::from(cpu.a);
+    let species = wildmons.encounters(time_of_day)[pokemon_idx].1;
 
     cpu.borrow_wram_mut().set_named_object_index(species.into());
     cpu.borrow_wram_mut().set_cur_party_species(Some(species));
@@ -94,8 +73,7 @@ pub fn oaks_pkmn_talk_4(cpu: &mut Cpu) {
     cpu.set_bc(MON_NAME_LENGTH as u16);
     cpu.call(0x3026); // CopyBytes
 
-    cpu.b = group_id;
-    cpu.c = map_id;
+    (cpu.b, cpu.c) = map.into();
     cpu.call(0x2caf); // GetWorldMapLocation
     let landmark_id = cpu.a;
 
