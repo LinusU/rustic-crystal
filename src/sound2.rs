@@ -1,4 +1,4 @@
-use rodio::{OutputStream, OutputStreamHandle, Sink};
+use rodio::{stream::OutputStream, OutputStreamBuilder, Sink};
 
 pub trait Sfx<TSource> {
     fn open(self) -> TSource;
@@ -9,21 +9,17 @@ pub trait Music<TSource>: Sfx<TSource> {
 }
 
 pub struct Sound2 {
-    handle: OutputStreamHandle,
     music: Option<(u32, Sink)>,
     sfx: Option<Sink>,
-    _stream: OutputStream,
+    stream: OutputStream,
 }
 
 impl Sound2 {
     pub fn new() -> Self {
-        let (stream, handle) = OutputStream::try_default().unwrap();
-
         Sound2 {
-            _stream: stream,
             music: None,
-            handle,
             sfx: None,
+            stream: OutputStreamBuilder::open_default_stream().unwrap(),
         }
     }
 
@@ -52,7 +48,6 @@ impl Sound2 {
         T: Music<TSource>,
         TSource: rodio::Source + Send + 'static,
         f32: cpal::FromSample<TSource::Item>,
-        TSource::Item: rodio::Sample + Send,
     {
         let id = music.id();
 
@@ -62,7 +57,7 @@ impl Sound2 {
 
         self.stop_music();
 
-        let sink = Sink::try_new(&self.handle).unwrap();
+        let sink = Sink::connect_new(self.stream.mixer());
         sink.append(music.open());
         self.music = Some((id, sink));
     }
@@ -72,13 +67,12 @@ impl Sound2 {
         T: Sfx<TSource>,
         TSource: rodio::Source + Send + 'static,
         f32: cpal::FromSample<TSource::Item>,
-        TSource::Item: rodio::Sample + Send,
     {
         if let Some(sink) = self.sfx.take() {
             sink.stop();
         }
 
-        let sink = Sink::try_new(&self.handle).unwrap();
+        let sink = Sink::connect_new(self.stream.mixer());
         sink.append(sound.open());
         self.sfx = Some(sink);
     }

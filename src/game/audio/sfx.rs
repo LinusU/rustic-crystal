@@ -270,7 +270,7 @@ impl Iterator for SynthesizerSource<'_> {
 }
 
 impl Source for SynthesizerSource<'_> {
-    fn current_frame_len(&self) -> Option<usize> {
+    fn current_span_len(&self) -> Option<usize> {
         None
     }
 

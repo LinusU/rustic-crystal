@@ -203,7 +203,6 @@ impl<'a> Cpu<'a> {
         T: Sfx<TSource>,
         TSource: rodio::Source + Send + 'static,
         f32: cpal::FromSample<TSource::Item>,
-        TSource::Item: rodio::Sample + Send,
     {
         self.mmu.sound2.play_sfx(sfx)
     }
