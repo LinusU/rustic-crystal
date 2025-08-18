@@ -115,7 +115,7 @@ impl<'a> Cpu<'a> {
                 (0x0a, 0x6235) => panic!("johto_wildmon_check should only be called from Rust"),
                 (0x0a, 0x623d) => panic!("swarm_wildmon_check should only be called from Rust"),
                 (0x0a, 0x627a) => panic!("normal_wildmon_ok should only be called from Rust"),
-                (0x0a, 0x627f) => crate::game::engine::overworld::wildmons::copy_curr_map_de(self),
+                (0x0a, 0x627f) => panic!("copy_curr_map_de should only be called from Rust"),
                 (0x0a, 0x6288) => panic!("look_up_wildmons_for_map_de should only be called from Rust"),
                 (0x0a, 0x62ce) => panic!("check_encounter_roam_mon should only be called from Rust"),
                 (0x0a, 0x64a0) => panic!("validate_temp_wild_mon_species should only be called from Rust"),

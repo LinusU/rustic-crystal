@@ -247,11 +247,6 @@ fn normal_wildmon_ok<'a, T>(cpu: &mut Cpu, wildmons: &'a [(Map, T)]) -> Option<&
     look_up_wildmons_for_map(cpu.borrow_wram().map(), wildmons)
 }
 
-pub fn copy_curr_map_de(cpu: &mut Cpu) {
-    (cpu.d, cpu.e) = cpu.borrow_wram().map().into();
-    cpu.pc = cpu.stack_pop(); // ret
-}
-
 fn look_up_wildmons_for_map<T>(map: Map, wildmons: &[(Map, T)]) -> Option<&T> {
     wildmons
         .iter()
