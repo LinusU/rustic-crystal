@@ -6,6 +6,7 @@ use crate::{
             engine_flags::UnlockedUnowns,
             input_constants::JoypadButtons,
             item_constants::Item,
+            map_constants::Map,
             pokemon_constants::PokemonSpecies,
             ram_constants::{MonType, SwarmFlags, TimeOfDay},
             text_constants::NAME_LENGTH,
@@ -350,12 +351,8 @@ impl GameState {
         SwarmFlags::from_bits_retain(self.data[0x1c20])
     }
 
-    pub fn yanma_map_group(&self) -> u8 {
-        self.data[0x1c5a]
-    }
-
-    pub fn yanma_map_number(&self) -> u8 {
-        self.data[0x1c5b]
+    pub fn yanma_map(&self) -> Map {
+        (self.data[0x1c5a], self.data[0x1c5b]).into()
     }
 
     pub fn park_balls_remaining(&self) -> u8 {
@@ -366,12 +363,8 @@ impl GameState {
         self.data[0x1c79] = value;
     }
 
-    pub fn map_group(&self) -> u8 {
-        self.data[0x1cb5]
-    }
-
-    pub fn map_number(&self) -> u8 {
-        self.data[0x1cb6]
+    pub fn map(&self) -> Map {
+        (self.data[0x1cb5], self.data[0x1cb6]).into()
     }
 
     pub fn party_count(&self) -> u8 {
@@ -382,12 +375,8 @@ impl GameState {
         UnlockedUnowns::from_bits_retain(self.data[0x1ef3])
     }
 
-    pub fn dunsparce_map_group(&self) -> u8 {
-        self.data[0x1fcc]
-    }
-
-    pub fn dunsparce_map_number(&self) -> u8 {
-        self.data[0x1fcd]
+    pub fn dunsparce_map(&self) -> Map {
+        (self.data[0x1fcc], self.data[0x1fcd]).into()
     }
 
     pub fn roam_mon_1_species(&self) -> Option<PokemonSpecies> {
@@ -401,12 +390,8 @@ impl GameState {
         self.data[0x1fd0]
     }
 
-    pub fn roam_mon_1_map_group(&self) -> u8 {
-        self.data[0x1fd1]
-    }
-
-    pub fn roam_mon_1_map_number(&self) -> u8 {
-        self.data[0x1fd2]
+    pub fn roam_mon_1_map(&self) -> Map {
+        (self.data[0x1fd1], self.data[0x1fd2]).into()
     }
 
     pub fn roam_mon_2_species(&self) -> Option<PokemonSpecies> {
@@ -420,12 +405,8 @@ impl GameState {
         self.data[0x1fd7]
     }
 
-    pub fn roam_mon_2_map_group(&self) -> u8 {
-        self.data[0x1fd8]
-    }
-
-    pub fn roam_mon_2_map_number(&self) -> u8 {
-        self.data[0x1fd9]
+    pub fn roam_mon_2_map(&self) -> Map {
+        (self.data[0x1fd8], self.data[0x1fd9]).into()
     }
 
     pub fn roam_mon_3_species(&self) -> Option<PokemonSpecies> {
@@ -439,11 +420,7 @@ impl GameState {
         self.data[0x1fde]
     }
 
-    pub fn roam_mon_3_map_group(&self) -> u8 {
-        self.data[0x1fdf]
-    }
-
-    pub fn roam_mon_3_map_number(&self) -> u8 {
-        self.data[0x1fe0]
+    pub fn roam_mon_3_map(&self) -> Map {
+        (self.data[0x1fdf], self.data[0x1fe0]).into()
     }
 }

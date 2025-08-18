@@ -100,19 +100,13 @@ fn find_nest_search_map_for_mon(cpu: &mut Cpu, species: PokemonSpecies, map: Map
 
 fn find_nest_roam_mon_1(cpu: &mut Cpu, species: PokemonSpecies) {
     if cpu.borrow_wram().roam_mon_1_species() == Some(species) {
-        let map_group = cpu.borrow_wram().roam_mon_1_map_group();
-        let map_id = cpu.borrow_wram().roam_mon_1_map_number();
-
-        find_nest_append_nest(cpu, (map_group, map_id).into())
+        find_nest_append_nest(cpu, cpu.borrow_wram().roam_mon_1_map())
     }
 }
 
 fn find_nest_roam_mon_2(cpu: &mut Cpu, species: PokemonSpecies) {
     if cpu.borrow_wram().roam_mon_2_species() == Some(species) {
-        let map_group = cpu.borrow_wram().roam_mon_2_map_group();
-        let map_id = cpu.borrow_wram().roam_mon_2_map_number();
-
-        find_nest_append_nest(cpu, (map_group, map_id).into())
+        find_nest_append_nest(cpu, cpu.borrow_wram().roam_mon_2_map())
     }
 }
 
@@ -234,44 +228,34 @@ fn johto_wildmon_check<T>(cpu: &mut Cpu, johto: T, kanto: T) -> T {
 }
 
 fn swarm_wildmon_check<'a, T>(cpu: &mut Cpu, wildmons: &'a [(Map, T)]) -> Option<&'a T> {
-    cpu.call(0x627f); // CopyCurrMapDE
-
+    let map = cpu.borrow_wram().map();
     let swarm_flags = cpu.borrow_wram().swarm_flags();
 
-    if swarm_flags.contains(SwarmFlags::DUNSPARCE_SWARM)
-        && cpu.borrow_wram().dunsparce_map_group() == cpu.d
-        && cpu.borrow_wram().dunsparce_map_number() == cpu.e
+    if swarm_flags.contains(SwarmFlags::DUNSPARCE_SWARM) && cpu.borrow_wram().dunsparce_map() == map
     {
-        return look_up_wildmons_for_map_de(cpu, wildmons);
+        return look_up_wildmons_for_map(map, wildmons);
     }
 
-    if swarm_flags.contains(SwarmFlags::YANMA_SWARM)
-        && cpu.borrow_wram().yanma_map_group() == cpu.d
-        && cpu.borrow_wram().yanma_map_number() == cpu.e
-    {
-        return look_up_wildmons_for_map_de(cpu, wildmons);
+    if swarm_flags.contains(SwarmFlags::YANMA_SWARM) && cpu.borrow_wram().yanma_map() == map {
+        return look_up_wildmons_for_map(map, wildmons);
     }
 
     None
 }
 
 fn normal_wildmon_ok<'a, T>(cpu: &mut Cpu, wildmons: &'a [(Map, T)]) -> Option<&'a T> {
-    cpu.call(0x627f); // CopyCurrMapDE
-    look_up_wildmons_for_map_de(cpu, wildmons)
+    look_up_wildmons_for_map(cpu.borrow_wram().map(), wildmons)
 }
 
 pub fn copy_curr_map_de(cpu: &mut Cpu) {
-    cpu.d = cpu.borrow_wram().map_group();
-    cpu.e = cpu.borrow_wram().map_number();
+    (cpu.d, cpu.e) = cpu.borrow_wram().map().into();
     cpu.pc = cpu.stack_pop(); // ret
 }
 
-fn look_up_wildmons_for_map_de<'a, T>(cpu: &mut Cpu, wildmons: &'a [(Map, T)]) -> Option<&'a T> {
-    let de = Map::from((cpu.d, cpu.e));
-
+fn look_up_wildmons_for_map<T>(map: Map, wildmons: &[(Map, T)]) -> Option<&T> {
     wildmons
         .iter()
-        .find(|(map, _)| *map == de)
+        .find(|(key, _)| *key == map)
         .map(|(_, data)| data)
 }
 
@@ -282,9 +266,6 @@ fn check_encounter_roam_mon(cpu: &mut Cpu) -> bool {
     if cpu.flag(CpuFlag::Z) {
         return false;
     }
-
-    // Load the current map group and number to de
-    cpu.call(0x627f); // CopyCurrMapDE
 
     // Randomly select a beast.
     cpu.call(0x2f8c); // Random
@@ -306,21 +287,14 @@ fn check_encounter_roam_mon(cpu: &mut Cpu) -> bool {
 
     // Compare its current location with yours
 
-    let roam_mon_map_group = match roam_mon {
-        1 => cpu.borrow_wram().roam_mon_1_map_group(),
-        2 => cpu.borrow_wram().roam_mon_2_map_group(),
-        3 => cpu.borrow_wram().roam_mon_3_map_group(),
+    let roam_mon_map = match roam_mon {
+        1 => cpu.borrow_wram().roam_mon_1_map(),
+        2 => cpu.borrow_wram().roam_mon_2_map(),
+        3 => cpu.borrow_wram().roam_mon_3_map(),
         n => panic!("Invalid roam mon index: {n}"),
     };
 
-    let roam_mon_map_number = match roam_mon {
-        1 => cpu.borrow_wram().roam_mon_1_map_number(),
-        2 => cpu.borrow_wram().roam_mon_2_map_number(),
-        3 => cpu.borrow_wram().roam_mon_3_map_number(),
-        n => panic!("Invalid roam mon index: {n}"),
-    };
-
-    if roam_mon_map_group != cpu.d || roam_mon_map_number != cpu.e {
+    if roam_mon_map != cpu.borrow_wram().map() {
         return false;
     }
 
@@ -359,26 +333,15 @@ pub fn random_unseen_wild_mon(cpu: &mut Cpu) {
     log::debug!("random_unseen_wild_mon()");
 
     macros::farcall::farcall(cpu, 0x24, 0x4439); // GetCallerLocation
+    let map = Map::from((cpu.b, cpu.c));
 
-    log::trace!(
-        "Caller location: group = {:#04x}, map = {:#04x}",
-        cpu.b,
-        cpu.c
-    );
+    log::trace!("Caller location: {map:?}");
 
-    cpu.d = cpu.b;
-    cpu.e = cpu.c;
-
-    let wildmons = look_up_wildmons_for_map_de(cpu, JOHTO_GRASS_WILD_MONS)
-        .or(look_up_wildmons_for_map_de(cpu, KANTO_GRASS_WILD_MONS));
+    let wildmons = look_up_wildmons_for_map(map, JOHTO_GRASS_WILD_MONS)
+        .or(look_up_wildmons_for_map(map, KANTO_GRASS_WILD_MONS));
 
     let Some(wildmons) = wildmons else {
-        log::warn!(
-            "No matching wildmons found for group_id {:#02x}, map_id {:#02x}",
-            cpu.d,
-            cpu.e
-        );
-
+        log::warn!("No matching wildmons found for map {map:?}");
         return return_value(cpu, 1);
     };
 
@@ -428,24 +391,13 @@ pub fn random_phone_wild_mon(cpu: &mut Cpu) {
     log::debug!("random_phone_wild_mon()");
 
     macros::farcall::farcall(cpu, 0x24, 0x4439); // GetCallerLocation
+    let map = Map::from((cpu.b, cpu.c));
 
-    log::trace!(
-        "Caller location: group = {:#04x}, map = {:#04x}",
-        cpu.b,
-        cpu.c
-    );
+    log::trace!("Caller location: {map:?}");
 
-    cpu.d = cpu.b;
-    cpu.e = cpu.c;
-
-    let wildmons = look_up_wildmons_for_map_de(cpu, JOHTO_GRASS_WILD_MONS)
-        .or(look_up_wildmons_for_map_de(cpu, KANTO_GRASS_WILD_MONS))
-        .unwrap_or_else(|| {
-            panic!(
-                "No matching wildmons found for group_id {:#02x}, map_id {:#02x}",
-                cpu.d, cpu.e
-            )
-        });
+    let wildmons = look_up_wildmons_for_map(map, JOHTO_GRASS_WILD_MONS)
+        .or(look_up_wildmons_for_map(map, KANTO_GRASS_WILD_MONS))
+        .unwrap_or_else(|| panic!("No matching wildmons found for map {map:?}"));
 
     cpu.call(0x2f8c); // Random
     cpu.a &= 0b11;
