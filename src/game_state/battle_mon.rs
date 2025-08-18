@@ -1,5 +1,6 @@
 use crate::game::constants::{
     item_constants::Item, move_constants::Move, pokemon_constants::PokemonSpecies,
+    type_constants::Type,
 };
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -97,6 +98,13 @@ impl<'a> BattleMon<'a> {
     pub fn max_hp(&self) -> u16 {
         u16::from_be_bytes([self.data[18], self.data[19]])
     }
+
+    pub fn types(&self) -> (Type, Type) {
+        (
+            self.data[30].into(), // Primary type
+            self.data[31].into(), // Secondary type
+        )
+    }
 }
 
 pub struct BattleMonMut<'a> {
@@ -136,5 +144,10 @@ impl<'a> BattleMonMut<'a> {
 
     pub fn set_max_hp(&mut self, max_hp: u16) {
         self.data[18..20].copy_from_slice(&max_hp.to_be_bytes());
+    }
+
+    pub fn set_types(&mut self, types: (Type, Type)) {
+        self.data[30] = types.0.into();
+        self.data[31] = types.1.into();
     }
 }

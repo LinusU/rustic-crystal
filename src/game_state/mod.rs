@@ -2,7 +2,7 @@ use crate::{
     game::{
         audio::music::Music,
         constants::{
-            battle_constants::{self, BattleMode, BattleResult, BattleType},
+            battle_constants::{self, BattleMode, BattleResult, BattleType, TypeEffectiveness},
             engine_flags::UnlockedUnowns,
             input_constants::JoypadButtons,
             item_constants::Item,
@@ -77,6 +77,10 @@ impl GameState {
 
     pub fn set_script_var(&mut self, value: u8) {
         self.data[0x02dd] = value;
+    }
+
+    pub fn set_player_move_struct_type(&mut self, value: u8) {
+        self.data[0x0612] = value;
     }
 
     pub fn battle_mon(&self) -> battle_mon::BattleMon<'_> {
@@ -238,6 +242,26 @@ impl GameState {
         self.data[0x11ea] = value;
     }
 
+    pub fn enemy_effectiveness_vs_player_mons(&self, n: u8) -> bool {
+        self.data[0x11ea] & (1 << n) != 0
+    }
+
+    pub fn set_enemy_effectiveness_vs_player_mons(&mut self, n: u8, value: bool) {
+        if value {
+            self.data[0x11ea] |= 1 << n;
+        } else {
+            self.data[0x11ea] &= !(1 << n);
+        }
+    }
+
+    pub fn set_player_effectiveness_vs_enemy_mons(&mut self, n: u8, value: bool) {
+        if value {
+            self.data[0x11eb] |= 1 << n;
+        } else {
+            self.data[0x11eb] &= !(1 << n);
+        }
+    }
+
     pub fn thrown_ball_wobble_count(&self) -> u8 {
         self.data[0x11eb]
     }
@@ -327,8 +351,22 @@ impl GameState {
         self.data[0x1265] = value.map_or(0, Into::into);
     }
 
+    pub fn type_matchup(&self) -> TypeEffectiveness {
+        self.data[0x1265].into()
+    }
+
     pub fn time_of_day(&self) -> TimeOfDay {
         self.data[0x1269].into()
+    }
+
+    pub fn ot_party_species(&self) -> Vec<PokemonSpecies> {
+        let count = self.data[0x1280] as usize;
+
+        self.data[0x1281..(0x1281 + count)]
+            .iter()
+            .take_while(|&n| *n != 0)
+            .map(|&n| n.into())
+            .collect::<Vec<_>>()
     }
 
     pub fn player_id(&self) -> u16 {

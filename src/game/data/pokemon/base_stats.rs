@@ -1,12 +1,20 @@
 use crate::{
-    game::constants::{pokemon_constants::PokemonSpecies, pokemon_data_constants::GrowthRate},
+    game::constants::{
+        pokemon_constants::PokemonSpecies, pokemon_data_constants::GrowthRate, type_constants::Type,
+    },
     rom::ROM,
 };
 
-pub const BASE_STATS: usize = (0x14 * 0x4000) | (0x5424 & 0x3fff);
-pub const BASE_DATA_SIZE: usize = 32;
+const BASE_STATS: usize = (0x14 * 0x4000) | (0x5424 & 0x3fff);
+const BASE_DATA_SIZE: usize = 32;
 
 impl PokemonSpecies {
+    pub fn types(self) -> (Type, Type) {
+        let offset = BASE_STATS + (BASE_DATA_SIZE * (u8::from(self) as usize - 1)) + 7;
+
+        (ROM[offset].into(), ROM[offset + 1].into())
+    }
+
     pub fn growth_rate(self) -> GrowthRate {
         ROM[BASE_STATS + (BASE_DATA_SIZE * (u8::from(self) as usize - 1)) + 22].into()
     }
@@ -15,6 +23,21 @@ impl PokemonSpecies {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn test_types() {
+        assert_eq!(
+            PokemonSpecies::Magnemite.types(),
+            (Type::Electric, Type::Steel)
+        );
+
+        assert_eq!(
+            PokemonSpecies::Dragonair.types(),
+            (Type::Dragon, Type::Dragon)
+        );
+
+        assert_eq!(PokemonSpecies::Entei.types(), (Type::Fire, Type::Fire));
+    }
 
     #[test]
     fn test_growth_rate() {

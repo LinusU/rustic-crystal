@@ -1,3 +1,4 @@
+pub mod battle;
 pub mod items;
 pub mod link;
 pub mod menus;

@@ -7,6 +7,16 @@ pub const NUM_MOVES: u8 = 4;
 
 pub const SUBSTATUS_TRANSFORMED: u8 = 3;
 
+define_u8_enum! {
+    pub enum TypeEffectiveness {
+        SuperEffective = 20,
+        MoreEffective = 15,
+        Effective = 10,
+        NotVeryEffective = 5,
+        NoEffect = 0,
+    }
+}
+
 bitflags! {
     pub struct BattleResult: u8 {
         const LOSE          = 1 << 0;
