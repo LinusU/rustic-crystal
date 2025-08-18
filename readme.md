@@ -51,6 +51,7 @@ Contributions to Rustic Crystal are welcome! Feel free to open an issue if you h
 
 - [Mathijs van de Nes](https://github.com/mvdnes) for their work on [mvdnes/rboy](https://github.com/mvdnes/rboy), from which this project was bootstrapped
 - [The pret team](https://github.com/orgs/pret/people) for their work on [pret/pokecrystal](https://github.com/pret/pokecrystal), which was used as a reference for the disassembly of the original Pokemon Crystal ROM
+- [TheSmithPlays](https://www.youtube.com/@TheSmithPlays) and team for their work on [Pokemon Crystal Legacy](https://github.com/cRz-Shadows/Pokemon_Crystal_Legacy), which improvements are being ported to Rustic Crystal
 - The original developers of Pokemon Crystal, for creating such a wonderful game
 
 ## License

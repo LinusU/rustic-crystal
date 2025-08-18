@@ -17,6 +17,10 @@ rodio = { version = "0.21.1", default-features = false, features = ["flac", "pla
 [target.'cfg(target_os = "macos")'.dependencies]
 core-foundation = "0.9.3"
 
+[features]
+default = ["legacy"]
+legacy = []
+
 [package.metadata.bundle]
 name = "Rustic Crystal"
 identifier = "com.linusu.rustic-crystal"
