@@ -7,9 +7,7 @@ use crate::{
             item_data_constants::HELD_CATCH_CHANCE,
             menu_constants, move_constants,
             pokemon_constants::PokemonSpecies,
-            pokemon_data_constants::{
-                FRIEND_BALL_HAPPINESS, MONS_PER_BOX, PARTYMON_STRUCT_LENGTH, PARTY_LENGTH,
-            },
+            pokemon_data_constants::{FRIEND_BALL_HAPPINESS, MONS_PER_BOX, PARTY_LENGTH},
             ram_constants::MonType,
             text_constants,
         },
@@ -315,10 +313,10 @@ fn poke_ball_effect_add_to_party(cpu: &mut Cpu) {
 
     if cpu.borrow_wram().cur_item() == Item::FriendBall {
         let idx = cpu.borrow_wram().party_count() - 1;
-        let base = 0xdcfa; // wPartyMon1Happiness
-        let offset = base + (idx as u16 * PARTYMON_STRUCT_LENGTH as u16);
 
-        cpu.write_byte(offset, FRIEND_BALL_HAPPINESS);
+        cpu.borrow_wram_mut()
+            .party_mon_mut(idx as usize)
+            .set_happiness(FRIEND_BALL_HAPPINESS);
     }
 
     cpu.set_hl(0x6df5); // AskGiveNicknameText

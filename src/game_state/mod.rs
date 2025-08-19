@@ -16,6 +16,7 @@ use crate::{
 };
 
 pub mod battle_mon;
+pub mod party_mon;
 
 const WRAM_SIZE: usize = 0x8000;
 
@@ -407,6 +408,12 @@ impl GameState {
 
     pub fn party_count(&self) -> u8 {
         self.data[0x1cd7]
+    }
+
+    pub fn party_mon_mut(&mut self, index: usize) -> party_mon::PartyMonMut<'_> {
+        assert!(index < 6);
+        let offset = 0x1cdf + (index * party_mon::PARTYMON_STRUCT_LENGTH);
+        party_mon::PartyMonMut::new(&mut self.data[offset..])
     }
 
     pub fn unlocked_unowns(&self) -> UnlockedUnowns {

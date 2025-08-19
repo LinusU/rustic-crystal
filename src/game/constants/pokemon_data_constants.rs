@@ -16,8 +16,6 @@ pub const NUM_WATERMON: usize = 3; // data/wild/*_water.asm table size
 
 pub const FISHGROUP_DATA_LENGTH: usize = 1 + 2 * 3;
 
-pub const PARTYMON_STRUCT_LENGTH: u8 = 48;
-
 pub const BASE_HAPPINESS: u8 = 70;
 pub const FRIEND_BALL_HAPPINESS: u8 = 200;
 
