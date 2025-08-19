@@ -7,6 +7,7 @@ use crate::{
             input_constants::JoypadButtons,
             item_constants::Item,
             map_constants::Map,
+            move_constants::Move,
             pokemon_constants::PokemonSpecies,
             ram_constants::{MonType, SwarmFlags, TimeOfDay},
             text_constants::NAME_LENGTH,
@@ -223,6 +224,11 @@ impl GameState {
         self.data[0x1108] = value.map_or(0, Into::into);
     }
 
+    /// index of mon's party location (0-5)
+    pub fn cur_party_mon(&self) -> u8 {
+        self.data[0x1109]
+    }
+
     pub fn set_cur_party_mon(&mut self, value: u8) {
         self.data[0x1109] = value;
     }
@@ -329,6 +335,10 @@ impl GameState {
         self.data[0x125d] = value;
     }
 
+    pub fn set_putative_tm_hm_move(&mut self, value: Move) {
+        self.data[0x1262] = value.into();
+    }
+
     pub fn set_chosen_cable_club_room(&mut self, value: u8) {
         self.data[0x1265] = value;
     }
@@ -408,6 +418,12 @@ impl GameState {
 
     pub fn party_count(&self) -> u8 {
         self.data[0x1cd7]
+    }
+
+    pub fn party_mon(&self, index: usize) -> party_mon::PartyMon<'_> {
+        assert!(index < 6);
+        let offset = 0x1cdf + (index * party_mon::PARTYMON_STRUCT_LENGTH);
+        party_mon::PartyMon::new(&self.data[offset..])
     }
 
     pub fn party_mon_mut(&mut self, index: usize) -> party_mon::PartyMonMut<'_> {

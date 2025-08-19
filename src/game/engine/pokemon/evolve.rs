@@ -2,6 +2,7 @@ use crate::{
     cpu::{Cpu, CpuFlag},
     game::{
         constants::pokemon_constants::PokemonSpecies, data::pokemon::evos_attacks::EVOS_ATTACKS,
+        macros,
     },
 };
 
@@ -17,6 +18,48 @@ impl PokemonSpecies {
 
         None
     }
+}
+
+pub fn learn_level_moves(cpu: &mut Cpu) {
+    let level = cpu.borrow_wram().cur_party_level();
+    let species = cpu
+        .borrow_wram()
+        .temp_species()
+        .expect("learn_level_moves missing temp_species");
+
+    log::info!("learn_level_moves({level}, {species:?})",);
+
+    cpu.borrow_wram_mut().set_cur_party_species(Some(species));
+
+    let data = &EVOS_ATTACKS[u8::from(species) as usize - 1];
+
+    for &(learn_level, learn_move) in data.level_up {
+        if level != learn_level {
+            continue;
+        }
+
+        let idx = cpu.borrow_wram().cur_party_mon() as usize;
+        let cur_party_mon_moves = cpu.borrow_wram().party_mon(idx).moves();
+
+        if cur_party_mon_moves.contains(&learn_move) {
+            continue;
+        }
+
+        cpu.borrow_wram_mut().set_putative_tm_hm_move(learn_move);
+
+        cpu.borrow_wram_mut()
+            .set_named_object_index(learn_move.into());
+
+        cpu.d = learn_move.into();
+        cpu.call(0x34f8); // GetMoveName
+        cpu.call(0x30d6); // CopyName1
+        macros::predef::predef_call!(cpu, LearnMove);
+    }
+
+    let species = cpu.borrow_wram().cur_party_species();
+    cpu.borrow_wram_mut().set_temp_species(species);
+
+    cpu.pc = cpu.stack_pop(); // ret
 }
 
 /// Find the first mon to evolve into `wCurPartySpecies`.
