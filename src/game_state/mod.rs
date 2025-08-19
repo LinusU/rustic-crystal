@@ -201,6 +201,10 @@ impl GameState {
         self.data[0x0fcd] = if value { 1 } else { 0 };
     }
 
+    pub fn prev_party_level(&self) -> u8 {
+        self.data[0x1002]
+    }
+
     pub fn battle_result(&self) -> BattleResult {
         BattleResult::from_bits(self.data[0x10ee]).unwrap()
     }
@@ -247,6 +251,17 @@ impl GameState {
 
     pub fn set_final_catch_rate(&mut self, value: u8) {
         self.data[0x11ea] = value;
+    }
+
+    pub fn evolution_old_species(&self) -> Option<PokemonSpecies> {
+        match self.data[0x11ea] {
+            0 => None,
+            n => Some(n.into()),
+        }
+    }
+
+    pub fn skip_moves_before_level_up(&self) -> u8 {
+        self.data[0x11ea]
     }
 
     pub fn enemy_effectiveness_vs_player_mons(&self, n: u8) -> bool {

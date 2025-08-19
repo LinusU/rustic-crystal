@@ -50,6 +50,10 @@ impl GrowthRate {
     }
 }
 
+// party_struct members
+pub const MON_MOVES: u16 = 2;
+pub const MON_PP: u16 = 23;
+
 define_u8_enum! {
     pub enum EvolutionType {
         Level = 1,

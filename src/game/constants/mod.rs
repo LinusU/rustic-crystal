@@ -11,6 +11,7 @@ pub mod map_constants;
 pub mod menu_constants;
 pub mod misc_constants;
 pub mod move_constants;
+pub mod move_effect_constants;
 pub mod pokemon_constants;
 pub mod pokemon_data_constants;
 pub mod radio_constants;

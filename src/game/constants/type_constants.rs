@@ -12,6 +12,7 @@ define_u8_enum! {
         Bug = 7,
         Ghost = 8,
         Steel = 9,
+        Curse = 19,
         Fire = 20,
         Water = 21,
         Grass = 22,

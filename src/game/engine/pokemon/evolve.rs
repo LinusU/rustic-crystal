@@ -1,7 +1,12 @@
 use crate::{
     cpu::{Cpu, CpuFlag},
     game::{
-        constants::{battle_constants::NUM_MOVES, pokemon_constants::PokemonSpecies},
+        constants::{
+            battle_constants::NUM_MOVES,
+            move_constants::Move,
+            pokemon_constants::PokemonSpecies,
+            pokemon_data_constants::{MON_MOVES, MON_PP},
+        },
         data::pokemon::evos_attacks::EVOS_ATTACKS,
         macros,
     },
@@ -63,23 +68,72 @@ pub fn learn_level_moves(cpu: &mut Cpu) {
     cpu.pc = cpu.stack_pop(); // ret
 }
 
-pub fn shift_moves(cpu: &mut Cpu) {
-    cpu.c = NUM_MOVES - 1;
+/// Fill in moves at de for wCurPartySpecies at wCurPartyLevel
+pub fn fill_moves(cpu: &mut Cpu) {
+    let level = cpu.borrow_wram().cur_party_level();
+    let species = cpu
+        .borrow_wram()
+        .cur_party_species()
+        .expect("fill_moves missing cur_party_species");
 
-    loop {
-        cpu.set_de(cpu.de().wrapping_add(1));
-        cpu.a = cpu.read_byte(cpu.de());
-        cpu.write_byte(cpu.hl(), cpu.a);
-        cpu.set_hl(cpu.hl() + 1);
+    log::info!("fill_moves({level}, {species:?})");
 
-        cpu.c -= 1;
+    let data = &EVOS_ATTACKS[u8::from(species) as usize - 1];
+    let level = cpu.borrow_wram().cur_party_level();
 
-        if cpu.c == 0 {
-            break;
+    'learn: for &(learn_level, learn_move) in data.level_up {
+        if learn_level > level {
+            break 'learn;
         }
+
+        if cpu.borrow_wram().skip_moves_before_level_up() != 0 {
+            let prev_level = cpu.borrow_wram().prev_party_level();
+
+            if learn_level <= prev_level {
+                continue 'learn;
+            }
+        }
+
+        for c in 0..NUM_MOVES {
+            if cpu.read_byte(cpu.de() + c as u16) == learn_move.into() {
+                continue 'learn;
+            }
+        }
+
+        for c in 0..NUM_MOVES {
+            if cpu.read_byte(cpu.de() + c as u16) == 0 {
+                fill_moves_learn_move(cpu, learn_move, cpu.de() + c as u16);
+                continue 'learn;
+            }
+        }
+
+        shift_moves(cpu, cpu.de());
+
+        if cpu.borrow_wram().evolution_old_species().is_some() {
+            shift_moves(cpu, cpu.de() + (MON_PP - MON_MOVES));
+        }
+
+        fill_moves_learn_move(cpu, learn_move, cpu.de() + 3);
     }
 
     cpu.pc = cpu.stack_pop(); // ret
+}
+
+fn fill_moves_learn_move(cpu: &mut Cpu, r#move: Move, slot_addr: u16) {
+    cpu.write_byte(slot_addr, r#move.into());
+
+    log::debug!("fill_moves_learn_move: {move:?} at {slot_addr:#04x}");
+
+    if cpu.borrow_wram().evolution_old_species().is_some() {
+        cpu.write_byte(slot_addr + (MON_PP - MON_MOVES), r#move.pp());
+    }
+}
+
+fn shift_moves(cpu: &mut Cpu, addr: u16) {
+    for c in 0..(NUM_MOVES - 1) {
+        let byte = cpu.read_byte(addr + 1 + c as u16);
+        cpu.write_byte(addr + c as u16, byte);
+    }
 }
 
 /// Find the first mon to evolve into `wCurPartySpecies`.
