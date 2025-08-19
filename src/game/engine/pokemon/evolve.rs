@@ -1,41 +1,17 @@
 use crate::{
     cpu::{Cpu, CpuFlag},
-    game::constants::{pokemon_constants::PokemonSpecies, pokemon_data_constants::EvolutionType},
-    rom::ROM,
+    game::{
+        constants::pokemon_constants::PokemonSpecies, data::pokemon::evos_attacks::EVOS_ATTACKS,
+    },
 };
 
 impl PokemonSpecies {
     fn pre_evolution(self) -> Option<PokemonSpecies> {
-        const EVOS_ATTACKS_POINTERS: usize = (0x10 * 0x4000) | (0x65b1 & 0x3fff);
-
-        for i in 0..PokemonSpecies::count() {
-            let addr = u16::from_le_bytes([
-                ROM[EVOS_ATTACKS_POINTERS + i * 2],
-                ROM[EVOS_ATTACKS_POINTERS + i * 2 + 1],
-            ]);
-
-            let mut offset = (0x10 * 0x4000) | (addr & 0x3fff) as usize; // Adjust for ROM offset
-
-            loop {
-                let evo_type: EvolutionType = match ROM[offset] {
-                    0 => break, // End of evolutions for this species
-                    n => n.into(),
-                };
-
-                offset += 1;
-
-                if evo_type == EvolutionType::Stat {
-                    offset += 1; // Skip the stat comparison byte
+        for (species, data) in PokemonSpecies::iter().zip(EVOS_ATTACKS) {
+            for evo in data.evos {
+                if evo.species() == self {
+                    return Some(species);
                 }
-
-                offset += 1;
-
-                if ROM[offset] == u8::from(self) {
-                    // Found a pre-evolution that matches the current species
-                    return Some(PokemonSpecies::from(i as u8 + 1)); // Convert to one-based index
-                }
-
-                offset += 1;
             }
         }
 

@@ -1,4 +1,7 @@
-use crate::game::macros::r#enum::define_u8_enum;
+use crate::game::{
+    constants::{item_constants::Item, move_constants::Move, pokemon_constants::PokemonSpecies},
+    macros::r#enum::define_u8_enum,
+};
 
 /// Maximum number of party pokemon
 pub const PARTY_LENGTH: u8 = 6;
@@ -57,6 +60,47 @@ define_u8_enum! {
         Happiness = 4,
         Stat = 5,
     }
+}
+
+define_u8_enum! {
+    pub enum EvolveHappinessTrigger {
+        Anytime = 1,
+        MornDay = 2,
+        Nite = 3,
+    }
+}
+
+define_u8_enum! {
+    pub enum EvolveStatTrigger {
+        AtkGtDef = 1,
+        AtkLtDef = 2,
+        AtkEqDef = 3,
+    }
+}
+
+pub enum Evolution {
+    LevelUp(u8, PokemonSpecies),
+    Item(Item, PokemonSpecies),
+    Trade(Option<Item>, PokemonSpecies),
+    Happiness(EvolveHappinessTrigger, PokemonSpecies),
+    Stat(u8, EvolveStatTrigger, PokemonSpecies),
+}
+
+impl Evolution {
+    pub fn species(&self) -> PokemonSpecies {
+        match self {
+            Evolution::LevelUp(_, species) => *species,
+            Evolution::Item(_, species) => *species,
+            Evolution::Trade(_, species) => *species,
+            Evolution::Happiness(_, species) => *species,
+            Evolution::Stat(_, _, species) => *species,
+        }
+    }
+}
+
+pub struct EvosAttacks {
+    pub evos: &'static [Evolution],
+    pub level_up: &'static [(u8, Move)],
 }
 
 #[cfg(test)]

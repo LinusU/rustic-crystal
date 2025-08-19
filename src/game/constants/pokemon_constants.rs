@@ -257,6 +257,10 @@ define_u8_enum! {
 }
 
 impl PokemonSpecies {
+    pub fn iter() -> impl Iterator<Item = PokemonSpecies> {
+        (1..=251).map(PokemonSpecies::from)
+    }
+
     pub fn name(self) -> PokeString {
         const START: usize = (0x14 * 0x4000) | (0x7384 & 0x3fff);
         let offset = START + (u8::from(self) as usize - 1) * 10;
