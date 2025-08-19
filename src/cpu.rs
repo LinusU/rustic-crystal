@@ -125,6 +125,7 @@ impl<'a> Cpu<'a> {
                 (0x0f, 0x5618) => crate::game::engine::battle::core::is_the_player_mon_types_effective_against_ot_mon(self),
 
                 (0x10, 0x6487) => crate::game::engine::pokemon::evolve::learn_level_moves(self),
+                (0x10, 0x656e) => crate::game::engine::pokemon::evolve::shift_moves(self),
                 (0x10, 0x6581) => crate::game::engine::pokemon::evolve::get_pre_evolution(self),
 
                 (0x12, 0x5cdc) => crate::game::engine::menus::main_menu::main_menu(self),

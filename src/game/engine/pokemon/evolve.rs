@@ -1,7 +1,8 @@
 use crate::{
     cpu::{Cpu, CpuFlag},
     game::{
-        constants::pokemon_constants::PokemonSpecies, data::pokemon::evos_attacks::EVOS_ATTACKS,
+        constants::{battle_constants::NUM_MOVES, pokemon_constants::PokemonSpecies},
+        data::pokemon::evos_attacks::EVOS_ATTACKS,
         macros,
     },
 };
@@ -58,6 +59,25 @@ pub fn learn_level_moves(cpu: &mut Cpu) {
 
     let species = cpu.borrow_wram().cur_party_species();
     cpu.borrow_wram_mut().set_temp_species(species);
+
+    cpu.pc = cpu.stack_pop(); // ret
+}
+
+pub fn shift_moves(cpu: &mut Cpu) {
+    cpu.c = NUM_MOVES - 1;
+
+    loop {
+        cpu.set_de(cpu.de().wrapping_add(1));
+        cpu.a = cpu.read_byte(cpu.de());
+        cpu.write_byte(cpu.hl(), cpu.a);
+        cpu.set_hl(cpu.hl() + 1);
+
+        cpu.c -= 1;
+
+        if cpu.c == 0 {
+            break;
+        }
+    }
 
     cpu.pc = cpu.stack_pop(); // ret
 }
