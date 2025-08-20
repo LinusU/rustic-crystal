@@ -108,7 +108,7 @@ pub fn poke_ball_effect(cpu: &mut Cpu) {
             if let Some(species) = cpu.borrow_wram().temp_enemy_mon_species() {
                 let evos = EVOS_ATTACKS[u8::from(species) as usize - 1].evos;
 
-                if evos.iter().any(|e| e.is_moon_stone_evolution()) {
+                if evos.iter().any(|e| e.is_stone_evolution(Item::MoonStone)) {
                     cpu.b = cpu.b.saturating_mul(4);
                 }
             } else {

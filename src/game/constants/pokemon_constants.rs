@@ -1,5 +1,7 @@
 use crate::{game::macros::r#enum::define_u8_enum, rom::ROM, save_state::string::PokeString};
 
+pub const EGG: u8 = 0xfd;
+
 define_u8_enum! {
     pub enum PokemonSpecies {
         Bulbasaur  = 0x01,

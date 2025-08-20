@@ -1,6 +1,9 @@
-use crate::game_state::{
-    box_mon::{BoxMon, BoxMonMut},
-    moveset::Moveset,
+use crate::{
+    game::constants::pokemon_constants::PokemonSpecies,
+    game_state::{
+        box_mon::{BoxMon, BoxMonMut},
+        moveset::Moveset,
+    },
 };
 
 pub const PARTYMON_STRUCT_LENGTH: usize = 48;
@@ -12,6 +15,10 @@ pub struct PartyMon<'a> {
 impl<'a> PartyMon<'a> {
     pub fn new(data: &'a [u8]) -> Self {
         Self { data }
+    }
+
+    pub fn species(&self) -> PokemonSpecies {
+        BoxMon::new(self.data).species()
     }
 
     pub fn moves(&self) -> Moveset {

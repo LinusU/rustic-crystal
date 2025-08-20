@@ -8,7 +8,7 @@ use crate::{
             item_constants::Item,
             map_constants::Map,
             move_constants::Move,
-            pokemon_constants::PokemonSpecies,
+            pokemon_constants::{PokemonSpecies, EGG},
             ram_constants::{MonType, SwarmFlags, TimeOfDay},
             text_constants::NAME_LENGTH,
         },
@@ -435,6 +435,11 @@ impl GameState {
 
     pub fn party_count(&self) -> u8 {
         self.data[0x1cd7]
+    }
+
+    pub fn party_mon_is_egg(&self, index: usize) -> bool {
+        assert!(index < 6);
+        self.data[0x1cd8 + index] == EGG
     }
 
     pub fn party_mon(&self, index: usize) -> party_mon::PartyMon<'_> {

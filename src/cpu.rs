@@ -138,6 +138,8 @@ impl<'a> Cpu<'a> {
                 (0x12, 0x5de4) => panic!("main_menu_joypad_loop should only be called from Rust"),
                 (0x12, 0x5e09) => panic!("main_menu_print_current_time_and_day should only be called from Rust"),
 
+                (0x14, 0x422f) => crate::game::engine::pokemon::party_menu::place_party_mon_evo_stone_compatibility(self),
+
                 (0x2e, 0x4762) => crate::game::engine::pokegear::radio::oaks_pkmn_talk_4(self),
 
                 (0x38, 0x76f9) => crate::game::engine::pokemon::bills_pc::bills_pc_change_box_submenu(self),
