@@ -103,6 +103,7 @@ impl<'a> Cpu<'a> {
                 (0x05, 0x50d8) => panic!("get_box_address should only be called from Rust"),
                 (0x05, 0x50f9) => panic!("save_box_address should only be called from Rust"),
                 (0x05, 0x517d) => panic!("load_box_address should only be called from Rust"),
+                (0x05, 0x70e4) => crate::game::engine::pokemon::breeding::get_egg_move(self),
 
                 (0x0a, 0x5ce8) => crate::game::engine::link::link::set_bits_for_link_trade_request(self),
                 (0x0a, 0x5d11) => crate::game::engine::link::link::wait_for_linked_friend(self),

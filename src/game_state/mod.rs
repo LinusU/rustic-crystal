@@ -17,6 +17,7 @@ use crate::{
 };
 
 pub mod battle_mon;
+pub mod box_mon;
 pub mod party_mon;
 
 const WRAM_SIZE: usize = 0x8000;
@@ -449,6 +450,13 @@ impl GameState {
 
     pub fn unlocked_unowns(&self) -> UnlockedUnowns {
         UnlockedUnowns::from_bits_retain(self.data[0x1ef3])
+    }
+
+    pub fn egg_mon(&self) -> Option<box_mon::BoxMon<'_>> {
+        match self.data[0x1f7b] {
+            0 => None,
+            _ => Some(box_mon::BoxMon::new(&self.data[0x1f7b..])),
+        }
     }
 
     pub fn dunsparce_map(&self) -> Map {
