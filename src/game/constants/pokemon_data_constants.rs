@@ -89,6 +89,10 @@ pub enum Evolution {
 }
 
 impl Evolution {
+    pub fn is_moon_stone_evolution(&self) -> bool {
+        matches!(self, Evolution::Item(Item::MoonStone, _))
+    }
+
     pub fn species(&self) -> PokemonSpecies {
         match self {
             Evolution::LevelUp(_, species) => *species,

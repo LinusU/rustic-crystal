@@ -11,7 +11,7 @@ use crate::{
             ram_constants::MonType,
             text_constants,
         },
-        data::wild::flee_mons,
+        data::{pokemon::evos_attacks::EVOS_ATTACKS, wild::flee_mons},
         macros,
         ram::{hram, sram, wram},
     },
@@ -103,8 +103,20 @@ pub fn poke_ball_effect(cpu: &mut Cpu) {
         }
 
         Item::HeavyBall => cpu.call(0x6c50), // HeavyBallMultiplier
-        Item::MoonBall => cpu.call(0x6cdd),  // MoonBallMultiplier
-        Item::LoveBall => cpu.call(0x6d12),  // LoveBallMultiplier
+
+        Item::MoonBall => {
+            if let Some(species) = cpu.borrow_wram().temp_enemy_mon_species() {
+                let evos = EVOS_ATTACKS[u8::from(species) as usize - 1].evos;
+
+                if evos.iter().any(|e| e.is_moon_stone_evolution()) {
+                    cpu.b = cpu.b.saturating_mul(4);
+                }
+            } else {
+                log::error!("temp_enemy_mon_species is None when using Moon Ball");
+            };
+        }
+
+        Item::LoveBall => cpu.call(0x6d12), // LoveBallMultiplier
 
         Item::PokeBall => {} // no special multiplier
 

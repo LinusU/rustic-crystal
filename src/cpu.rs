@@ -88,6 +88,7 @@ impl<'a> Cpu<'a> {
                 (0x03, 0x6c29) => panic!("ultra_ball_multiplier should only be called from Rust"),
                 (0x03, 0x6c2f) => panic!("great_ball_multiplier should only be called from Rust"),
                 (0x03, 0x6ccc) => panic!("lure_ball_multiplier should only be called from Rust"),
+                (0x03, 0x6cdd) => panic!("moon_ball_multiplier should only be called from Rust"),
                 (0x03, 0x6d68) => panic!("fast_ball_multiplier should only be called from Rust"),
                 (0x03, 0x6d8c) => panic!("level_ball_multiplier should only be called from Rust"),
                 (0x03, 0x6dfa) => panic!("return_to_battle_use_ball should only be called from Rust"),
