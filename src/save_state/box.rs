@@ -1,12 +1,11 @@
 use crate::{
     game::constants::{
         item_constants::Item,
-        move_constants::Move,
         pokemon_constants::PokemonSpecies,
         pokemon_data_constants::BASE_HAPPINESS,
         text_constants::{MON_NAME_LENGTH, NAME_LENGTH},
     },
-    game_state::battle_mon::BattleMon,
+    game_state::{battle_mon::BattleMon, moveset::Moveset},
     save_state::string::PokeString,
 };
 
@@ -14,7 +13,7 @@ use crate::{
 pub struct BoxedMon {
     pub species: PokemonSpecies,
     pub item: Option<Item>,
-    pub moves: [Option<Move>; 4],
+    pub moves: Moveset,
     pub ot_id: u16,
     pub exp: u32,
     pub ev_hp: u16,
@@ -107,23 +106,12 @@ impl<'a> Box<'a> {
                 n => Some(n.into()),
             },
             moves: [
-                match self.data[offset + 2] {
-                    0 => None,
-                    n => Some(n.into()),
-                },
-                match self.data[offset + 3] {
-                    0 => None,
-                    n => Some(n.into()),
-                },
-                match self.data[offset + 4] {
-                    0 => None,
-                    n => Some(n.into()),
-                },
-                match self.data[offset + 5] {
-                    0 => None,
-                    n => Some(n.into()),
-                },
-            ],
+                self.data[offset + 2],
+                self.data[offset + 3],
+                self.data[offset + 4],
+                self.data[offset + 5],
+            ]
+            .into(),
             ot_id: u16::from_be_bytes([self.data[offset + 6], self.data[offset + 7]]),
             exp: u32::from_be_bytes([
                 0,
@@ -198,10 +186,10 @@ impl<'a> BoxMut<'a> {
         let offset = 22 + (index * 32);
         self.data[offset] = pokemon.species.into();
         self.data[offset + 1] = pokemon.item.map_or(0, Into::into);
-        self.data[offset + 2] = pokemon.moves[0].map_or(0, Into::into);
-        self.data[offset + 3] = pokemon.moves[1].map_or(0, Into::into);
-        self.data[offset + 4] = pokemon.moves[2].map_or(0, Into::into);
-        self.data[offset + 5] = pokemon.moves[3].map_or(0, Into::into);
+        self.data[offset + 2] = pokemon.moves.get(0).map_or(0, Into::into);
+        self.data[offset + 3] = pokemon.moves.get(1).map_or(0, Into::into);
+        self.data[offset + 4] = pokemon.moves.get(2).map_or(0, Into::into);
+        self.data[offset + 5] = pokemon.moves.get(3).map_or(0, Into::into);
         self.data[offset + 6..offset + 8].copy_from_slice(&pokemon.ot_id.to_be_bytes());
         self.data[offset + 8..offset + 11].copy_from_slice(&pokemon.exp.to_be_bytes()[1..]);
         self.data[offset + 11..offset + 13].copy_from_slice(&pokemon.ev_hp.to_be_bytes());

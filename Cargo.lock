@@ -1463,6 +1463,7 @@ checksum = "56f7d92ca342cea22a06f2121d944b4fd82af56988c270852495420f961d4ace"
 name = "rustic-crystal"
 version = "0.1.0"
 dependencies = [
+ "arrayvec 0.7.6",
  "bitflags 2.9.2",
  "blip_buf",
  "core-foundation",

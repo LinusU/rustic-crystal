@@ -1,6 +1,8 @@
-use crate::game::constants::{
-    item_constants::Item, move_constants::Move, pokemon_constants::PokemonSpecies,
-    type_constants::Type,
+use crate::{
+    game::constants::{
+        item_constants::Item, pokemon_constants::PokemonSpecies, type_constants::Type,
+    },
+    game_state::moveset::Moveset,
 };
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -54,25 +56,8 @@ impl<'a> BattleMon<'a> {
         }
     }
 
-    pub fn moves(&self) -> [Option<Move>; 4] {
-        [
-            match self.data[2] {
-                0 => None,
-                n => Some(n.into()),
-            },
-            match self.data[3] {
-                0 => None,
-                n => Some(n.into()),
-            },
-            match self.data[4] {
-                0 => None,
-                n => Some(n.into()),
-            },
-            match self.data[5] {
-                0 => None,
-                n => Some(n.into()),
-            },
-        ]
+    pub fn moves(&self) -> Moveset {
+        [self.data[2], self.data[3], self.data[4], self.data[5]].into()
     }
 
     pub fn dvs(&self) -> u16 {

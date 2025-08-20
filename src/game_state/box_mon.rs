@@ -1,6 +1,4 @@
-use crate::game::constants::{
-    battle_constants::NUM_MOVES, move_constants::Move, pokemon_constants::PokemonSpecies,
-};
+use crate::{game::constants::pokemon_constants::PokemonSpecies, game_state::moveset::Moveset};
 
 pub struct BoxMon<'a> {
     data: &'a [u8],
@@ -15,13 +13,8 @@ impl<'a> BoxMon<'a> {
         self.data[0].into()
     }
 
-    pub fn moves(&self) -> [Move; NUM_MOVES as usize] {
-        [
-            self.data[2].into(),
-            self.data[3].into(),
-            self.data[4].into(),
-            self.data[5].into(),
-        ]
+    pub fn moves(&self) -> Moveset {
+        [self.data[2], self.data[3], self.data[4], self.data[5]].into()
     }
 }
 

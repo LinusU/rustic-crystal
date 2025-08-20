@@ -3,7 +3,7 @@ use bitflags::bitflags;
 use crate::game::macros::r#enum::define_u8_enum;
 
 pub const NUM_EXP_STATS: u8 = 5;
-pub const NUM_MOVES: u8 = 4;
+pub const NUM_MOVES: usize = 4;
 
 pub const SUBSTATUS_TRANSFORMED: u8 = 3;
 

@@ -1,6 +1,6 @@
-use crate::{
-    game::constants::{battle_constants::NUM_MOVES, move_constants::Move},
-    game_state::box_mon::{BoxMon, BoxMonMut},
+use crate::game_state::{
+    box_mon::{BoxMon, BoxMonMut},
+    moveset::Moveset,
 };
 
 pub const PARTYMON_STRUCT_LENGTH: usize = 48;
@@ -14,7 +14,7 @@ impl<'a> PartyMon<'a> {
         Self { data }
     }
 
-    pub fn moves(&self) -> [Move; NUM_MOVES as usize] {
+    pub fn moves(&self) -> Moveset {
         BoxMon::new(self.data).moves()
     }
 }

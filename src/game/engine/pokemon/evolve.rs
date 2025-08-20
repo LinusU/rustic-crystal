@@ -47,7 +47,7 @@ pub fn learn_level_moves(cpu: &mut Cpu) {
         let idx = cpu.borrow_wram().cur_party_mon() as usize;
         let cur_party_mon_moves = cpu.borrow_wram().party_mon(idx).moves();
 
-        if cur_party_mon_moves.contains(&learn_move) {
+        if cur_party_mon_moves.contains(learn_move) {
             continue;
         }
 

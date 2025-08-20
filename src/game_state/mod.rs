@@ -18,6 +18,7 @@ use crate::{
 
 pub mod battle_mon;
 pub mod box_mon;
+pub mod moveset;
 pub mod party_mon;
 
 const WRAM_SIZE: usize = 0x8000;
