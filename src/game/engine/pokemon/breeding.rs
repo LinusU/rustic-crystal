@@ -1,10 +1,11 @@
 use crate::{
     cpu::{Cpu, CpuFlag},
     game::{
-        constants::{battle_constants::NUM_MOVES, move_constants::Move},
+        constants::{move_constants::Move, pokemon_constants::PokemonSpecies},
         data::{moves::tmhm_moves::tmhm_moves, pokemon::evos_attacks::EVOS_ATTACKS},
         macros,
     },
+    game_state::moveset::Moveset,
 };
 
 pub fn get_egg_move(cpu: &mut Cpu) {
@@ -22,22 +23,11 @@ pub fn get_egg_move(cpu: &mut Cpu) {
         return return_value(cpu, true);
     }
 
-    let saved_bc = cpu.bc();
-    cpu.call(0x720b); // GetBreedmonMovePointer
-    let breedmon_ptr = cpu.hl();
-    cpu.set_bc(saved_bc);
+    if get_breedmon_moves(cpu).contains(de_move) {
+        let data = EVOS_ATTACKS[u8::from(species) as usize - 1].level_up;
 
-    for i in 0..NUM_MOVES {
-        let breedmon_move = cpu.read_byte(breedmon_ptr + i as u16);
-
-        if breedmon_move == de_move.into() {
-            let data = EVOS_ATTACKS[u8::from(species) as usize - 1].level_up;
-
-            if data.iter().any(|&(_, r#move)| de_move == r#move) {
-                return return_value(cpu, true);
-            }
-
-            break;
+        if data.iter().any(|&(_, r#move)| de_move == r#move) {
+            return return_value(cpu, true);
         }
     }
 
@@ -54,4 +44,26 @@ pub fn get_egg_move(cpu: &mut Cpu) {
     }
 
     return_value(cpu, false)
+}
+
+fn get_breedmon_moves(cpu: &mut Cpu) -> Moveset {
+    if let Some(mon) = cpu.borrow_wram().breed_mon_1() {
+        if mon.species() == PokemonSpecies::Ditto {
+            return mon.moves();
+        }
+    }
+
+    if let Some(mon) = cpu.borrow_wram().breed_mon_2() {
+        if mon.species() == PokemonSpecies::Ditto {
+            return mon.moves();
+        }
+    }
+
+    let mon = if cpu.borrow_wram().breed_mother_or_non_ditto() {
+        cpu.borrow_wram().breed_mon_1()
+    } else {
+        cpu.borrow_wram().breed_mon_2()
+    };
+
+    mon.map_or([0, 0, 0, 0].into(), |mon| mon.moves())
 }

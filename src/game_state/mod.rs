@@ -453,6 +453,25 @@ impl GameState {
         UnlockedUnowns::from_bits_retain(self.data[0x1ef3])
     }
 
+    pub fn breed_mon_1(&self) -> Option<box_mon::BoxMon<'_>> {
+        match self.data[0x1f0c] {
+            0 => None,
+            _ => Some(box_mon::BoxMon::new(&self.data[0x1f0c..])),
+        }
+    }
+
+    pub fn breed_mother_or_non_ditto(&self) -> bool {
+        // z: yes, nz: no
+        self.data[0x1f2e] == 0
+    }
+
+    pub fn breed_mon_2(&self) -> Option<box_mon::BoxMon<'_>> {
+        match self.data[0x1f45] {
+            0 => None,
+            _ => Some(box_mon::BoxMon::new(&self.data[0x1f45..])),
+        }
+    }
+
     pub fn egg_mon(&self) -> Option<box_mon::BoxMon<'_>> {
         match self.data[0x1f7b] {
             0 => None,
