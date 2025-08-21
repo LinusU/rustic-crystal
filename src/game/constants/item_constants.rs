@@ -25,6 +25,7 @@ define_u8_enum! {
         SunStone = 0xa9,
         UpGrade = 0xac,
         ParkBall = 0xb1,
+        BrickPiece = 0xb4,
     }
 }
 
