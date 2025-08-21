@@ -10,6 +10,7 @@ use crate::{
             move_constants::Move,
             pokemon_constants::{PokemonSpecies, EGG},
             ram_constants::{MonType, SwarmFlags, TimeOfDay},
+            serial_constants::LinkMode,
             text_constants::NAME_LENGTH,
         },
     },
@@ -22,6 +23,13 @@ pub mod moveset;
 pub mod party_mon;
 
 const WRAM_SIZE: usize = 0x8000;
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum PartyMonSpecies {
+    Some(PokemonSpecies),
+    Egg,
+    EndOfListMarker,
+}
 
 fn fill_random(slice: &mut [u8], start: u32) {
     // Simple LCG to generate (non-cryptographic) random values
@@ -77,6 +85,10 @@ impl GameState {
 
     pub fn set_disable_text_acceleration(&mut self, value: bool) {
         self.data[0x02d7] = if value { 1 } else { 0 };
+    }
+
+    pub fn link_mode(&self) -> LinkMode {
+        self.data[0x02dc].into()
     }
 
     pub fn set_script_var(&mut self, value: u8) {
@@ -140,6 +152,13 @@ impl GameState {
 
     pub fn set_mon_type(&mut self, value: MonType) {
         self.data[0x0f5f] = value.into();
+    }
+
+    pub fn cur_species(&self) -> Option<PokemonSpecies> {
+        match self.data[0x0f60] {
+            0 => None,
+            n => Some(n.into()),
+        }
     }
 
     pub fn set_cur_species(&mut self, value: Option<PokemonSpecies>) {
@@ -243,12 +262,28 @@ impl GameState {
         self.data[0x110c] = value;
     }
 
+    pub fn temp_mon(&self) -> party_mon::PartyMon<'_> {
+        party_mon::PartyMon::new(&self.data[0x110e..])
+    }
+
+    pub fn temp_mon_mut(&mut self) -> party_mon::PartyMonMut<'_> {
+        party_mon::PartyMonMut::new(&mut self.data[0x110e..])
+    }
+
     pub fn cur_party_level(&self) -> u8 {
         self.data[0x1143]
     }
 
     pub fn set_cur_party_level(&mut self, value: u8) {
         self.data[0x1143] = value;
+    }
+
+    pub fn evolvable_flags(&self) -> u8 {
+        self.data[0x11e8]
+    }
+
+    pub fn force_evolution(&self) -> bool {
+        self.data[0x11e9] != 0
     }
 
     pub fn set_final_catch_rate(&mut self, value: u8) {
@@ -260,6 +295,10 @@ impl GameState {
             0 => None,
             n => Some(n.into()),
         }
+    }
+
+    pub fn set_evolution_old_species(&mut self, value: Option<PokemonSpecies>) {
+        self.data[0x11ea] = value.map_or(0, Into::into);
     }
 
     pub fn skip_moves_before_level_up(&self) -> u8 {
@@ -284,6 +323,10 @@ impl GameState {
         } else {
             self.data[0x11eb] &= !(1 << n);
         }
+    }
+
+    pub fn set_evolution_new_species(&mut self, value: Option<PokemonSpecies>) {
+        self.data[0x11eb] = value.map_or(0, Into::into);
     }
 
     pub fn thrown_ball_wobble_count(&self) -> u8 {
@@ -383,6 +426,14 @@ impl GameState {
         self.data[0x1265].into()
     }
 
+    pub fn mon_tried_to_evolve(&self) -> bool {
+        self.data[0x1268] != 0
+    }
+
+    pub fn set_mon_tried_to_evolve(&mut self, value: bool) {
+        self.data[0x1268] = value.into();
+    }
+
     pub fn time_of_day(&self) -> TimeOfDay {
         self.data[0x1269].into()
     }
@@ -437,9 +488,22 @@ impl GameState {
         self.data[0x1cd7]
     }
 
-    pub fn party_mon_is_egg(&self, index: usize) -> bool {
+    pub fn party_mon_species(&self, index: usize) -> PartyMonSpecies {
         assert!(index < 6);
-        self.data[0x1cd8 + index] == EGG
+        match self.data[0x1cd8 + index] {
+            EGG => PartyMonSpecies::Egg,
+            0xff => PartyMonSpecies::EndOfListMarker,
+            n => PartyMonSpecies::Some(n.into()),
+        }
+    }
+
+    pub fn set_party_mon_species(&mut self, index: usize, species: PartyMonSpecies) {
+        assert!(index < 6);
+        self.data[0x1cd8 + index] = match species {
+            PartyMonSpecies::Some(s) => s.into(),
+            PartyMonSpecies::Egg => EGG,
+            PartyMonSpecies::EndOfListMarker => 0xff,
+        };
     }
 
     pub fn party_mon(&self, index: usize) -> party_mon::PartyMon<'_> {

@@ -1,5 +1,8 @@
 use crate::game::{
-    constants::{item_constants::Item, move_constants::Move, pokemon_constants::PokemonSpecies},
+    constants::{
+        item_constants::Item, move_constants::Move, pokemon_constants::PokemonSpecies,
+        ram_constants::TimeOfDay,
+    },
     macros::r#enum::define_u8_enum,
 };
 
@@ -18,6 +21,7 @@ pub const FISHGROUP_DATA_LENGTH: usize = 1 + 2 * 3;
 
 pub const BASE_HAPPINESS: u8 = 70;
 pub const FRIEND_BALL_HAPPINESS: u8 = 200;
+pub const HAPPINESS_TO_EVOLVE: u8 = 220;
 
 define_u8_enum! {
     pub enum GrowthRate {
@@ -72,11 +76,32 @@ define_u8_enum! {
     }
 }
 
+impl EvolveHappinessTrigger {
+    pub fn can_trigger(self, time_of_day: TimeOfDay) -> bool {
+        match self {
+            EvolveHappinessTrigger::MornDay => time_of_day != TimeOfDay::Nite,
+            EvolveHappinessTrigger::Nite => time_of_day == TimeOfDay::Nite,
+            _ => true,
+        }
+    }
+}
+
 define_u8_enum! {
     pub enum EvolveStatTrigger {
         AtkGtDef = 1,
         AtkLtDef = 2,
         AtkEqDef = 3,
+    }
+}
+
+impl EvolveStatTrigger {
+    pub fn can_trigger(self, attack: u16, defense: u16) -> bool {
+        match self {
+            EvolveStatTrigger::AtkGtDef => attack > defense,
+            EvolveStatTrigger::AtkLtDef => attack < defense,
+            EvolveStatTrigger::AtkEqDef => attack == defense,
+            _ => false,
+        }
     }
 }
 

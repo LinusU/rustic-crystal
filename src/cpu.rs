@@ -127,6 +127,10 @@ impl<'a> Cpu<'a> {
 
                 (0x0f, 0x5618) => crate::game::engine::battle::core::is_the_player_mon_types_effective_against_ot_mon(self),
 
+                (0x10, 0x61e6) => crate::game::engine::pokemon::evolve::evolve_after_battle(self),
+                (0x10, 0x61f5) => panic!("evolve_after_battle_master_loop should only be called from Rust"),
+                (0x10, 0x6454) => panic!("cancel_evolution should only be called from Rust"),
+                (0x10, 0x6461) => panic!("is_mon_holding_everstone should only be called from Rust"),
                 (0x10, 0x6487) => crate::game::engine::pokemon::evolve::learn_level_moves(self),
                 (0x10, 0x64e1) => crate::game::engine::pokemon::evolve::fill_moves(self),
                 (0x10, 0x656e) => panic!("shift_moves should only be called from Rust"),

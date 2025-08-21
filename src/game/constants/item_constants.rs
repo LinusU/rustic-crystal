@@ -12,6 +12,7 @@ define_u8_enum! {
         WaterStone = 0x18,
         LeafStone = 0x22,
         KingsRock = 0x52,
+        Everstone = 0x70,
         MetalCoat = 0x8f,
         DragonScale = 0x97,
         HeavyBall = 0x9d,
