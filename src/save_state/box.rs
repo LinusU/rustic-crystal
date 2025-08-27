@@ -169,7 +169,7 @@ impl<'a> BoxMut<'a> {
         if self.data[0] == 1 {
             self.data[2] = 0xff;
         } else {
-            self.data.copy_within(1..20, 2);
+            self.data.copy_within(1..21, 2);
             self.data.copy_within(22..630, 54);
             self.data.copy_within(662..871, 673);
             self.data.copy_within(882..1091, 893);
