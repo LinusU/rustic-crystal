@@ -1,6 +1,7 @@
 use crate::{
     game::constants::{
         pokemon_constants::EGG,
+        pokemon_data_constants::MONS_PER_BOX,
         text_constants::{MON_NAME_LENGTH, NAME_LENGTH},
     },
     game_state::{
@@ -19,7 +20,7 @@ impl<'a> Box<'a> {
     }
 
     pub fn capacity(&self) -> usize {
-        20
+        MONS_PER_BOX
     }
 
     pub fn len(&self) -> usize {
@@ -84,7 +85,7 @@ impl<'a> BoxMut<'a> {
     }
 
     pub fn push_back(&mut self, pokemon: MonListEntry<BoxMonRef>) {
-        assert!(self.len() < 20);
+        assert!(self.len() < MONS_PER_BOX);
 
         let idx = self.len();
         self.data[0] += 1;
@@ -93,7 +94,7 @@ impl<'a> BoxMut<'a> {
     }
 
     pub fn push_front(&mut self, pokemon: MonListEntry<BoxMonRef>) {
-        assert!(self.len() < 20);
+        assert!(self.len() < MONS_PER_BOX);
 
         self.data[0] += 1;
 
