@@ -25,8 +25,7 @@ pub fn poke_ball_effect(cpu: &mut Cpu) {
         return cpu.jump(0x77a0); // UseBallInTrainerBattle
     }
 
-    if cpu.borrow_wram().party().is_full() && cpu.borrow_sram().current_box().len() == MONS_PER_BOX
-    {
+    if cpu.borrow_wram().party().is_full() && cpu.borrow_sram().current_box().is_full() {
         return cpu.jump(0x77dc); // Ball_BoxIsFullMessage
     }
 
