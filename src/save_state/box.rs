@@ -83,6 +83,15 @@ impl<'a> BoxMut<'a> {
         Some(BoxMonMut::new(&mut self.data[22 + (index * 32)..]))
     }
 
+    pub fn push_back(&mut self, pokemon: MonListEntry<BoxMonRef>) {
+        assert!(self.len() < 20);
+
+        let idx = self.len();
+        self.data[0] += 1;
+        self.set(idx, pokemon);
+        *self.species_slot_mut(idx + 1) = 0xff;
+    }
+
     pub fn push_front(&mut self, pokemon: MonListEntry<BoxMonRef>) {
         assert!(self.len() < 20);
 
