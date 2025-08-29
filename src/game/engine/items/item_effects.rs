@@ -25,8 +25,7 @@ pub fn poke_ball_effect(cpu: &mut Cpu) {
         return cpu.jump(0x77a0); // UseBallInTrainerBattle
     }
 
-    if cpu.borrow_wram().party().is_full()
-        && cpu.borrow_sram().current_box().len() == MONS_PER_BOX as usize
+    if cpu.borrow_wram().party().is_full() && cpu.borrow_sram().current_box().len() == MONS_PER_BOX
     {
         return cpu.jump(0x77dc); // Ball_BoxIsFullMessage
     }
@@ -376,7 +375,7 @@ fn poke_ball_effect_send_to_pc(cpu: &mut Cpu) {
 
     cpu.a = cpu.read_byte(0xad10); // sBoxCount
 
-    if cpu.a == MONS_PER_BOX {
+    if cpu.a == MONS_PER_BOX as u8 {
         let mut value = cpu.borrow_wram().battle_result();
         value |= BattleResult::BOX_FULL;
         cpu.borrow_wram_mut().set_battle_result(value);
