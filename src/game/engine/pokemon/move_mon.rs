@@ -31,77 +31,55 @@ pub fn send_get_mon_into_from_box(cpu: &mut Cpu) {
     cpu.a = 0x01; // BANK(sBoxCount)
     cpu.call(0x2fcb); // OpenSRAM
 
-    let dst_ptr = match action {
-        PokemonWithdrawDepositParameter::PCWithdraw
-        | PokemonWithdrawDepositParameter::DayCareWithdraw => {
-            let party_count = cpu.borrow_wram().party_count() as usize;
+    let dst_ptr = if action == PokemonWithdrawDepositParameter::PCWithdraw {
+        let party_count = cpu.borrow_wram().party_count() as usize;
 
-            if party_count as u8 == PARTY_LENGTH {
-                return return_value(cpu, true);
-            }
-
-            let species = if action == PokemonWithdrawDepositParameter::PCWithdraw {
-                cpu.borrow_wram()
-                    .cur_party_species()
-                    .unwrap_or(PokemonSpecies::Unknown(0))
-            } else {
-                cpu.borrow_wram()
-                    .breed_mon_1()
-                    .map(|mon| mon.species())
-                    .unwrap_or(PokemonSpecies::Unknown(0))
-            };
-
-            cpu.borrow_wram_mut().set_party_count(party_count as u8 + 1);
-            cpu.borrow_wram_mut()
-                .set_party_mon_species(party_count, PartyMonSpecies::Some(species));
-            cpu.borrow_wram_mut()
-                .set_party_mon_species(party_count + 1, PartyMonSpecies::EndOfListMarker);
-
-            // wPartyMon{N}
-            0xdcdf + PARTYMON_STRUCT_LENGTH as u16 * party_count as u16
+        if party_count as u8 == PARTY_LENGTH {
+            return return_value(cpu, true);
         }
 
-        PokemonWithdrawDepositParameter::DayCareDeposit => {
-            0xdf0c // wBreedMon1Species
+        let species = cpu
+            .borrow_wram()
+            .cur_party_species()
+            .unwrap_or(PokemonSpecies::Unknown(0));
+
+        cpu.borrow_wram_mut().set_party_count(party_count as u8 + 1);
+        cpu.borrow_wram_mut()
+            .set_party_mon_species(party_count, PartyMonSpecies::Some(species));
+        cpu.borrow_wram_mut()
+            .set_party_mon_species(party_count + 1, PartyMonSpecies::EndOfListMarker);
+
+        // wPartyMon{N}
+        0xdcdf + PARTYMON_STRUCT_LENGTH as u16 * party_count as u16
+    } else {
+        if cpu.borrow_sram().current_box().is_full() {
+            return return_value(cpu, true);
         }
 
-        // PCDeposit
-        _ => {
-            if cpu.borrow_sram().current_box().is_full() {
-                return return_value(cpu, true);
-            }
+        let species = cpu
+            .borrow_wram()
+            .cur_party_species()
+            .unwrap_or(PokemonSpecies::Unknown(0));
 
-            let species = cpu
-                .borrow_wram()
-                .cur_party_species()
-                .unwrap_or(PokemonSpecies::Unknown(0));
+        let list_addr = 0xad10; // sBoxCount
+        let list_len = cpu.borrow_sram().current_box().len();
 
-            let list_addr = 0xad10; // sBoxCount
-            let list_len = cpu.borrow_sram().current_box().len();
+        cpu.write_byte(list_addr, list_len as u8 + 1);
+        cpu.set_hl(list_addr + list_len as u16 + 1);
 
-            cpu.write_byte(list_addr, list_len as u8 + 1);
-            cpu.set_hl(list_addr + list_len as u16 + 1);
+        cpu.write_byte(cpu.hl(), species.into());
+        cpu.write_byte(cpu.hl() + 1, 0xff);
 
-            cpu.write_byte(cpu.hl(), species.into());
-            cpu.write_byte(cpu.hl() + 1, 0xff);
-
-            // sBoxMon{N}
-            0xad26 + BOXMON_STRUCT_LENGTH as u16 * list_len as u16
-        }
+        // sBoxMon{N}
+        0xad26 + BOXMON_STRUCT_LENGTH as u16 * list_len as u16
     };
 
-    let src_ptr = match action {
-        PokemonWithdrawDepositParameter::PCWithdraw => {
-            let idx = cpu.borrow_wram().cur_party_mon();
-            0xad26 + BOXMON_STRUCT_LENGTH as u16 * idx as u16 // sBoxMon{N}
-        }
-        PokemonWithdrawDepositParameter::DayCareWithdraw => {
-            0xdf0c // wBreedMon1Species
-        }
-        _ => {
-            let idx = cpu.borrow_wram().cur_party_mon();
-            0xdcdf * PARTYMON_STRUCT_LENGTH as u16 * idx as u16 // wPartyMon{N}
-        }
+    let src_ptr = if action == PokemonWithdrawDepositParameter::PCWithdraw {
+        let idx = cpu.borrow_wram().cur_party_mon();
+        0xad26 + BOXMON_STRUCT_LENGTH as u16 * idx as u16 // sBoxMon{N}
+    } else {
+        let idx = cpu.borrow_wram().cur_party_mon();
+        0xdcdf + PARTYMON_STRUCT_LENGTH as u16 * idx as u16 // wPartyMon{N}
     };
 
     for i in 0..BOXMON_STRUCT_LENGTH {
@@ -109,32 +87,20 @@ pub fn send_get_mon_into_from_box(cpu: &mut Cpu) {
         cpu.write_byte(dst_ptr + i as u16, val);
     }
 
-    let ot_dst_ptr = match action {
-        PokemonWithdrawDepositParameter::PCDeposit => {
-            let idx = cpu.borrow_sram().current_box().len() - 1;
-            0xafa6 + NAME_LENGTH as u16 * idx as u16 // sBoxMon{N}OT
-        }
-        PokemonWithdrawDepositParameter::DayCareDeposit => {
-            0xdf01 // wBreedMon1OT
-        }
-        _ => {
-            let idx = cpu.borrow_wram().party_count() - 1;
-            0xddff + NAME_LENGTH as u16 * idx as u16 // wPartyMon{N}OT
-        }
+    let ot_dst_ptr = if action == PokemonWithdrawDepositParameter::PCDeposit {
+        let idx = cpu.borrow_sram().current_box().len() - 1;
+        0xafa6 + NAME_LENGTH as u16 * idx as u16 // sBoxMon{N}OT
+    } else {
+        let idx = cpu.borrow_wram().party_count() - 1;
+        0xddff + NAME_LENGTH as u16 * idx as u16 // wPartyMon{N}OT
     };
 
-    let ot_src_ptr = match action {
-        PokemonWithdrawDepositParameter::PCWithdraw => {
-            let idx = cpu.borrow_wram().cur_party_mon();
-            0xafa6 + NAME_LENGTH as u16 * idx as u16 // sBoxMon{N}OT
-        }
-        PokemonWithdrawDepositParameter::DayCareWithdraw => {
-            0xdf01 // wBreedMon1OT
-        }
-        _ => {
-            let idx = cpu.borrow_wram().cur_party_mon();
-            0xddff + NAME_LENGTH as u16 * idx as u16 // wPartyMon{N}OT
-        }
+    let ot_src_ptr = if action == PokemonWithdrawDepositParameter::PCWithdraw {
+        let idx = cpu.borrow_wram().cur_party_mon();
+        0xafa6 + NAME_LENGTH as u16 * idx as u16 // sBoxMon{N}OT
+    } else {
+        let idx = cpu.borrow_wram().cur_party_mon();
+        0xddff + NAME_LENGTH as u16 * idx as u16 // wPartyMon{N}OT
     };
 
     for i in 0..NAME_LENGTH {
@@ -142,32 +108,20 @@ pub fn send_get_mon_into_from_box(cpu: &mut Cpu) {
         cpu.write_byte(ot_dst_ptr + i as u16, val);
     }
 
-    let nick_dst_ptr = match action {
-        PokemonWithdrawDepositParameter::PCDeposit => {
-            let idx = cpu.borrow_sram().current_box().len() - 1;
-            0xb082 + NAME_LENGTH as u16 * idx as u16 // sBoxMon{N}Nickname
-        }
-        PokemonWithdrawDepositParameter::DayCareDeposit => {
-            0xdef6 // wBreedMon1Nickname
-        }
-        _ => {
-            let idx = cpu.borrow_wram().party_count() - 1;
-            0xde41 + NAME_LENGTH as u16 * idx as u16 // wPartyMon{N}Nickname
-        }
+    let nick_dst_ptr = if action == PokemonWithdrawDepositParameter::PCDeposit {
+        let idx = cpu.borrow_sram().current_box().len() - 1;
+        0xb082 + NAME_LENGTH as u16 * idx as u16 // sBoxMon{N}Nickname
+    } else {
+        let idx = cpu.borrow_wram().party_count() - 1;
+        0xde41 + NAME_LENGTH as u16 * idx as u16 // wPartyMon{N}Nickname
     };
 
-    let nick_src_ptr = match action {
-        PokemonWithdrawDepositParameter::PCWithdraw => {
-            let idx = cpu.borrow_wram().cur_party_mon();
-            0xb082 + NAME_LENGTH as u16 * idx as u16 // sBoxMon{N}Nickname
-        }
-        PokemonWithdrawDepositParameter::DayCareWithdraw => {
-            0xdef6 // wBreedMon1Nickname
-        }
-        _ => {
-            let idx = cpu.borrow_wram().cur_party_mon();
-            0xde41 + NAME_LENGTH as u16 * idx as u16 // wPartyMon{N}Nickname
-        }
+    let nick_src_ptr = if action == PokemonWithdrawDepositParameter::PCWithdraw {
+        let idx = cpu.borrow_wram().cur_party_mon();
+        0xb082 + NAME_LENGTH as u16 * idx as u16 // sBoxMon{N}Nickname
+    } else {
+        let idx = cpu.borrow_wram().cur_party_mon();
+        0xde41 + NAME_LENGTH as u16 * idx as u16 // wPartyMon{N}Nickname
     };
 
     for i in 0..MON_NAME_LENGTH {
@@ -175,29 +129,14 @@ pub fn send_get_mon_into_from_box(cpu: &mut Cpu) {
         cpu.write_byte(nick_dst_ptr + i as u16, val);
     }
 
-    match action {
-        PokemonWithdrawDepositParameter::PCDeposit => {
-            cpu.b = (cpu.borrow_sram().current_box().len() as u8) - 1;
-            cpu.call(0x5cb6); // RestorePPOfDepositedPokemon
-            return return_value(cpu, false);
-        }
-
-        PokemonWithdrawDepositParameter::DayCareDeposit => {
-            return return_value(cpu, false);
-        }
-
-        PokemonWithdrawDepositParameter::DayCareWithdraw => {
-            cpu.borrow_wram_mut().set_mon_type(MonType::Temp);
-            macros::predef::predef_call!(cpu, CopyMonToTempMon);
-        }
-
-        // PCWithdraw
-        _ => {
-            cpu.borrow_wram_mut().set_mon_type(MonType::Box);
-            macros::predef::predef_call!(cpu, CopyMonToTempMon);
-        }
+    if action == PokemonWithdrawDepositParameter::PCDeposit {
+        cpu.b = (cpu.borrow_sram().current_box().len() as u8) - 1;
+        cpu.call(0x5cb6); // RestorePPOfDepositedPokemon
+        return return_value(cpu, false);
     }
 
+    cpu.borrow_wram_mut().set_mon_type(MonType::Box);
+    macros::predef::predef_call!(cpu, CopyMonToTempMon);
     macros::farcall::callfar(cpu, 0x14, 0x4e1b); // CalcLevel
     let level = cpu.d;
 
@@ -209,18 +148,16 @@ pub fn send_get_mon_into_from_box(cpu: &mut Cpu) {
     cpu.set_de(dst_ptr + 36); // MON_MAXHP
     cpu.call(0x6167); // CalcMonStats
 
-    if action == PokemonWithdrawDepositParameter::PCWithdraw {
-        cpu.write_byte(dst_ptr + 32, 0); // MON_STATUS
+    cpu.write_byte(dst_ptr + 32, 0); // MON_STATUS
 
-        if cpu.borrow_wram().cur_party_species() == Some(PokemonSpecies::Unknown(EGG)) {
-            cpu.write_byte(dst_ptr + 34, 0); // MON_HP
-            cpu.write_byte(dst_ptr + 35, 0); // MON_HP + 1
-        } else {
-            cpu.a = cpu.read_byte(dst_ptr + 36); // MON_MAXHP
-            cpu.write_byte(dst_ptr + 34, cpu.a); // MON_HP
-            cpu.a = cpu.read_byte(dst_ptr + 36 + 1); // MON_MAXHP + 1
-            cpu.write_byte(dst_ptr + 34 + 1, cpu.a); // MON_HP + 1
-        }
+    if cpu.borrow_wram().cur_party_species() == Some(PokemonSpecies::Unknown(EGG)) {
+        cpu.write_byte(dst_ptr + 34, 0); // MON_HP
+        cpu.write_byte(dst_ptr + 35, 0); // MON_HP + 1
+    } else {
+        cpu.a = cpu.read_byte(dst_ptr + 36); // MON_MAXHP
+        cpu.write_byte(dst_ptr + 34, cpu.a); // MON_HP
+        cpu.a = cpu.read_byte(dst_ptr + 36 + 1); // MON_MAXHP + 1
+        cpu.write_byte(dst_ptr + 34 + 1, cpu.a); // MON_HP + 1
     }
 
     return_value(cpu, false)

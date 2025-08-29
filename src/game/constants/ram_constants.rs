@@ -14,8 +14,6 @@ define_u8_enum! {
     pub enum PokemonWithdrawDepositParameter {
         PCWithdraw = 0,
         PCDeposit = 1,
-        DayCareWithdraw = 2,
-        DayCareDeposit = 3,
     }
 }
 
