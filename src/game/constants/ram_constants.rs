@@ -6,6 +6,16 @@ define_u8_enum! {
     pub enum MonType {
         Party = 0,
         Box = 2,
+        Temp = 3,
+    }
+}
+
+define_u8_enum! {
+    pub enum PokemonWithdrawDepositParameter {
+        PCWithdraw = 0,
+        PCDeposit = 1,
+        DayCareWithdraw = 2,
+        DayCareDeposit = 3,
     }
 }
 

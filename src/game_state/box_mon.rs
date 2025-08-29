@@ -3,13 +3,17 @@ use crate::{
     game_state::moveset::Moveset,
 };
 
+pub const BOXMON_STRUCT_LENGTH: usize = 32;
+
 pub struct BoxMon<'a> {
     data: &'a [u8],
 }
 
 impl<'a> BoxMon<'a> {
     pub fn new(data: &'a [u8]) -> Self {
-        Self { data }
+        Self {
+            data: &data[..BOXMON_STRUCT_LENGTH],
+        }
     }
 
     pub fn species(&self) -> PokemonSpecies {

@@ -9,7 +9,7 @@ use crate::{
             map_constants::Map,
             move_constants::Move,
             pokemon_constants::{PokemonSpecies, EGG},
-            ram_constants::{MonType, SwarmFlags, TimeOfDay},
+            ram_constants::{MonType, PokemonWithdrawDepositParameter, SwarmFlags, TimeOfDay},
             serial_constants::LinkMode,
             text_constants::NAME_LENGTH,
         },
@@ -258,6 +258,10 @@ impl GameState {
         self.data[0x1109] = value;
     }
 
+    pub fn pokemon_withdraw_deposit_parameter(&self) -> PokemonWithdrawDepositParameter {
+        self.data[0x110b].into()
+    }
+
     pub fn set_item_quantity_change(&mut self, value: u8) {
         self.data[0x110c] = value;
     }
@@ -488,8 +492,13 @@ impl GameState {
         self.data[0x1cd7]
     }
 
+    pub fn set_party_count(&mut self, value: u8) {
+        assert!(value <= 6);
+        self.data[0x1cd7] = value;
+    }
+
     pub fn party_mon_species(&self, index: usize) -> PartyMonSpecies {
-        assert!(index < 6);
+        assert!(index <= 6);
         match self.data[0x1cd8 + index] {
             EGG => PartyMonSpecies::Egg,
             0xff => PartyMonSpecies::EndOfListMarker,
@@ -498,7 +507,7 @@ impl GameState {
     }
 
     pub fn set_party_mon_species(&mut self, index: usize, species: PartyMonSpecies) {
-        assert!(index < 6);
+        assert!(index <= 6);
         self.data[0x1cd8 + index] = match species {
             PartyMonSpecies::Some(s) => s.into(),
             PartyMonSpecies::Egg => EGG,
