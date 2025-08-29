@@ -44,19 +44,19 @@ impl<'a> PartyMon<'a> {
     }
 
     pub fn hp(&self) -> u16 {
-        BoxMon::new(self.data).hp()
+        u16::from_be_bytes([self.data[34], self.data[35]])
     }
 
     pub fn max_hp(&self) -> u16 {
-        BoxMon::new(self.data).max_hp()
+        u16::from_be_bytes([self.data[36], self.data[37]])
     }
 
     pub fn attack(&self) -> u16 {
-        BoxMon::new(self.data).attack()
+        u16::from_be_bytes([self.data[38], self.data[39]])
     }
 
     pub fn defense(&self) -> u16 {
-        BoxMon::new(self.data).defense()
+        u16::from_be_bytes([self.data[40], self.data[41]])
     }
 }
 

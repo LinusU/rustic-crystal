@@ -38,22 +38,6 @@ impl<'a> BoxMon<'a> {
     pub fn level(&self) -> u8 {
         self.data[31]
     }
-
-    pub fn hp(&self) -> u16 {
-        u16::from_be_bytes([self.data[34], self.data[35]])
-    }
-
-    pub fn max_hp(&self) -> u16 {
-        u16::from_be_bytes([self.data[36], self.data[37]])
-    }
-
-    pub fn attack(&self) -> u16 {
-        u16::from_be_bytes([self.data[38], self.data[39]])
-    }
-
-    pub fn defense(&self) -> u16 {
-        u16::from_be_bytes([self.data[40], self.data[41]])
-    }
 }
 
 pub struct BoxMonMut<'a> {
