@@ -7,7 +7,7 @@ use crate::{
             item_data_constants::HELD_CATCH_CHANCE,
             menu_constants, move_constants,
             pokemon_constants::PokemonSpecies,
-            pokemon_data_constants::{FRIEND_BALL_HAPPINESS, MONS_PER_BOX, PARTY_LENGTH},
+            pokemon_data_constants::{FRIEND_BALL_HAPPINESS, MONS_PER_BOX},
             ram_constants::MonType,
             text_constants,
         },
@@ -25,7 +25,7 @@ pub fn poke_ball_effect(cpu: &mut Cpu) {
         return cpu.jump(0x77a0); // UseBallInTrainerBattle
     }
 
-    if cpu.borrow_wram().party().len() == PARTY_LENGTH
+    if cpu.borrow_wram().party().is_full()
         && cpu.borrow_sram().current_box().len() == MONS_PER_BOX as usize
     {
         return cpu.jump(0x77dc); // Ball_BoxIsFullMessage
@@ -309,7 +309,7 @@ fn poke_ball_effect_catch(cpu: &mut Cpu, species: Option<PokemonSpecies>) {
         cpu.borrow_wram_mut().set_battle_result(value);
     }
 
-    if cpu.borrow_wram().party().len() == PARTY_LENGTH {
+    if cpu.borrow_wram().party().is_full() {
         poke_ball_effect_send_to_pc(cpu)
     } else {
         poke_ball_effect_add_to_party(cpu)

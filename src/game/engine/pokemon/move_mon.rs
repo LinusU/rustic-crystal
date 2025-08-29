@@ -4,7 +4,6 @@ use crate::{
         constants::{
             battle_constants::NUM_MOVES,
             pokemon_constants::{PokemonSpecies, EGG},
-            pokemon_data_constants::PARTY_LENGTH,
             ram_constants::{MonType, PokemonWithdrawDepositParameter},
             text_constants::{MON_NAME_LENGTH, NAME_LENGTH},
         },
@@ -29,9 +28,7 @@ pub fn send_get_mon_into_from_box(cpu: &mut Cpu) {
     cpu.call(0x2fcb); // OpenSRAM
 
     let dst_ptr = if action == PokemonWithdrawDepositParameter::PCWithdraw {
-        let party_count = cpu.borrow_wram().party().len();
-
-        if party_count == PARTY_LENGTH {
+        if cpu.borrow_wram().party().is_full() {
             return return_value(cpu, true);
         }
 
@@ -39,6 +36,8 @@ pub fn send_get_mon_into_from_box(cpu: &mut Cpu) {
             .borrow_wram()
             .cur_party_species()
             .unwrap_or(PokemonSpecies::Unknown(0));
+
+        let party_count = cpu.borrow_wram().party().len();
 
         cpu.borrow_wram_mut().set_party_count(party_count + 1);
         cpu.borrow_wram_mut()

@@ -18,4 +18,8 @@ impl<'a, T: MonListItem<'a>, const N: usize> MonList<'a, T, N> {
     pub fn len(&self) -> usize {
         self.data[0] as usize
     }
+
+    pub fn is_full(&self) -> bool {
+        self.len() >= N
+    }
 }
