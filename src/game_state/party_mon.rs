@@ -7,16 +7,16 @@ use crate::{
     },
 };
 
-pub const PARTYMON_STRUCT_LENGTH: usize = 48;
-
 pub struct PartyMon<'a> {
     data: &'a [u8],
 }
 
 impl<'a> PartyMon<'a> {
+    pub const LEN: usize = 48;
+
     pub fn new(data: &'a [u8]) -> Self {
         Self {
-            data: &data[..PARTYMON_STRUCT_LENGTH],
+            data: &data[..Self::LEN],
         }
     }
 
@@ -70,7 +70,7 @@ pub struct PartyMonMut<'a> {
 impl<'a> PartyMonMut<'a> {
     pub fn new(data: &'a mut [u8]) -> Self {
         Self {
-            data: &mut data[..PARTYMON_STRUCT_LENGTH],
+            data: &mut data[..PartyMon::LEN],
         }
     }
 

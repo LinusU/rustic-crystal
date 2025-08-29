@@ -520,13 +520,13 @@ impl GameState {
 
     pub fn party_mon(&self, index: usize) -> party_mon::PartyMon<'_> {
         assert!(index < 6);
-        let offset = 0x1cdf + (index * party_mon::PARTYMON_STRUCT_LENGTH);
+        let offset = 0x1cdf + (index * party_mon::PartyMon::LEN);
         party_mon::PartyMon::new(&self.data[offset..])
     }
 
     pub fn party_mon_mut(&mut self, index: usize) -> party_mon::PartyMonMut<'_> {
         assert!(index < 6);
-        let offset = 0x1cdf + (index * party_mon::PARTYMON_STRUCT_LENGTH);
+        let offset = 0x1cdf + (index * party_mon::PartyMon::LEN);
         party_mon::PartyMonMut::new(&mut self.data[offset..])
     }
 

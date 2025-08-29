@@ -9,7 +9,7 @@ use crate::{
         },
         macros,
     },
-    game_state::{box_mon::BoxMonOwned, party_mon::PARTYMON_STRUCT_LENGTH, PartyMonSpecies},
+    game_state::{box_mon::BoxMonOwned, party_mon::PartyMon, PartyMonSpecies},
 };
 
 /// Sents/Gets mon into/from Box depending on Parameter
@@ -46,7 +46,7 @@ pub fn send_get_mon_into_from_box(cpu: &mut Cpu) {
             .set_party_mon_species(party_count + 1, PartyMonSpecies::EndOfListMarker);
 
         // wPartyMon{N}
-        0xdcdf + PARTYMON_STRUCT_LENGTH as u16 * party_count as u16
+        0xdcdf + PartyMon::LEN as u16 * party_count as u16
     } else {
         if cpu.borrow_sram().current_box().is_full() {
             return return_value(cpu, true);
@@ -75,7 +75,7 @@ pub fn send_get_mon_into_from_box(cpu: &mut Cpu) {
         0xad26 + BoxMonOwned::LEN as u16 * idx as u16 // sBoxMon{N}
     } else {
         let idx = cpu.borrow_wram().cur_party_mon();
-        0xdcdf + PARTYMON_STRUCT_LENGTH as u16 * idx as u16 // wPartyMon{N}
+        0xdcdf + PartyMon::LEN as u16 * idx as u16 // wPartyMon{N}
     };
 
     for i in 0..BoxMonOwned::LEN {
