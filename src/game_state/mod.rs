@@ -500,15 +500,6 @@ impl GameState {
         self.data[0x1cd7] = value as u8;
     }
 
-    pub fn party_mon_species(&self, index: usize) -> PartyMonSpecies {
-        assert!(index <= 6);
-        match self.data[0x1cd8 + index] {
-            EGG => PartyMonSpecies::Egg,
-            0xff => PartyMonSpecies::EndOfListMarker,
-            n => PartyMonSpecies::Some(n.into()),
-        }
-    }
-
     pub fn set_party_mon_species(&mut self, index: usize, species: PartyMonSpecies) {
         assert!(index <= 6);
         self.data[0x1cd8 + index] = match species {
@@ -516,12 +507,6 @@ impl GameState {
             PartyMonSpecies::Egg => EGG,
             PartyMonSpecies::EndOfListMarker => 0xff,
         };
-    }
-
-    pub fn party_mon(&self, index: usize) -> party_mon::PartyMon<'_> {
-        assert!(index < 6);
-        let offset = 0x1cdf + (index * party_mon::PartyMon::LEN);
-        party_mon::PartyMon::new(&self.data[offset..])
     }
 
     pub fn party_mon_mut(&mut self, index: usize) -> party_mon::PartyMonMut<'_> {

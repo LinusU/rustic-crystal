@@ -1,15 +1,13 @@
 use crate::{
     cpu::Cpu,
     game::{data::pokemon::evos_attacks::EVOS_ATTACKS, macros},
-    game_state::PartyMonSpecies,
+    game_state::mon_list::MonListEntry,
 };
 
 pub fn place_party_mon_evo_stone_compatibility(cpu: &mut Cpu) {
-    let party_count = cpu.borrow_wram().party().len();
-
-    for i in 0..party_count {
-        if cpu.borrow_wram().party_mon_species(i) != PartyMonSpecies::Egg {
-            let species = cpu.borrow_wram().party_mon(i).species();
+    for i in 0..cpu.borrow_wram().party().len() {
+        if let MonListEntry::Mon(mon, ..) = cpu.borrow_wram().party().get(i).unwrap() {
+            let species = mon.species();
             let stone = cpu.borrow_wram().cur_item();
             let evos = EVOS_ATTACKS[u8::from(species) as usize - 1].evos;
 

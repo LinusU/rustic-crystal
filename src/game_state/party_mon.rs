@@ -61,7 +61,13 @@ impl<'a> PartyMon<'a> {
     }
 }
 
-impl<'a> MonListItem<'a> for PartyMon<'a> {}
+impl<'a> MonListItem<'a> for PartyMon<'a> {
+    const LEN: usize = PartyMon::LEN;
+
+    fn new(data: &'a [u8]) -> Self {
+        PartyMon::new(data)
+    }
+}
 
 pub struct PartyMonMut<'a> {
     data: &'a mut [u8],

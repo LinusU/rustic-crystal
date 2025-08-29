@@ -16,7 +16,7 @@ use crate::{
         macros,
         ram::hram,
     },
-    game_state::PartyMonSpecies,
+    game_state::{mon_list::MonListEntry, PartyMonSpecies},
 };
 
 impl PokemonSpecies {
@@ -43,10 +43,10 @@ pub fn evolve_after_battle(cpu: &mut Cpu) {
     for party_mon_idx in 0..PARTY_LENGTH {
         cpu.borrow_wram_mut().set_cur_party_mon(party_mon_idx as u8);
 
-        let species = match cpu.borrow_wram().party_mon_species(party_mon_idx) {
-            PartyMonSpecies::Some(species) => species,
-            PartyMonSpecies::Egg => continue,
-            PartyMonSpecies::EndOfListMarker => break,
+        let (species, held_item) = match cpu.borrow_wram().party().get(party_mon_idx) {
+            Some(MonListEntry::Mon(mon, ..)) => (mon.species(), mon.item()),
+            Some(MonListEntry::Egg(..)) => continue,
+            None => break,
         };
 
         cpu.borrow_wram_mut()
@@ -65,8 +65,7 @@ pub fn evolve_after_battle(cpu: &mut Cpu) {
             let species_to_evolve_to = match evolution {
                 Evolution::Trade(trade_item, species_to_evolve_to) => {
                     if cpu.borrow_wram().link_mode() == LinkMode::Null
-                        || cpu.borrow_wram().party_mon(party_mon_idx).item()
-                            == Some(Item::Everstone)
+                        || held_item == Some(Item::Everstone)
                     {
                         continue;
                     }
@@ -101,8 +100,7 @@ pub fn evolve_after_battle(cpu: &mut Cpu) {
                     if cpu.borrow_wram().link_mode() != LinkMode::Null
                         || cpu.borrow_wram().force_evolution()
                         || cpu.borrow_wram().temp_mon().level() < *level_requirement
-                        || cpu.borrow_wram().party_mon(party_mon_idx).item()
-                            == Some(Item::Everstone)
+                        || held_item == Some(Item::Everstone)
                     {
                         continue;
                     }
@@ -114,8 +112,7 @@ pub fn evolve_after_battle(cpu: &mut Cpu) {
                     if cpu.borrow_wram().link_mode() != LinkMode::Null
                         || cpu.borrow_wram().force_evolution()
                         || cpu.borrow_wram().temp_mon().happiness() < HAPPINESS_TO_EVOLVE
-                        || cpu.borrow_wram().party_mon(party_mon_idx).item()
-                            == Some(Item::Everstone)
+                        || held_item == Some(Item::Everstone)
                         || !trigger.can_trigger(cpu.borrow_wram().time_of_day())
                     {
                         continue;
@@ -131,8 +128,7 @@ pub fn evolve_after_battle(cpu: &mut Cpu) {
                     if cpu.borrow_wram().link_mode() != LinkMode::Null
                         || cpu.borrow_wram().force_evolution()
                         || cpu.borrow_wram().temp_mon().level() < *evo_level
-                        || cpu.borrow_wram().party_mon(party_mon_idx).item()
-                            == Some(Item::Everstone)
+                        || held_item == Some(Item::Everstone)
                         || !trigger.can_trigger(attack, defense)
                     {
                         continue;
@@ -229,7 +225,13 @@ pub fn evolve_after_battle(cpu: &mut Cpu) {
             cpu.b = 1; // TRUE
             macros::predef::predef_call!(cpu, CalcMonStats);
 
-            let party_mon_max_hp = cpu.borrow_wram().party_mon(party_mon_idx).max_hp();
+            let party_mon_max_hp = cpu
+                .borrow_wram()
+                .party()
+                .get(party_mon_idx)
+                .unwrap()
+                .mon()
+                .max_hp();
 
             let temp_mon_hp = cpu.borrow_wram().temp_mon().hp();
             let temp_mon_max_hp = cpu.borrow_wram().temp_mon().max_hp();
@@ -301,7 +303,7 @@ pub fn learn_level_moves(cpu: &mut Cpu) {
         }
 
         let idx = cpu.borrow_wram().cur_party_mon() as usize;
-        let cur_party_mon_moves = cpu.borrow_wram().party_mon(idx).moves();
+        let cur_party_mon_moves = cpu.borrow_wram().party().get(idx).unwrap().mon().moves();
 
         if cur_party_mon_moves.contains(learn_move) {
             continue;
