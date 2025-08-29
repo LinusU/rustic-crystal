@@ -79,8 +79,4 @@ impl<'a> BoxMonMut<'a> {
     pub fn set_happiness(&mut self, happiness: u8) {
         self.data[27] = happiness;
     }
-
-    pub fn set_hp(&mut self, hp: u16) {
-        self.data[34..=35].copy_from_slice(&hp.to_be_bytes());
-    }
 }

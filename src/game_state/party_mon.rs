@@ -88,6 +88,6 @@ impl<'a> PartyMonMut<'a> {
     }
 
     pub fn set_hp(&mut self, hp: u16) {
-        BoxMonMut::new(self.data).set_hp(hp);
+        self.data[34..=35].copy_from_slice(&hp.to_be_bytes());
     }
 }
