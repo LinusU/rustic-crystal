@@ -488,13 +488,13 @@ impl GameState {
         (self.data[0x1cb5], self.data[0x1cb6]).into()
     }
 
-    pub fn party_count(&self) -> u8 {
-        self.data[0x1cd7]
+    pub fn party_count(&self) -> usize {
+        self.data[0x1cd7].into()
     }
 
-    pub fn set_party_count(&mut self, value: u8) {
+    pub fn set_party_count(&mut self, value: usize) {
         assert!(value <= 6);
-        self.data[0x1cd7] = value;
+        self.data[0x1cd7] = value as u8;
     }
 
     pub fn party_mon_species(&self, index: usize) -> PartyMonSpecies {

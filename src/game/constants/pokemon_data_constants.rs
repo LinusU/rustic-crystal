@@ -7,7 +7,7 @@ use crate::game::{
 };
 
 /// Maximum number of party pokemon
-pub const PARTY_LENGTH: u8 = 6;
+pub const PARTY_LENGTH: usize = 6;
 
 pub const MONS_PER_BOX: u8 = 20;
 pub const NUM_BOXES: u8 = 14;

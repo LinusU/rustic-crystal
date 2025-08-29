@@ -40,7 +40,7 @@ pub fn evolve_after_battle(cpu: &mut Cpu) {
     let saved_bc = cpu.bc();
     let saved_de = cpu.de();
 
-    for party_mon_idx in 0..(PARTY_LENGTH as usize) {
+    for party_mon_idx in 0..PARTY_LENGTH {
         cpu.borrow_wram_mut().set_cur_party_mon(party_mon_idx as u8);
 
         let species = match cpu.borrow_wram().party_mon_species(party_mon_idx) {

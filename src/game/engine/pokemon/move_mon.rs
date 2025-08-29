@@ -29,9 +29,9 @@ pub fn send_get_mon_into_from_box(cpu: &mut Cpu) {
     cpu.call(0x2fcb); // OpenSRAM
 
     let dst_ptr = if action == PokemonWithdrawDepositParameter::PCWithdraw {
-        let party_count = cpu.borrow_wram().party_count() as usize;
+        let party_count = cpu.borrow_wram().party_count();
 
-        if party_count as u8 == PARTY_LENGTH {
+        if party_count == PARTY_LENGTH {
             return return_value(cpu, true);
         }
 
@@ -40,7 +40,7 @@ pub fn send_get_mon_into_from_box(cpu: &mut Cpu) {
             .cur_party_species()
             .unwrap_or(PokemonSpecies::Unknown(0));
 
-        cpu.borrow_wram_mut().set_party_count(party_count as u8 + 1);
+        cpu.borrow_wram_mut().set_party_count(party_count + 1);
         cpu.borrow_wram_mut()
             .set_party_mon_species(party_count, PartyMonSpecies::Some(species));
         cpu.borrow_wram_mut()

@@ -327,7 +327,7 @@ fn poke_ball_effect_add_to_party(cpu: &mut Cpu) {
         let idx = cpu.borrow_wram().party_count() - 1;
 
         cpu.borrow_wram_mut()
-            .party_mon_mut(idx as usize)
+            .party_mon_mut(idx)
             .set_happiness(FRIEND_BALL_HAPPINESS);
     }
 
@@ -343,7 +343,7 @@ fn poke_ball_effect_add_to_party(cpu: &mut Cpu) {
 
     if !cpu.flag(CpuFlag::C) {
         let idx = cpu.borrow_wram().party_count() - 1;
-        cpu.borrow_wram_mut().set_cur_party_mon(idx);
+        cpu.borrow_wram_mut().set_cur_party_mon(idx as u8);
 
         let base = 0xde41; // wPartyMonNicknames
         let offset = base + (idx as u16 * text_constants::MON_NAME_LENGTH as u16);
