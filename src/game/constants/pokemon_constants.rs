@@ -1,4 +1,8 @@
-use crate::{game::macros::r#enum::define_u8_enum, rom::ROM, save_state::string::PokeString};
+use crate::{
+    game::{constants::text_constants::MON_NAME_LENGTH, macros::r#enum::define_u8_enum},
+    rom::ROM,
+    save_state::string::PokeString,
+};
 
 pub const EGG: u8 = 0xfd;
 
@@ -263,10 +267,12 @@ impl PokemonSpecies {
         (1..=251).map(PokemonSpecies::from)
     }
 
-    pub fn name(self) -> PokeString {
+    pub fn name(self) -> PokeString<MON_NAME_LENGTH> {
         const START: usize = (0x14 * 0x4000) | (0x7384 & 0x3fff);
         let offset = START + (u8::from(self) as usize - 1) * 10;
-        PokeString::from_bytes(&ROM[offset..], 10)
+        let mut result = [0x50; MON_NAME_LENGTH];
+        result[0..10].copy_from_slice(&ROM[offset..offset + 10]);
+        PokeString::new(result)
     }
 }
 

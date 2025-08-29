@@ -1,18 +1,11 @@
 use std::fmt::{Debug, Display, Write};
 
-#[derive(Default, PartialEq, Eq, PartialOrd, Ord, Clone)]
-pub struct PokeString(Vec<u8>);
+#[derive(PartialEq, Eq, PartialOrd, Ord, Clone)]
+pub struct PokeString<const N: usize>([u8; N]);
 
-impl PokeString {
-    pub fn from_bytes(data: &[u8], max_len: usize) -> PokeString {
-        let result = data
-            .iter()
-            .copied()
-            .take(max_len)
-            .take_while(|&b| b != 0x50)
-            .collect();
-
-        PokeString(result)
+impl<const N: usize> PokeString<N> {
+    pub fn new(data: [u8; N]) -> Self {
+        Self(data)
     }
 
     pub fn iter(&self) -> std::iter::Copied<std::slice::Iter<'_, u8>> {
@@ -24,7 +17,13 @@ impl PokeString {
     }
 }
 
-impl<'a> IntoIterator for &'a PokeString {
+impl<const N: usize> AsRef<[u8]> for PokeString<N> {
+    fn as_ref(&self) -> &[u8] {
+        &self.0
+    }
+}
+
+impl<'a, const N: usize> IntoIterator for &'a PokeString<N> {
     type Item = u8;
     type IntoIter = std::iter::Copied<std::slice::Iter<'a, u8>>;
 
@@ -33,12 +32,13 @@ impl<'a> IntoIterator for &'a PokeString {
     }
 }
 
-impl Display for PokeString {
+impl<const N: usize> Display for PokeString<N> {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         for ch in &self.0 {
             match ch {
+                0x50 => break,
+
                 0x4a => f.write_str("𝔭𝔪")?,
-                0x50 => unreachable!(),
                 0x54 => f.write_str("POKé")?,
                 0x56 => f.write_str("……")?,
                 0x5b => f.write_str("PC")?,
@@ -122,8 +122,8 @@ impl Display for PokeString {
     }
 }
 
-impl Debug for PokeString {
+impl<const N: usize> Debug for PokeString<N> {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "PokeString {:?}", format!("{}", self))
+        write!(f, "PokeString<{N}> {:?}", format!("{}", self))
     }
 }

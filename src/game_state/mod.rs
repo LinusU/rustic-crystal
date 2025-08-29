@@ -456,8 +456,8 @@ impl GameState {
         u16::from_be_bytes([self.data[0x147b], self.data[0x147c]])
     }
 
-    pub fn player_name(&self) -> PokeString {
-        PokeString::from_bytes(&self.data[0x147d..], NAME_LENGTH)
+    pub fn player_name(&self) -> PokeString<NAME_LENGTH> {
+        PokeString::new(self.data[0x147d..0x147d + NAME_LENGTH].try_into().unwrap())
     }
 
     pub fn cur_box(&self) -> u8 {
@@ -531,10 +531,10 @@ impl GameState {
         UnlockedUnowns::from_bits_retain(self.data[0x1ef3])
     }
 
-    pub fn breed_mon_1(&self) -> Option<box_mon::BoxMon<'_>> {
+    pub fn breed_mon_1(&self) -> Option<box_mon::BoxMonRef<'_>> {
         match self.data[0x1f0c] {
             0 => None,
-            _ => Some(box_mon::BoxMon::new(&self.data[0x1f0c..])),
+            _ => Some(box_mon::BoxMonRef::new(&self.data[0x1f0c..])),
         }
     }
 
@@ -543,17 +543,17 @@ impl GameState {
         self.data[0x1f2e] == 0
     }
 
-    pub fn breed_mon_2(&self) -> Option<box_mon::BoxMon<'_>> {
+    pub fn breed_mon_2(&self) -> Option<box_mon::BoxMonRef<'_>> {
         match self.data[0x1f45] {
             0 => None,
-            _ => Some(box_mon::BoxMon::new(&self.data[0x1f45..])),
+            _ => Some(box_mon::BoxMonRef::new(&self.data[0x1f45..])),
         }
     }
 
-    pub fn egg_mon(&self) -> Option<box_mon::BoxMon<'_>> {
+    pub fn egg_mon(&self) -> Option<box_mon::BoxMonRef<'_>> {
         match self.data[0x1f7b] {
             0 => None,
-            _ => Some(box_mon::BoxMon::new(&self.data[0x1f7b..])),
+            _ => Some(box_mon::BoxMonRef::new(&self.data[0x1f7b..])),
         }
     }
 

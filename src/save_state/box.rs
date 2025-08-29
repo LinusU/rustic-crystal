@@ -1,71 +1,8 @@
 use crate::{
-    game::constants::{
-        item_constants::Item,
-        pokemon_constants::PokemonSpecies,
-        pokemon_data_constants::BASE_HAPPINESS,
-        text_constants::{MON_NAME_LENGTH, NAME_LENGTH},
-    },
-    game_state::{battle_mon::BattleMon, moveset::Moveset},
+    game::constants::text_constants::{MON_NAME_LENGTH, NAME_LENGTH},
+    game_state::box_mon::{BoxMonMut, BoxMonOwned, BoxMonRef},
     save_state::string::PokeString,
 };
-
-#[derive(Debug, PartialEq, Eq, Clone)]
-pub struct BoxedMon {
-    pub species: PokemonSpecies,
-    pub item: Option<Item>,
-    pub moves: Moveset,
-    pub ot_id: u16,
-    pub exp: u32,
-    pub ev_hp: u16,
-    pub ev_attack: u16,
-    pub ev_defense: u16,
-    pub ev_speed: u16,
-    pub ev_special: u16,
-    pub dvs: u16,
-    pub pp: [u8; 4],
-    pub friendship: u8,
-    pub pokerus: u8,
-    pub caught_data: [u8; 2],
-    pub level: u8,
-    pub ot_name: PokeString,
-    pub nickname: PokeString,
-}
-
-impl BoxedMon {
-    pub fn from_battle_mon(
-        battle_mon: &BattleMon,
-        ot_id: u16,
-        ot_name: PokeString,
-        nickname: PokeString,
-    ) -> Self {
-        assert!(ot_name.len() <= NAME_LENGTH);
-        assert!(nickname.len() <= MON_NAME_LENGTH);
-
-        Self {
-            species: battle_mon.species(),
-            item: battle_mon.item(),
-            moves: battle_mon.moves(),
-            ot_id,
-            exp: battle_mon
-                .species()
-                .growth_rate()
-                .exp_at_level(battle_mon.level()),
-            ev_hp: 0,
-            ev_attack: 0,
-            ev_defense: 0,
-            ev_speed: 0,
-            ev_special: 0,
-            dvs: battle_mon.dvs(),
-            pp: battle_mon.pp(),
-            friendship: BASE_HAPPINESS,
-            pokerus: 0,
-            caught_data: [0, 0],
-            level: battle_mon.level(),
-            ot_name,
-            nickname,
-        }
-    }
-}
 
 pub struct Box<'a> {
     data: &'a [u8],
@@ -88,7 +25,7 @@ impl<'a> Box<'a> {
         self.len() >= self.capacity()
     }
 
-    pub fn get(&self, index: usize) -> Option<BoxedMon> {
+    pub fn get(&self, index: usize) -> Option<BoxMonRef<'_>> {
         if index >= self.len() {
             return None;
         }
@@ -98,49 +35,7 @@ impl<'a> Box<'a> {
             return None;
         }
 
-        let offset = 22 + (index * 32);
-        Some(BoxedMon {
-            species: self.data[offset].into(),
-            item: match self.data[offset + 1] {
-                0 => None,
-                n => Some(n.into()),
-            },
-            moves: [
-                self.data[offset + 2],
-                self.data[offset + 3],
-                self.data[offset + 4],
-                self.data[offset + 5],
-            ]
-            .into(),
-            ot_id: u16::from_be_bytes([self.data[offset + 6], self.data[offset + 7]]),
-            exp: u32::from_be_bytes([
-                0,
-                self.data[offset + 8],
-                self.data[offset + 9],
-                self.data[offset + 10],
-            ]),
-            ev_hp: u16::from_be_bytes([self.data[offset + 11], self.data[offset + 12]]),
-            ev_attack: u16::from_be_bytes([self.data[offset + 13], self.data[offset + 14]]),
-            ev_defense: u16::from_be_bytes([self.data[offset + 15], self.data[offset + 16]]),
-            ev_speed: u16::from_be_bytes([self.data[offset + 17], self.data[offset + 18]]),
-            ev_special: u16::from_be_bytes([self.data[offset + 19], self.data[offset + 20]]),
-            dvs: u16::from_be_bytes([self.data[offset + 21], self.data[offset + 22]]),
-            pp: [
-                self.data[offset + 23],
-                self.data[offset + 24],
-                self.data[offset + 25],
-                self.data[offset + 26],
-            ],
-            friendship: self.data[offset + 27],
-            pokerus: self.data[offset + 28],
-            caught_data: [self.data[offset + 29], self.data[offset + 30]],
-            level: self.data[offset + 31],
-            ot_name: PokeString::from_bytes(&self.data[662 + (index * NAME_LENGTH)..], NAME_LENGTH),
-            nickname: PokeString::from_bytes(
-                &self.data[882 + (index * MON_NAME_LENGTH)..],
-                MON_NAME_LENGTH,
-            ),
-        })
+        Some(BoxMonRef::new(&self.data[22 + (index * 32)..]))
     }
 }
 
@@ -157,11 +52,38 @@ impl<'a> BoxMut<'a> {
         self.data[0].into()
     }
 
-    pub fn get(&self, index: usize) -> Option<BoxedMon> {
-        Box::new(self.data).get(index)
+    pub fn get(&mut self, index: usize) -> Option<BoxMonRef<'_>> {
+        if index >= self.len() {
+            return None;
+        }
+
+        if self.data[1 + index] == 0xff {
+            log::error!("List terminated before expected length");
+            return None;
+        }
+
+        Some(BoxMonRef::new(&self.data[22 + (index * 32)..]))
     }
 
-    pub fn push_front(&mut self, pokemon: &BoxedMon) {
+    pub fn get_mut(&mut self, index: usize) -> Option<BoxMonMut<'_>> {
+        if index >= self.len() {
+            return None;
+        }
+
+        if self.data[1 + index] == 0xff {
+            log::error!("List terminated before expected length");
+            return None;
+        }
+
+        Some(BoxMonMut::new(&mut self.data[22 + (index * 32)..]))
+    }
+
+    pub fn push_front(
+        &mut self,
+        pokemon: BoxMonRef,
+        ot_name: PokeString<NAME_LENGTH>,
+        nickname: PokeString<MON_NAME_LENGTH>,
+    ) {
         assert!(self.len() < 20);
 
         self.data[0] += 1;
@@ -175,66 +97,55 @@ impl<'a> BoxMut<'a> {
             self.data.copy_within(882..1091, 893);
         }
 
-        self.set(0, pokemon);
+        self.set(0, pokemon, ot_name, nickname);
     }
 
-    fn set(&mut self, index: usize, pokemon: &BoxedMon) {
+    fn set(
+        &mut self,
+        i: usize,
+        pokemon: BoxMonRef,
+        ot_name: PokeString<NAME_LENGTH>,
+        nickname: PokeString<MON_NAME_LENGTH>,
+    ) {
+        *self.species_slot_mut(i) = pokemon.species().into();
+        self.pokemon_slot_mut(i).copy_from_slice(pokemon.as_ref());
+        self.ot_name_slot_mut(i).copy_from_slice(ot_name.as_ref());
+        self.nickname_slot_mut(i).copy_from_slice(nickname.as_ref());
+    }
+
+    fn species_slot_mut(&mut self, index: usize) -> &mut u8 {
         assert!(index < self.len());
+        &mut self.data[1 + index]
+    }
 
-        self.data[1 + index] = pokemon.species.into();
+    fn pokemon_slot_mut(&mut self, index: usize) -> &mut [u8; BoxMonOwned::LEN] {
+        assert!(index < self.len());
+        let start = 22 + index * BoxMonOwned::LEN;
+        let end = start + BoxMonOwned::LEN;
+        (&mut self.data[start..end]).try_into().unwrap()
+    }
 
-        let offset = 22 + (index * 32);
-        self.data[offset] = pokemon.species.into();
-        self.data[offset + 1] = pokemon.item.map_or(0, Into::into);
-        self.data[offset + 2] = pokemon.moves.get(0).map_or(0, Into::into);
-        self.data[offset + 3] = pokemon.moves.get(1).map_or(0, Into::into);
-        self.data[offset + 4] = pokemon.moves.get(2).map_or(0, Into::into);
-        self.data[offset + 5] = pokemon.moves.get(3).map_or(0, Into::into);
-        self.data[offset + 6..offset + 8].copy_from_slice(&pokemon.ot_id.to_be_bytes());
-        self.data[offset + 8..offset + 11].copy_from_slice(&pokemon.exp.to_be_bytes()[1..]);
-        self.data[offset + 11..offset + 13].copy_from_slice(&pokemon.ev_hp.to_be_bytes());
-        self.data[offset + 13..offset + 15].copy_from_slice(&pokemon.ev_attack.to_be_bytes());
-        self.data[offset + 15..offset + 17].copy_from_slice(&pokemon.ev_defense.to_be_bytes());
-        self.data[offset + 17..offset + 19].copy_from_slice(&pokemon.ev_speed.to_be_bytes());
-        self.data[offset + 19..offset + 21].copy_from_slice(&pokemon.ev_special.to_be_bytes());
-        self.data[offset + 21..offset + 23].copy_from_slice(&pokemon.dvs.to_be_bytes());
-        self.data[offset + 23..offset + 27].copy_from_slice(&pokemon.pp);
-        self.data[offset + 27] = pokemon.friendship;
-        self.data[offset + 28] = pokemon.pokerus;
-        self.data[offset + 29..offset + 31].copy_from_slice(&pokemon.caught_data);
-        self.data[offset + 31] = pokemon.level;
+    fn ot_name_slot_mut(&mut self, index: usize) -> &mut [u8; NAME_LENGTH] {
+        assert!(index < self.len());
+        let start = 662 + index * NAME_LENGTH;
+        let end = start + NAME_LENGTH;
+        (&mut self.data[start..end]).try_into().unwrap()
+    }
 
-        let mut ot_name_bytes = pokemon.ot_name.iter();
-        self.data[662 + (index * 11)] = ot_name_bytes.next().unwrap_or(0x50);
-        self.data[663 + (index * 11)] = ot_name_bytes.next().unwrap_or(0x50);
-        self.data[664 + (index * 11)] = ot_name_bytes.next().unwrap_or(0x50);
-        self.data[665 + (index * 11)] = ot_name_bytes.next().unwrap_or(0x50);
-        self.data[666 + (index * 11)] = ot_name_bytes.next().unwrap_or(0x50);
-        self.data[667 + (index * 11)] = ot_name_bytes.next().unwrap_or(0x50);
-        self.data[668 + (index * 11)] = ot_name_bytes.next().unwrap_or(0x50);
-        self.data[669 + (index * 11)] = ot_name_bytes.next().unwrap_or(0x50);
-        self.data[670 + (index * 11)] = ot_name_bytes.next().unwrap_or(0x50);
-        self.data[671 + (index * 11)] = ot_name_bytes.next().unwrap_or(0x50);
-        self.data[672 + (index * 11)] = ot_name_bytes.next().unwrap_or(0x50);
-
-        let mut nickname_bytes = pokemon.nickname.iter();
-        self.data[882 + (index * 11)] = nickname_bytes.next().unwrap_or(0x50);
-        self.data[883 + (index * 11)] = nickname_bytes.next().unwrap_or(0x50);
-        self.data[884 + (index * 11)] = nickname_bytes.next().unwrap_or(0x50);
-        self.data[885 + (index * 11)] = nickname_bytes.next().unwrap_or(0x50);
-        self.data[886 + (index * 11)] = nickname_bytes.next().unwrap_or(0x50);
-        self.data[887 + (index * 11)] = nickname_bytes.next().unwrap_or(0x50);
-        self.data[888 + (index * 11)] = nickname_bytes.next().unwrap_or(0x50);
-        self.data[889 + (index * 11)] = nickname_bytes.next().unwrap_or(0x50);
-        self.data[890 + (index * 11)] = nickname_bytes.next().unwrap_or(0x50);
-        self.data[891 + (index * 11)] = nickname_bytes.next().unwrap_or(0x50);
-        self.data[892 + (index * 11)] = nickname_bytes.next().unwrap_or(0x50);
+    fn nickname_slot_mut(&mut self, index: usize) -> &mut [u8; MON_NAME_LENGTH] {
+        assert!(index < self.len());
+        let start = 882 + index * MON_NAME_LENGTH;
+        let end = start + MON_NAME_LENGTH;
+        (&mut self.data[start..end]).try_into().unwrap()
     }
 }
 
 #[cfg(test)]
 mod test {
-    use crate::game_state::battle_mon::BattleMonMut;
+    use crate::{
+        game::constants::pokemon_constants::PokemonSpecies,
+        game_state::battle_mon::{BattleMon, BattleMonMut},
+    };
 
     use super::*;
 
@@ -259,17 +170,29 @@ mod test {
         c.set_species(PokemonSpecies::Phanpy);
         c.set_level(18);
 
-        let a_ot = PokeString::from_bytes(&[0x80], 1);
-        let b_ot = PokeString::from_bytes(&[0x81, 0x81], 2);
-        let c_ot = PokeString::from_bytes(&[0x82, 0x82, 0x82], 3);
+        let a_ot = PokeString::new([
+            0x80, 0x50, 0x50, 0x50, 0x50, 0x50, 0x50, 0x50, 0x50, 0x50, 0x50,
+        ]);
+        let b_ot = PokeString::new([
+            0x81, 0x81, 0x50, 0x50, 0x50, 0x50, 0x50, 0x50, 0x50, 0x50, 0x50,
+        ]);
+        let c_ot = PokeString::new([
+            0x82, 0x82, 0x82, 0x50, 0x50, 0x50, 0x50, 0x50, 0x50, 0x50, 0x50,
+        ]);
 
-        let a_name = PokeString::from_bytes(&[0xa0], 1);
-        let b_name = PokeString::from_bytes(&[0xa1, 0xa1], 2);
-        let c_name = PokeString::from_bytes(&[0xa2, 0xa2, 0xa2], 3);
+        let a_name = PokeString::new([
+            0xa0, 0x50, 0x50, 0x50, 0x50, 0x50, 0x50, 0x50, 0x50, 0x50, 0x50,
+        ]);
+        let b_name = PokeString::new([
+            0xa1, 0xa1, 0x50, 0x50, 0x50, 0x50, 0x50, 0x50, 0x50, 0x50, 0x50,
+        ]);
+        let c_name = PokeString::new([
+            0xa2, 0xa2, 0xa2, 0x50, 0x50, 0x50, 0x50, 0x50, 0x50, 0x50, 0x50,
+        ]);
 
-        let a = BoxedMon::from_battle_mon(&BattleMon::new(&a_vec), 10101, a_ot, a_name);
-        let b = BoxedMon::from_battle_mon(&BattleMon::new(&b_vec), 20202, b_ot, b_name);
-        let c = BoxedMon::from_battle_mon(&BattleMon::new(&c_vec), 30303, c_ot, c_name);
+        let a = BoxMonOwned::from_battle_mon(BattleMon::new(&a_vec), 10101);
+        let b = BoxMonOwned::from_battle_mon(BattleMon::new(&b_vec), 20202);
+        let c = BoxMonOwned::from_battle_mon(BattleMon::new(&c_vec), 30303);
 
         let mut box_vec = vec![0; 1200];
         let mut r#box = BoxMut::new(&mut box_vec);
@@ -277,25 +200,25 @@ mod test {
         assert_eq!(r#box.len(), 0);
         assert_eq!(r#box.get(0), None);
 
-        r#box.push_front(&c);
+        r#box.push_front(c.as_ref(), c_ot, c_name);
 
         assert_eq!(r#box.len(), 1);
-        assert_eq!(r#box.get(0), Some(c.clone()));
+        assert_eq!(r#box.get(0), Some(c.as_ref()));
         assert_eq!(r#box.get(1), None);
 
-        r#box.push_front(&b);
+        r#box.push_front(b.as_ref(), b_ot, b_name);
 
         assert_eq!(r#box.len(), 2);
-        assert_eq!(r#box.get(0), Some(b.clone()));
-        assert_eq!(r#box.get(1), Some(c.clone()));
+        assert_eq!(r#box.get(0), Some(b.as_ref()));
+        assert_eq!(r#box.get(1), Some(c.as_ref()));
         assert_eq!(r#box.get(2), None);
 
-        r#box.push_front(&a);
+        r#box.push_front(a.as_ref(), a_ot, a_name);
 
         assert_eq!(r#box.len(), 3);
-        assert_eq!(r#box.get(0), Some(a.clone()));
-        assert_eq!(r#box.get(1), Some(b.clone()));
-        assert_eq!(r#box.get(2), Some(c.clone()));
+        assert_eq!(r#box.get(0), Some(a.as_ref()));
+        assert_eq!(r#box.get(1), Some(b.as_ref()));
+        assert_eq!(r#box.get(2), Some(c.as_ref()));
         assert_eq!(r#box.get(3), None);
     }
 }

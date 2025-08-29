@@ -1,7 +1,7 @@
 use crate::{
     game::constants::{item_constants::Item, pokemon_constants::PokemonSpecies},
     game_state::{
-        box_mon::{BoxMon, BoxMonMut},
+        box_mon::{BoxMonMut, BoxMonRef},
         moveset::Moveset,
     },
 };
@@ -24,23 +24,23 @@ impl<'a> PartyMon<'a> {
     }
 
     pub fn species(&self) -> PokemonSpecies {
-        BoxMon::new(self.data).species()
+        BoxMonRef::new(self.data).species()
     }
 
     pub fn item(&self) -> Option<Item> {
-        BoxMon::new(self.data).item()
+        BoxMonRef::new(self.data).item()
     }
 
     pub fn moves(&self) -> Moveset {
-        BoxMon::new(self.data).moves()
+        BoxMonRef::new(self.data).moves()
     }
 
     pub fn happiness(&self) -> u8 {
-        BoxMon::new(self.data).happiness()
+        BoxMonRef::new(self.data).happiness()
     }
 
     pub fn level(&self) -> u8 {
-        BoxMon::new(self.data).level()
+        BoxMonRef::new(self.data).level()
     }
 
     pub fn hp(&self) -> u16 {

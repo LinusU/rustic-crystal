@@ -10,10 +10,7 @@ use crate::{
         },
         macros,
     },
-    game_state::{
-        box_mon::BOXMON_STRUCT_LENGTH, party_mon::PARTYMON_STRUCT_LENGTH, PartyMonSpecies,
-    },
-    save_state::r#box::BoxedMon,
+    game_state::{box_mon::BoxMonOwned, party_mon::PARTYMON_STRUCT_LENGTH, PartyMonSpecies},
 };
 
 /// Sents/Gets mon into/from Box depending on Parameter
@@ -71,18 +68,18 @@ pub fn send_get_mon_into_from_box(cpu: &mut Cpu) {
         cpu.write_byte(cpu.hl() + 1, 0xff);
 
         // sBoxMon{N}
-        0xad26 + BOXMON_STRUCT_LENGTH as u16 * list_len as u16
+        0xad26 + BoxMonOwned::LEN as u16 * list_len as u16
     };
 
     let src_ptr = if action == PokemonWithdrawDepositParameter::PCWithdraw {
         let idx = cpu.borrow_wram().cur_party_mon();
-        0xad26 + BOXMON_STRUCT_LENGTH as u16 * idx as u16 // sBoxMon{N}
+        0xad26 + BoxMonOwned::LEN as u16 * idx as u16 // sBoxMon{N}
     } else {
         let idx = cpu.borrow_wram().cur_party_mon();
         0xdcdf + PARTYMON_STRUCT_LENGTH as u16 * idx as u16 // wPartyMon{N}
     };
 
-    for i in 0..BOXMON_STRUCT_LENGTH {
+    for i in 0..BoxMonOwned::LEN {
         let val = cpu.read_byte(src_ptr + i as u16);
         cpu.write_byte(dst_ptr + i as u16, val);
     }
@@ -180,19 +177,23 @@ pub fn send_mon_into_box(cpu: &mut Cpu) {
     cpu.a = 0x01; // BANK(sBoxCount)
     cpu.call(0x2fcb); // OpenSRAM
 
-    let cur_species = cpu.borrow_wram().cur_party_species();
-    cpu.borrow_wram_mut().set_cur_species(cur_species);
+    let cur_species = cpu
+        .borrow_wram()
+        .cur_party_species()
+        .expect("send_mon_into_box called without cur_party_species");
 
-    let mon = BoxedMon::from_battle_mon(
-        &cpu.borrow_wram().enemy_mon(),
-        cpu.borrow_wram().player_id(),
-        cpu.borrow_wram().player_name(),
-        cur_species.map_or_else(Default::default, |s| s.name()),
-    );
+    cpu.borrow_wram_mut().set_cur_species(Some(cur_species));
 
-    cpu.borrow_sram_mut().current_box_mut().push_front(&mon);
+    let mon =
+        BoxMonOwned::from_battle_mon(cpu.borrow_wram().enemy_mon(), cpu.borrow_wram().player_id());
 
-    cpu.a = cur_species.map_or(0, Into::into) - 1;
+    let ot_name = cpu.borrow_wram().player_name();
+
+    cpu.borrow_sram_mut()
+        .current_box_mut()
+        .push_front(mon.as_ref(), ot_name, cur_species.name());
+
+    cpu.a = u8::from(cur_species) - 1;
     cpu.call(0x3380); // SetSeenAndCaughtMon
 
     if cpu.borrow_wram().cur_party_species() == Some(PokemonSpecies::Unown) {
