@@ -5,7 +5,7 @@ use crate::{
         item_constants::Item, pokemon_constants::PokemonSpecies,
         pokemon_data_constants::BASE_HAPPINESS,
     },
-    game_state::{battle_mon::BattleMon, moveset::Moveset, party_mon::PartyMon},
+    game_state::{battle_mon::BattleMon, moveset::Moveset, party_mon::PartyMonRef},
 };
 
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -43,7 +43,7 @@ impl BoxMonOwned {
         result
     }
 
-    pub fn from_party_mon(party_mon: PartyMon) -> Self {
+    pub fn from_party_mon(party_mon: PartyMonRef) -> Self {
         Self {
             // PartyMon is a superset of BoxMon, so this is safe
             data: party_mon.to_vec()[0..BoxMonOwned::LEN].try_into().unwrap(),

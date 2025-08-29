@@ -7,11 +7,11 @@ use crate::{
     },
 };
 
-pub struct PartyMon<'a> {
+pub struct PartyMonRef<'a> {
     data: &'a [u8],
 }
 
-impl<'a> PartyMon<'a> {
+impl<'a> PartyMonRef<'a> {
     pub const LEN: usize = 48;
 
     pub fn new(data: &'a [u8]) -> Self {
@@ -61,11 +61,11 @@ impl<'a> PartyMon<'a> {
     }
 }
 
-impl<'a> MonListItem<'a> for PartyMon<'a> {
-    const LEN: usize = PartyMon::LEN;
+impl<'a> MonListItem<'a> for PartyMonRef<'a> {
+    const LEN: usize = PartyMonRef::LEN;
 
     fn new(data: &'a [u8]) -> Self {
-        PartyMon::new(data)
+        PartyMonRef::new(data)
     }
 }
 
@@ -76,7 +76,7 @@ pub struct PartyMonMut<'a> {
 impl<'a> PartyMonMut<'a> {
     pub fn new(data: &'a mut [u8]) -> Self {
         Self {
-            data: &mut data[..PartyMon::LEN],
+            data: &mut data[..PartyMonRef::LEN],
         }
     }
 

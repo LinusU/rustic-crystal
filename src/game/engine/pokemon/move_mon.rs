@@ -10,7 +10,7 @@ use crate::{
         macros,
     },
     game_state::{
-        box_mon::BoxMonOwned, mon_list::MonListEntry, party_mon::PartyMon, PartyMonSpecies,
+        box_mon::BoxMonOwned, mon_list::MonListEntry, party_mon::PartyMonRef, PartyMonSpecies,
     },
 };
 
@@ -80,7 +80,7 @@ pub fn send_get_mon_into_from_box(cpu: &mut Cpu) {
             .set_party_mon_species(party_count + 1, PartyMonSpecies::EndOfListMarker);
 
         // wPartyMon{N}
-        0xdcdf + PartyMon::LEN as u16 * party_count as u16
+        0xdcdf + PartyMonRef::LEN as u16 * party_count as u16
     };
 
     let src_ptr = {

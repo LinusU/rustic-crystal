@@ -15,7 +15,7 @@ use crate::{
             text_constants::NAME_LENGTH,
         },
     },
-    game_state::{mon_list::MonList, party_mon::PartyMon},
+    game_state::{mon_list::MonList, party_mon::PartyMonRef},
     save_state::string::PokeString,
 };
 
@@ -269,8 +269,8 @@ impl GameState {
         self.data[0x110c] = value;
     }
 
-    pub fn temp_mon(&self) -> party_mon::PartyMon<'_> {
-        party_mon::PartyMon::new(&self.data[0x110e..])
+    pub fn temp_mon(&self) -> party_mon::PartyMonRef<'_> {
+        party_mon::PartyMonRef::new(&self.data[0x110e..])
     }
 
     pub fn temp_mon_mut(&mut self) -> party_mon::PartyMonMut<'_> {
@@ -491,7 +491,7 @@ impl GameState {
         (self.data[0x1cb5], self.data[0x1cb6]).into()
     }
 
-    pub fn party(&self) -> MonList<'_, PartyMon<'_>, PARTY_LENGTH> {
+    pub fn party(&self) -> MonList<'_, PartyMonRef<'_>, PARTY_LENGTH> {
         MonList::new(&self.data[0x1cd7..])
     }
 
@@ -511,7 +511,7 @@ impl GameState {
 
     pub fn party_mon_mut(&mut self, index: usize) -> party_mon::PartyMonMut<'_> {
         assert!(index < 6);
-        let offset = 0x1cdf + (index * party_mon::PartyMon::LEN);
+        let offset = 0x1cdf + (index * party_mon::PartyMonRef::LEN);
         party_mon::PartyMonMut::new(&mut self.data[offset..])
     }
 
