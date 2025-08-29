@@ -52,6 +52,16 @@ impl GrowthRate {
             }
         }
     }
+
+    pub fn level_at_exp(self, exp: u32) -> u8 {
+        for level in 2..=100 {
+            if self.exp_at_level(level) > exp {
+                return level - 1;
+            }
+        }
+
+        100
+    }
 }
 
 // party_struct members

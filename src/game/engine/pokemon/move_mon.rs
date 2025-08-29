@@ -2,16 +2,12 @@ use crate::{
     cpu::{Cpu, CpuFlag},
     game::{
         constants::{
-            battle_constants::NUM_MOVES,
-            pokemon_constants::{PokemonSpecies, EGG},
-            ram_constants::{MonType, PokemonWithdrawDepositParameter},
-            text_constants::{MON_NAME_LENGTH, NAME_LENGTH},
+            battle_constants::NUM_MOVES, pokemon_constants::PokemonSpecies,
+            ram_constants::PokemonWithdrawDepositParameter,
         },
         macros,
     },
-    game_state::{
-        box_mon::BoxMonOwned, mon_list::MonListEntry, party_mon::PartyMonRef, PartyMonSpecies,
-    },
+    game_state::{box_mon::BoxMonOwned, mon_list::MonListEntry, party_mon::PartyMonOwned},
 };
 
 /// Sents/Gets mon into/from Box depending on Parameter
@@ -29,12 +25,12 @@ pub fn send_get_mon_into_from_box(cpu: &mut Cpu) {
     cpu.a = 0x01; // BANK(sBoxCount)
     cpu.call(0x2fcb); // OpenSRAM
 
+    let idx = cpu.borrow_wram().cur_party_mon() as usize;
+
     if action == PokemonWithdrawDepositParameter::PCDeposit {
         if cpu.borrow_sram().current_box().is_full() {
             return return_value(cpu, true);
         }
-
-        let idx = cpu.borrow_wram().cur_party_mon() as usize;
 
         match cpu.borrow_wram().party().get(idx) {
             None => {
@@ -57,95 +53,31 @@ pub fn send_get_mon_into_from_box(cpu: &mut Cpu) {
 
         cpu.b = (cpu.borrow_sram().current_box().len() as u8) - 1;
         cpu.call(0x5cb6); // RestorePPOfDepositedPokemon
-
-        return return_value(cpu, false);
-    }
-
-    if cpu.borrow_wram().party().is_full() {
-        return return_value(cpu, true);
-    }
-
-    let Some(species) = cpu.borrow_wram().cur_party_species() else {
-        log::error!("send_get_mon_into_from_box called without cur_party_species");
-        return return_value(cpu, true);
-    };
-
-    let dst_ptr = {
-        let party_count = cpu.borrow_wram().party().len();
-
-        cpu.borrow_wram_mut().set_party_count(party_count + 1);
-        cpu.borrow_wram_mut()
-            .set_party_mon_species(party_count, PartyMonSpecies::Some(species));
-        cpu.borrow_wram_mut()
-            .set_party_mon_species(party_count + 1, PartyMonSpecies::EndOfListMarker);
-
-        // wPartyMon{N}
-        0xdcdf + PartyMonRef::LEN as u16 * party_count as u16
-    };
-
-    let src_ptr = {
-        let idx = cpu.borrow_wram().cur_party_mon();
-        0xad26 + BoxMonOwned::LEN as u16 * idx as u16 // sBoxMon{N}
-    };
-
-    for i in 0..BoxMonOwned::LEN {
-        let val = cpu.read_byte(src_ptr + i as u16);
-        cpu.write_byte(dst_ptr + i as u16, val);
-    }
-
-    let ot_dst_ptr = {
-        let idx = cpu.borrow_wram().party().len() - 1;
-        0xddff + NAME_LENGTH as u16 * idx as u16 // wPartyMon{N}OT
-    };
-
-    let ot_src_ptr = {
-        let idx = cpu.borrow_wram().cur_party_mon();
-        0xafa6 + NAME_LENGTH as u16 * idx as u16 // sBoxMon{N}OT
-    };
-
-    for i in 0..NAME_LENGTH {
-        let val = cpu.read_byte(ot_src_ptr + i as u16);
-        cpu.write_byte(ot_dst_ptr + i as u16, val);
-    }
-
-    let nick_dst_ptr = {
-        let idx = cpu.borrow_wram().party().len() - 1;
-        0xde41 + NAME_LENGTH as u16 * idx as u16 // wPartyMon{N}Nickname
-    };
-
-    let nick_src_ptr = {
-        let idx = cpu.borrow_wram().cur_party_mon();
-        0xb082 + NAME_LENGTH as u16 * idx as u16 // sBoxMon{N}Nickname
-    };
-
-    for i in 0..MON_NAME_LENGTH {
-        let val = cpu.read_byte(nick_src_ptr + i as u16);
-        cpu.write_byte(nick_dst_ptr + i as u16, val);
-    }
-
-    cpu.borrow_wram_mut().set_mon_type(MonType::Box);
-    macros::predef::predef_call!(cpu, CopyMonToTempMon);
-    macros::farcall::callfar(cpu, 0x14, 0x4e1b); // CalcLevel
-    let level = cpu.d;
-
-    cpu.borrow_wram_mut().set_cur_party_level(level);
-    cpu.write_byte(dst_ptr + 31, level); // MON_LEVEL
-
-    cpu.b = 1; // TRUE
-    cpu.set_hl(dst_ptr + 11 - 1); // MON_STAT_EXP - 1
-    cpu.set_de(dst_ptr + 36); // MON_MAXHP
-    cpu.call(0x6167); // CalcMonStats
-
-    cpu.write_byte(dst_ptr + 32, 0); // MON_STATUS
-
-    if cpu.borrow_wram().cur_party_species() == Some(PokemonSpecies::Unknown(EGG)) {
-        cpu.write_byte(dst_ptr + 34, 0); // MON_HP
-        cpu.write_byte(dst_ptr + 35, 0); // MON_HP + 1
     } else {
-        cpu.a = cpu.read_byte(dst_ptr + 36); // MON_MAXHP
-        cpu.write_byte(dst_ptr + 34, cpu.a); // MON_HP
-        cpu.a = cpu.read_byte(dst_ptr + 36 + 1); // MON_MAXHP + 1
-        cpu.write_byte(dst_ptr + 34 + 1, cpu.a); // MON_HP + 1
+        if cpu.borrow_wram().party().is_full() {
+            return return_value(cpu, true);
+        }
+
+        match cpu.borrow_sram().current_box().get(idx) {
+            None => {
+                log::error!("send_get_mon_into_from_box called with invalid cur_party_mon {idx}");
+                return return_value(cpu, true);
+            }
+
+            Some(MonListEntry::Egg(mon, ot_name, nickname)) => {
+                let party_mon = PartyMonOwned::from_box_mon(mon, true);
+                cpu.borrow_wram_mut().set_cur_party_level(party_mon.level());
+                let ptr = MonListEntry::Egg(party_mon.as_ref(), ot_name, nickname);
+                cpu.borrow_wram_mut().party_mut().push_back(ptr);
+            }
+
+            Some(MonListEntry::Mon(mon, ot_name, nickname)) => {
+                let party_mon = PartyMonOwned::from_box_mon(mon, false);
+                cpu.borrow_wram_mut().set_cur_party_level(party_mon.level());
+                let ptr = MonListEntry::Mon(party_mon.as_ref(), ot_name, nickname);
+                cpu.borrow_wram_mut().party_mut().push_back(ptr);
+            }
+        }
     }
 
     return_value(cpu, false)

@@ -6,44 +6,11 @@ use crate::{
     },
     game_state::{
         box_mon::{BoxMonMut, BoxMonOwned, BoxMonRef},
-        mon_list::MonListEntry,
+        mon_list::{MonList, MonListEntry, MonListItem},
     },
 };
 
-pub struct Box<'a> {
-    data: &'a [u8],
-}
-
-impl<'a> Box<'a> {
-    pub fn new(data: &'a [u8]) -> Self {
-        Self { data }
-    }
-
-    pub fn capacity(&self) -> usize {
-        MONS_PER_BOX
-    }
-
-    pub fn len(&self) -> usize {
-        self.data[0].into()
-    }
-
-    pub fn is_full(&self) -> bool {
-        self.len() >= self.capacity()
-    }
-
-    pub fn get(&self, index: usize) -> Option<BoxMonRef<'_>> {
-        if index >= self.len() {
-            return None;
-        }
-
-        if self.data[1 + index] == 0xff {
-            log::error!("List terminated before expected length");
-            return None;
-        }
-
-        Some(BoxMonRef::new(&self.data[22 + (index * 32)..]))
-    }
-}
+pub type Box<'a> = MonList<'a, BoxMonRef<'a>, MONS_PER_BOX>;
 
 pub struct BoxMut<'a> {
     data: &'a mut [u8],

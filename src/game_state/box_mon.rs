@@ -5,7 +5,10 @@ use crate::{
         item_constants::Item, pokemon_constants::PokemonSpecies,
         pokemon_data_constants::BASE_HAPPINESS,
     },
-    game_state::{battle_mon::BattleMon, moveset::Moveset, party_mon::PartyMonRef},
+    game_state::{
+        battle_mon::BattleMon, mon_list::MonListItem, moveset::Moveset, party_mon::PartyMonRef,
+    },
+    save_state::determinant_values::DeterminantValues,
 };
 
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -142,8 +145,8 @@ impl<'a> BoxMonRef<'a> {
         u16::from_be_bytes([self.data[19], self.data[20]])
     }
 
-    pub fn dvs(&self) -> u16 {
-        u16::from_be_bytes([self.data[21], self.data[22]])
+    pub fn dvs(&self) -> DeterminantValues {
+        [self.data[21], self.data[22]].into()
     }
 
     pub fn pp(&self) -> [u8; 4] {
@@ -167,12 +170,6 @@ impl<'a> BoxMonRef<'a> {
     }
 }
 
-impl<'a> AsRef<[u8]> for BoxMonRef<'a> {
-    fn as_ref(&self) -> &[u8] {
-        self.data
-    }
-}
-
 impl Debug for BoxMonRef<'_> {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         f.debug_struct("BoxMonRef")
@@ -193,6 +190,22 @@ impl Debug for BoxMonRef<'_> {
             .field("caught_data", &self.caught_data())
             .field("level", &self.level())
             .finish()
+    }
+}
+
+impl<'a> MonListItem<'a> for BoxMonRef<'a> {
+    const LEN: usize = BoxMonOwned::LEN;
+
+    fn new(data: &'a [u8]) -> Self {
+        BoxMonRef::new(data)
+    }
+
+    fn species(&self) -> PokemonSpecies {
+        self.species()
+    }
+
+    fn as_ref(&self) -> &[u8] {
+        self.data
     }
 }
 

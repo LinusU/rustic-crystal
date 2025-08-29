@@ -15,7 +15,10 @@ use crate::{
             text_constants::NAME_LENGTH,
         },
     },
-    game_state::{mon_list::MonList, party_mon::PartyMonRef},
+    game_state::{
+        mon_list::{MonList, MonListMut},
+        party_mon::PartyMonRef,
+    },
     save_state::string::PokeString,
 };
 
@@ -495,6 +498,10 @@ impl GameState {
         MonList::new(&self.data[0x1cd7..])
     }
 
+    pub fn party_mut(&mut self) -> MonListMut<'_, PartyMonRef<'_>, PARTY_LENGTH> {
+        MonListMut::new(&mut self.data[0x1cd7..])
+    }
+
     pub fn set_party_count(&mut self, value: usize) {
         assert!(value <= 6);
         self.data[0x1cd7] = value as u8;
@@ -511,7 +518,7 @@ impl GameState {
 
     pub fn party_mon_mut(&mut self, index: usize) -> party_mon::PartyMonMut<'_> {
         assert!(index < 6);
-        let offset = 0x1cdf + (index * party_mon::PartyMonRef::LEN);
+        let offset = 0x1cdf + (index * party_mon::PartyMonOwned::LEN);
         party_mon::PartyMonMut::new(&mut self.data[offset..])
     }
 

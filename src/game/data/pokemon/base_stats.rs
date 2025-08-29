@@ -15,6 +15,30 @@ impl PokemonSpecies {
         (ROM[offset].into(), ROM[offset + 1].into())
     }
 
+    pub fn base_hp(self) -> u8 {
+        ROM[BASE_STATS + (BASE_DATA_SIZE * (u8::from(self) as usize - 1)) + 1]
+    }
+
+    pub fn base_attack(self) -> u8 {
+        ROM[BASE_STATS + (BASE_DATA_SIZE * (u8::from(self) as usize - 1)) + 2]
+    }
+
+    pub fn base_defense(self) -> u8 {
+        ROM[BASE_STATS + (BASE_DATA_SIZE * (u8::from(self) as usize - 1)) + 3]
+    }
+
+    pub fn base_speed(self) -> u8 {
+        ROM[BASE_STATS + (BASE_DATA_SIZE * (u8::from(self) as usize - 1)) + 4]
+    }
+
+    pub fn base_special_attack(self) -> u8 {
+        ROM[BASE_STATS + (BASE_DATA_SIZE * (u8::from(self) as usize - 1)) + 5]
+    }
+
+    pub fn base_special_defense(self) -> u8 {
+        ROM[BASE_STATS + (BASE_DATA_SIZE * (u8::from(self) as usize - 1)) + 6]
+    }
+
     pub fn growth_rate(self) -> GrowthRate {
         ROM[BASE_STATS + (BASE_DATA_SIZE * (u8::from(self) as usize - 1)) + 22].into()
     }
