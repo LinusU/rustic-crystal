@@ -9,16 +9,19 @@ use crate::{
             map_constants::Map,
             move_constants::Move,
             pokemon_constants::{PokemonSpecies, EGG},
+            pokemon_data_constants::PARTY_LENGTH,
             ram_constants::{MonType, PokemonWithdrawDepositParameter, SwarmFlags, TimeOfDay},
             serial_constants::LinkMode,
             text_constants::NAME_LENGTH,
         },
     },
+    game_state::{mon_list::MonList, party_mon::PartyMon},
     save_state::string::PokeString,
 };
 
 pub mod battle_mon;
 pub mod box_mon;
+pub mod mon_list;
 pub mod moveset;
 pub mod party_mon;
 
@@ -488,8 +491,8 @@ impl GameState {
         (self.data[0x1cb5], self.data[0x1cb6]).into()
     }
 
-    pub fn party_count(&self) -> usize {
-        self.data[0x1cd7].into()
+    pub fn party(&self) -> MonList<'_, PartyMon<'_>, PARTY_LENGTH> {
+        MonList::new(&self.data[0x1cd7..])
     }
 
     pub fn set_party_count(&mut self, value: usize) {

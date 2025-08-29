@@ -2,6 +2,7 @@ use crate::{
     game::constants::{item_constants::Item, pokemon_constants::PokemonSpecies},
     game_state::{
         box_mon::{BoxMonMut, BoxMonRef},
+        mon_list::MonListItem,
         moveset::Moveset,
     },
 };
@@ -59,6 +60,8 @@ impl<'a> PartyMon<'a> {
         u16::from_be_bytes([self.data[40], self.data[41]])
     }
 }
+
+impl<'a> MonListItem<'a> for PartyMon<'a> {}
 
 pub struct PartyMonMut<'a> {
     data: &'a mut [u8],

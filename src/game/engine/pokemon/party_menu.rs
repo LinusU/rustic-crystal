@@ -5,7 +5,7 @@ use crate::{
 };
 
 pub fn place_party_mon_evo_stone_compatibility(cpu: &mut Cpu) {
-    let party_count = cpu.borrow_wram().party_count();
+    let party_count = cpu.borrow_wram().party().len();
 
     for i in 0..party_count {
         if cpu.borrow_wram().party_mon_species(i) != PartyMonSpecies::Egg {

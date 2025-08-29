@@ -29,7 +29,7 @@ pub fn send_get_mon_into_from_box(cpu: &mut Cpu) {
     cpu.call(0x2fcb); // OpenSRAM
 
     let dst_ptr = if action == PokemonWithdrawDepositParameter::PCWithdraw {
-        let party_count = cpu.borrow_wram().party_count();
+        let party_count = cpu.borrow_wram().party().len();
 
         if party_count == PARTY_LENGTH {
             return return_value(cpu, true);
@@ -88,7 +88,7 @@ pub fn send_get_mon_into_from_box(cpu: &mut Cpu) {
         let idx = cpu.borrow_sram().current_box().len() - 1;
         0xafa6 + NAME_LENGTH as u16 * idx as u16 // sBoxMon{N}OT
     } else {
-        let idx = cpu.borrow_wram().party_count() - 1;
+        let idx = cpu.borrow_wram().party().len() - 1;
         0xddff + NAME_LENGTH as u16 * idx as u16 // wPartyMon{N}OT
     };
 
@@ -109,7 +109,7 @@ pub fn send_get_mon_into_from_box(cpu: &mut Cpu) {
         let idx = cpu.borrow_sram().current_box().len() - 1;
         0xb082 + NAME_LENGTH as u16 * idx as u16 // sBoxMon{N}Nickname
     } else {
-        let idx = cpu.borrow_wram().party_count() - 1;
+        let idx = cpu.borrow_wram().party().len() - 1;
         0xde41 + NAME_LENGTH as u16 * idx as u16 // wPartyMon{N}Nickname
     };
 
