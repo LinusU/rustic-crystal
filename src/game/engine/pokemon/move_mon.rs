@@ -9,7 +9,9 @@ use crate::{
         },
         macros,
     },
-    game_state::{box_mon::BoxMonOwned, party_mon::PartyMon, PartyMonSpecies},
+    game_state::{
+        box_mon::BoxMonOwned, mon_list::MonListEntry, party_mon::PartyMon, PartyMonSpecies,
+    },
 };
 
 /// Sents/Gets mon into/from Box depending on Parameter
@@ -190,7 +192,7 @@ pub fn send_mon_into_box(cpu: &mut Cpu) {
 
     cpu.borrow_sram_mut()
         .current_box_mut()
-        .push_front(mon.as_ref(), ot_name, cur_species.name());
+        .push_front(MonListEntry::Mon(mon.as_ref(), ot_name, cur_species.name()));
 
     cpu.a = u8::from(cur_species) - 1;
     cpu.call(0x3380); // SetSeenAndCaughtMon

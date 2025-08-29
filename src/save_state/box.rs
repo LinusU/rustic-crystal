@@ -1,7 +1,12 @@
 use crate::{
-    game::constants::text_constants::{MON_NAME_LENGTH, NAME_LENGTH},
-    game_state::box_mon::{BoxMonMut, BoxMonOwned, BoxMonRef},
-    save_state::string::PokeString,
+    game::constants::{
+        pokemon_constants::EGG,
+        text_constants::{MON_NAME_LENGTH, NAME_LENGTH},
+    },
+    game_state::{
+        box_mon::{BoxMonMut, BoxMonOwned, BoxMonRef},
+        mon_list::MonListEntry,
+    },
 };
 
 pub struct Box<'a> {
@@ -78,12 +83,7 @@ impl<'a> BoxMut<'a> {
         Some(BoxMonMut::new(&mut self.data[22 + (index * 32)..]))
     }
 
-    pub fn push_front(
-        &mut self,
-        pokemon: BoxMonRef,
-        ot_name: PokeString<NAME_LENGTH>,
-        nickname: PokeString<MON_NAME_LENGTH>,
-    ) {
+    pub fn push_front(&mut self, pokemon: MonListEntry<BoxMonRef>) {
         assert!(self.len() < 20);
 
         self.data[0] += 1;
@@ -97,17 +97,21 @@ impl<'a> BoxMut<'a> {
             self.data.copy_within(882..1091, 893);
         }
 
-        self.set(0, pokemon, ot_name, nickname);
+        self.set(0, pokemon);
     }
 
-    fn set(
-        &mut self,
-        i: usize,
-        pokemon: BoxMonRef,
-        ot_name: PokeString<NAME_LENGTH>,
-        nickname: PokeString<MON_NAME_LENGTH>,
-    ) {
-        *self.species_slot_mut(i) = pokemon.species().into();
+    fn set(&mut self, i: usize, pokemon: MonListEntry<BoxMonRef>) {
+        let (pokemon, ot_name, nickname) = match pokemon {
+            MonListEntry::Egg(pokemon, ot_name, nickname) => {
+                *self.species_slot_mut(i) = EGG;
+                (pokemon, ot_name, nickname)
+            }
+            MonListEntry::Mon(pokemon, ot_name, nickname) => {
+                *self.species_slot_mut(i) = pokemon.species().into();
+                (pokemon, ot_name, nickname)
+            }
+        };
+
         self.pokemon_slot_mut(i).copy_from_slice(pokemon.as_ref());
         self.ot_name_slot_mut(i).copy_from_slice(ot_name.as_ref());
         self.nickname_slot_mut(i).copy_from_slice(nickname.as_ref());
@@ -145,6 +149,7 @@ mod test {
     use crate::{
         game::constants::pokemon_constants::PokemonSpecies,
         game_state::battle_mon::{BattleMon, BattleMonMut},
+        save_state::string::PokeString,
     };
 
     use super::*;
@@ -200,20 +205,20 @@ mod test {
         assert_eq!(r#box.len(), 0);
         assert_eq!(r#box.get(0), None);
 
-        r#box.push_front(c.as_ref(), c_ot, c_name);
+        r#box.push_front(MonListEntry::Mon(c.as_ref(), c_ot, c_name));
 
         assert_eq!(r#box.len(), 1);
         assert_eq!(r#box.get(0), Some(c.as_ref()));
         assert_eq!(r#box.get(1), None);
 
-        r#box.push_front(b.as_ref(), b_ot, b_name);
+        r#box.push_front(MonListEntry::Mon(b.as_ref(), b_ot, b_name));
 
         assert_eq!(r#box.len(), 2);
         assert_eq!(r#box.get(0), Some(b.as_ref()));
         assert_eq!(r#box.get(1), Some(c.as_ref()));
         assert_eq!(r#box.get(2), None);
 
-        r#box.push_front(a.as_ref(), a_ot, a_name);
+        r#box.push_front(MonListEntry::Mon(a.as_ref(), a_ot, a_name));
 
         assert_eq!(r#box.len(), 3);
         assert_eq!(r#box.get(0), Some(a.as_ref()));
