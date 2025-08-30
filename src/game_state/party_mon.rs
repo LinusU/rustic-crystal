@@ -161,6 +161,10 @@ impl<'a> PartyMonRef<'a> {
         BoxMonRef::new(self.data).moves()
     }
 
+    pub fn pp(&self) -> [u8; 4] {
+        BoxMonRef::new(self.data).pp()
+    }
+
     pub fn happiness(&self) -> u8 {
         BoxMonRef::new(self.data).happiness()
     }

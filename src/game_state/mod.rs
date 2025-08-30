@@ -240,6 +240,10 @@ impl GameState {
         self.data[0x1002]
     }
 
+    pub fn buffer_mon(&self) -> PartyMonRef<'_> {
+        PartyMonRef::new(&self.data[0x1018..])
+    }
+
     pub fn battle_result(&self) -> BattleResult {
         BattleResult::from_bits(self.data[0x10ee]).unwrap()
     }
