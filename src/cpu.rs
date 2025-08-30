@@ -86,6 +86,7 @@ impl<'a> Cpu<'a> {
                 (0x03, 0x5cb6) => crate::game::engine::pokemon::move_mon::restore_pp_of_deposited_pokemon(self),
                 (0x03, 0x5e6e) => crate::game::engine::pokemon::move_mon::send_mon_into_box(self),
                 (0x03, 0x5f47) => panic!("shift_box_mon should only be called from Rust"),
+                (0x03, 0x6039) => crate::game::engine::pokemon::move_mon::remove_mon_from_party_or_box(self),
                 (0x03, 0x68a2) => crate::game::engine::items::item_effects::poke_ball_effect(self),
                 (0x03, 0x6c29) => panic!("ultra_ball_multiplier should only be called from Rust"),
                 (0x03, 0x6c2f) => panic!("great_ball_multiplier should only be called from Rust"),

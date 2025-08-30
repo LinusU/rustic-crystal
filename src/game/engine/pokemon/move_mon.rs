@@ -3,10 +3,15 @@ use crate::{
     game::{
         constants::{
             battle_constants::NUM_MOVES,
+            item_data_constants::MAIL_STRUCT_LENGTH,
             pokemon_constants::PokemonSpecies,
+            pokemon_data_constants::{MONS_PER_BOX, PARTY_LENGTH},
             ram_constants::{MonType, PokemonWithdrawDepositParameter},
+            serial_constants::LinkMode,
+            text_constants::MON_NAME_LENGTH,
         },
         macros,
+        ram::sram,
     },
     game_state::{box_mon::BoxMonOwned, mon_list::MonListEntry, party_mon::PartyMonOwned},
 };
@@ -190,4 +195,172 @@ pub fn send_mon_into_box(cpu: &mut Cpu) {
 
     cpu.set_flag(CpuFlag::C, true); // return success
     cpu.pc = cpu.stack_pop(); // ret
+}
+
+const REMOVE_PARTY: PokemonWithdrawDepositParameter = PokemonWithdrawDepositParameter::PCWithdraw;
+
+pub fn remove_mon_from_party_or_box(cpu: &mut Cpu) {
+    let action = cpu.borrow_wram().pokemon_withdraw_deposit_parameter();
+    let idx = cpu.borrow_wram().cur_party_mon() as usize;
+
+    if action == REMOVE_PARTY {
+        cpu.a = (cpu.borrow_wram().party().len() as u8) - 1;
+        cpu.set_hl(0xdcd7); // wPartyCount
+    } else {
+        cpu.a = 0x01; // BANK(sBoxCount)
+        cpu.call(0x2fcb); // OpenSRAM
+        cpu.a = (cpu.borrow_sram().current_box().len() as u8) - 1;
+        cpu.set_hl(0xad10); // sBoxCount
+    }
+
+    cpu.write_byte(cpu.hl(), cpu.a);
+    cpu.set_hl(cpu.hl() + 1);
+
+    cpu.set_bc(idx as u16);
+    cpu.set_hl(cpu.hl() + idx as u16);
+    cpu.set_de(cpu.hl() + idx as u16 + 1);
+
+    loop {
+        cpu.a = cpu.read_byte(cpu.de());
+        cpu.set_de(cpu.de() + 1);
+        cpu.write_byte(cpu.hl(), cpu.a);
+        cpu.set_hl(cpu.hl() + 1);
+
+        if cpu.a == 0xff {
+            break;
+        }
+    }
+
+    if action == REMOVE_PARTY {
+        cpu.set_hl(0xddff); // wPartyMonOTs
+        cpu.d = PARTY_LENGTH as u8 - 1;
+    } else {
+        cpu.set_hl(0xafa6); // sBoxMonOTs
+        cpu.d = MONS_PER_BOX as u8 - 1;
+    }
+
+    // If this is the last mon in our party (box),
+    // shift all the other mons up to close the gap.
+    cpu.a = cpu.borrow_wram().cur_party_mon();
+    cpu.call(0x30f4); // SkipNames
+
+    cpu.a = cpu.borrow_wram().cur_party_mon();
+
+    cpu.set_flag(CpuFlag::Z, cpu.a == cpu.d);
+    cpu.set_flag(CpuFlag::H, (cpu.a & 0x0f) < (cpu.d & 0x0f));
+    cpu.set_flag(CpuFlag::N, true);
+    cpu.set_flag(CpuFlag::C, cpu.a < cpu.d);
+
+    // jr nz, .delete_inside
+    if cpu.a != cpu.d {
+        // Shift the OT names
+        cpu.set_de(cpu.hl());
+        cpu.set_hl(cpu.hl() + MON_NAME_LENGTH as u16);
+
+        if action == REMOVE_PARTY {
+            cpu.set_bc(0xde41); // wPartyMonNicknames
+        } else {
+            cpu.set_bc(0xb082); // sBoxMonNicknames
+        }
+
+        cpu.call(0x318c); // CopyDataUntil
+
+        if action == REMOVE_PARTY {
+            cpu.set_hl(0xdcdf); // wPartyMons
+            cpu.set_bc(PartyMonOwned::LEN as u16);
+        } else {
+            cpu.set_hl(0xad26); // sBoxMons
+            cpu.set_bc(BoxMonOwned::LEN as u16);
+        }
+
+        cpu.a = cpu.borrow_wram().cur_party_mon();
+        cpu.call(0x30fe); // AddNTimes
+
+        cpu.set_de(cpu.hl());
+
+        if action == REMOVE_PARTY {
+            cpu.set_hl(cpu.hl() + PartyMonOwned::LEN as u16);
+            cpu.set_bc(0xddff); // wPartyMonOTs
+        } else {
+            cpu.set_hl(cpu.hl() + BoxMonOwned::LEN as u16);
+            cpu.set_bc(0xafa6); // sBoxMonOTs
+        }
+
+        cpu.call(0x318c); // CopyDataUntil
+
+        // Shift the nicknames
+        if action == REMOVE_PARTY {
+            cpu.set_hl(0xde41); // wPartyMonNicknames
+        } else {
+            cpu.set_hl(0xb082); // sBoxMonNicknames
+        }
+
+        cpu.set_bc(MON_NAME_LENGTH as u16);
+
+        cpu.a = cpu.borrow_wram().cur_party_mon();
+        cpu.call(0x30fe); // AddNTimes
+
+        cpu.set_de(cpu.hl());
+        cpu.set_hl(cpu.hl() + MON_NAME_LENGTH as u16);
+
+        if action == REMOVE_PARTY {
+            cpu.set_bc(0xde83); // wPartyMonNicknamesEnd
+        } else {
+            cpu.set_bc(0xb15e); // sBoxMonNicknamesEnd
+        }
+
+        cpu.call(0x318c); // CopyDataUntil
+    } else {
+        cpu.write_byte(cpu.hl(), 0xff);
+    }
+
+    if action != REMOVE_PARTY {
+        return cpu.jump(0x2fe1); // CloseSRAM
+    }
+
+    if cpu.borrow_wram().link_mode() != LinkMode::Null {
+        cpu.pc = cpu.stack_pop(); // ret
+        return;
+    }
+
+    // Shift mail
+    cpu.a = sram::PARTY_MAIL.0;
+    cpu.call(0x2fcb); // OpenSRAM
+
+    // If this is the last mon in our party, no need to shift mail.
+    if idx < cpu.borrow_wram().party().len() {
+        // Shift our mail messages up.
+        cpu.set_bc(MAIL_STRUCT_LENGTH as u16);
+        cpu.set_hl(sram::PARTY_MAIL.1 + (idx * MAIL_STRUCT_LENGTH) as u16);
+
+        let saved = cpu.hl();
+        cpu.set_hl(cpu.hl() + MAIL_STRUCT_LENGTH as u16);
+        cpu.set_de(saved);
+
+        cpu.a = cpu.borrow_wram().cur_party_mon();
+        cpu.b = cpu.borrow_wram().cur_party_mon();
+
+        loop {
+            let saved_bc = cpu.bc();
+            let saved_hl = cpu.hl();
+
+            cpu.set_bc(MAIL_STRUCT_LENGTH as u16);
+            cpu.call(0x3026); // CopyBytes
+
+            cpu.set_bc(MAIL_STRUCT_LENGTH as u16);
+            cpu.set_hl(saved_hl + MAIL_STRUCT_LENGTH as u16);
+
+            cpu.set_de(saved_hl);
+            cpu.set_bc(saved_bc);
+
+            cpu.b = cpu.b.wrapping_add(1);
+            cpu.a = cpu.borrow_wram().party().len() as u8;
+
+            if cpu.a == cpu.b {
+                break;
+            }
+        }
+    }
+
+    cpu.jump(0x2fe1) // CloseSRAM
 }
