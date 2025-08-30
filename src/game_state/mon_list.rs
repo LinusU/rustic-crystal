@@ -154,42 +154,47 @@ impl<'a, T: MonListItem<'a>, TMut: MonListItemMut<'a>, const N: usize> MonListMu
         Some(TMut::new(&mut self.data[start..end]))
     }
 
-    pub fn push_back(&mut self, pokemon: MonListEntry<T>) {
+    pub fn insert(&mut self, index: usize, pokemon: MonListEntry<T>) {
         assert!(self.len() < N);
+        assert!(index <= self.len());
 
-        let idx = self.len();
-        self.data[0] += 1;
-        self.set(idx, pokemon);
-        *self.species_slot_mut(idx + 1) = 0xff;
+        let old_len = self.len();
+        let new_len = old_len + 1;
+
+        self.data[0] = new_len as u8;
+
+        if index < old_len {
+            self.data.copy_within(
+                (Self::SPECIES_OFFSET + index)..(Self::POKEMON_OFFSET - 1),
+                Self::SPECIES_OFFSET + index + 1,
+            );
+            self.data.copy_within(
+                (Self::POKEMON_OFFSET + (index * T::LEN))..(Self::OT_NAME_OFFSET - T::LEN),
+                Self::POKEMON_OFFSET + ((index + 1) * T::LEN),
+            );
+            self.data.copy_within(
+                (Self::OT_NAME_OFFSET + (index * NAME_LENGTH))
+                    ..(Self::NICKNAME_OFFSET - NAME_LENGTH),
+                Self::OT_NAME_OFFSET + ((index + 1) * NAME_LENGTH),
+            );
+            self.data.copy_within(
+                (Self::NICKNAME_OFFSET + (index * MON_NAME_LENGTH))
+                    ..(Self::END_OFFSET - MON_NAME_LENGTH),
+                Self::NICKNAME_OFFSET + ((index + 1) * MON_NAME_LENGTH),
+            );
+        } else {
+            *self.species_slot_mut(new_len) = 0xff;
+        }
+
+        self.set(index, pokemon);
+    }
+
+    pub fn push_back(&mut self, pokemon: MonListEntry<T>) {
+        self.insert(self.len(), pokemon);
     }
 
     pub fn push_front(&mut self, pokemon: MonListEntry<T>) {
-        assert!(self.len() < N);
-
-        self.data[0] += 1;
-
-        if self.data[0] == 1 {
-            self.data[2] = 0xff;
-        } else {
-            self.data.copy_within(
-                Self::SPECIES_OFFSET..(Self::POKEMON_OFFSET - 1),
-                Self::SPECIES_OFFSET + 1,
-            );
-            self.data.copy_within(
-                Self::POKEMON_OFFSET..(Self::OT_NAME_OFFSET - T::LEN),
-                Self::POKEMON_OFFSET + T::LEN,
-            );
-            self.data.copy_within(
-                Self::OT_NAME_OFFSET..(Self::NICKNAME_OFFSET - NAME_LENGTH),
-                Self::OT_NAME_OFFSET + NAME_LENGTH,
-            );
-            self.data.copy_within(
-                Self::NICKNAME_OFFSET..(Self::END_OFFSET - MON_NAME_LENGTH),
-                Self::NICKNAME_OFFSET + MON_NAME_LENGTH,
-            );
-        }
-
-        self.set(0, pokemon);
+        self.insert(0, pokemon);
     }
 
     pub fn remove(&mut self, index: usize) {

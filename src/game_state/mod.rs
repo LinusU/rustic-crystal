@@ -12,7 +12,7 @@ use crate::{
             pokemon_data_constants::PARTY_LENGTH,
             ram_constants::{MonType, PokemonWithdrawDepositParameter, SwarmFlags, TimeOfDay},
             serial_constants::LinkMode,
-            text_constants::NAME_LENGTH,
+            text_constants::{MON_NAME_LENGTH, NAME_LENGTH},
         },
     },
     game_state::{
@@ -238,6 +238,18 @@ impl GameState {
 
     pub fn prev_party_level(&self) -> u8 {
         self.data[0x1002]
+    }
+
+    pub fn buffer_mon_nickname(&self) -> PokeString<MON_NAME_LENGTH> {
+        PokeString::new(
+            self.data[0x1002..0x1002 + MON_NAME_LENGTH]
+                .try_into()
+                .unwrap(),
+        )
+    }
+
+    pub fn buffer_mon_ot_name(&self) -> PokeString<NAME_LENGTH> {
+        PokeString::new(self.data[0x100d..0x100d + NAME_LENGTH].try_into().unwrap())
     }
 
     pub fn buffer_mon(&self) -> PartyMonRef<'_> {
