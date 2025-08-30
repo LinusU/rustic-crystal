@@ -2,8 +2,9 @@ use crate::{
     cpu::{Cpu, CpuFlag},
     game::{
         constants::{
-            battle_constants::NUM_MOVES, pokemon_constants::PokemonSpecies,
-            ram_constants::PokemonWithdrawDepositParameter,
+            battle_constants::NUM_MOVES,
+            pokemon_constants::PokemonSpecies,
+            ram_constants::{MonType, PokemonWithdrawDepositParameter},
         },
         macros,
     },
@@ -81,6 +82,53 @@ pub fn send_get_mon_into_from_box(cpu: &mut Cpu) {
     }
 
     return_value(cpu, false)
+}
+
+pub fn restore_pp_of_deposited_pokemon(cpu: &mut Cpu) {
+    let idx = cpu.b as usize;
+
+    log::info!("restore_pp_of_deposited_pokemon({idx})");
+
+    let (mut pp, moves) = {
+        let r#box = cpu.borrow_sram().current_box();
+        let mon = r#box.get(idx).unwrap().mon();
+        (mon.pp(), mon.moves())
+    };
+
+    log::trace!("restore_pp_of_deposited_pokemon({idx}) Moves: {moves:?}");
+    log::trace!("restore_pp_of_deposited_pokemon({idx}) PP before: {pp:?}");
+
+    cpu.borrow_wram_mut().temp_mon_mut().set_pp(pp);
+    cpu.borrow_wram_mut().temp_mon_mut().set_moves(&moves);
+
+    let saved_menu_cursor_y = cpu.borrow_wram().menu_cursor_y();
+    let saved_mon_type = cpu.borrow_wram().mon_type();
+
+    for (i, pp) in pp.iter_mut().enumerate() {
+        if moves.get(i).is_none() {
+            break;
+        }
+
+        cpu.borrow_wram_mut().temp_mon_mut().set_moves(&moves);
+        cpu.borrow_wram_mut().set_mon_type(MonType::Box);
+        cpu.borrow_wram_mut().set_menu_cursor_y(i as u8);
+        macros::farcall::farcall(cpu, 0x03, 0x78ec); // GetMaxPPOfMove
+
+        *pp = (*pp & 0b11000000) + cpu.borrow_wram().temp_pp();
+    }
+
+    cpu.borrow_sram_mut()
+        .current_box_mut()
+        .get_mut(idx)
+        .unwrap()
+        .set_pp(pp);
+
+    log::trace!("restore_pp_of_deposited_pokemon({idx}) PP after: {pp:?}");
+
+    cpu.borrow_wram_mut().set_mon_type(saved_mon_type);
+    cpu.borrow_wram_mut().set_menu_cursor_y(saved_menu_cursor_y);
+
+    cpu.pc = cpu.stack_pop(); // ret
 }
 
 /// Sends the mon into one of Bills Boxes \

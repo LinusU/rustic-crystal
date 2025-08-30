@@ -1,13 +1,13 @@
 use crate::{
     game::constants::pokemon_data_constants::MONS_PER_BOX,
     game_state::{
-        box_mon::BoxMonRef,
+        box_mon::{BoxMonMut, BoxMonRef},
         mon_list::{MonList, MonListMut},
     },
 };
 
 pub type Box<'a> = MonList<'a, BoxMonRef<'a>, MONS_PER_BOX>;
-pub type BoxMut<'a> = MonListMut<'a, BoxMonRef<'a>, MONS_PER_BOX>;
+pub type BoxMut<'a> = MonListMut<'a, BoxMonRef<'a>, BoxMonMut<'a>, MONS_PER_BOX>;
 
 #[cfg(test)]
 mod test {

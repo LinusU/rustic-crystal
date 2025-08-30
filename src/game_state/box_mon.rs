@@ -6,7 +6,10 @@ use crate::{
         pokemon_data_constants::BASE_HAPPINESS,
     },
     game_state::{
-        battle_mon::BattleMon, mon_list::MonListItem, moveset::Moveset, party_mon::PartyMonRef,
+        battle_mon::BattleMon,
+        mon_list::{MonListItem, MonListItemMut},
+        moveset::Moveset,
+        party_mon::PartyMonRef,
     },
     save_state::determinant_values::DeterminantValues,
 };
@@ -30,7 +33,7 @@ impl BoxMonOwned {
 
         result.set_species(battle_mon.species());
         result.set_item(battle_mon.item());
-        result.set_moves(battle_mon.moves());
+        result.set_moves(&battle_mon.moves());
         result.set_ot_id(ot_id);
         result.set_exp(
             battle_mon
@@ -61,7 +64,7 @@ impl BoxMonOwned {
         BoxMonMut::new(&mut self.data).set_item(item);
     }
 
-    pub fn set_moves(&mut self, moves: Moveset) {
+    pub fn set_moves(&mut self, moves: &Moveset) {
         BoxMonMut::new(&mut self.data).set_moves(moves);
     }
 
@@ -229,7 +232,7 @@ impl<'a> BoxMonMut<'a> {
         };
     }
 
-    pub fn set_moves(&mut self, moves: Moveset) {
+    pub fn set_moves(&mut self, moves: &Moveset) {
         self.data[2] = moves.get(0).map_or(0, Into::into);
         self.data[3] = moves.get(1).map_or(0, Into::into);
         self.data[4] = moves.get(2).map_or(0, Into::into);
@@ -258,5 +261,13 @@ impl<'a> BoxMonMut<'a> {
 
     pub fn set_level(&mut self, level: u8) {
         self.data[31] = level;
+    }
+}
+
+impl<'a> MonListItemMut<'a> for BoxMonMut<'a> {
+    const LEN: usize = BoxMonOwned::LEN;
+
+    fn new(data: &'a mut [u8]) -> Self {
+        BoxMonMut::new(data)
     }
 }

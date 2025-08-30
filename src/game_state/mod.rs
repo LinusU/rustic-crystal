@@ -17,7 +17,7 @@ use crate::{
     },
     game_state::{
         mon_list::{MonList, MonListMut},
-        party_mon::PartyMonRef,
+        party_mon::{PartyMonMut, PartyMonRef},
     },
     save_state::string::PokeString,
 };
@@ -156,6 +156,10 @@ impl GameState {
         [self.data[0x0f5b], self.data[0x0f5c]] = value.to_le_bytes();
     }
 
+    pub fn mon_type(&self) -> MonType {
+        self.data[0x0f5f].into()
+    }
+
     pub fn set_mon_type(&mut self, value: MonType) {
         self.data[0x0f5f] = value.into();
     }
@@ -189,6 +193,10 @@ impl GameState {
 
     pub fn menu_cursor_y(&self) -> u8 {
         self.data[0x0fa9]
+    }
+
+    pub fn set_menu_cursor_y(&mut self, value: u8) {
+        self.data[0x0fa9] = value;
     }
 
     pub fn game_timer_paused(&self) -> bool {
@@ -421,6 +429,10 @@ impl GameState {
         self.data[0x1265] = value;
     }
 
+    pub fn temp_pp(&self) -> u8 {
+        self.data[0x1265]
+    }
+
     pub fn temp_species(&self) -> Option<PokemonSpecies> {
         match self.data[0x1265] {
             0 => None,
@@ -498,7 +510,7 @@ impl GameState {
         MonList::new(&self.data[0x1cd7..])
     }
 
-    pub fn party_mut(&mut self) -> MonListMut<'_, PartyMonRef<'_>, PARTY_LENGTH> {
+    pub fn party_mut(&mut self) -> MonListMut<'_, PartyMonRef<'_>, PartyMonMut<'_>, PARTY_LENGTH> {
         MonListMut::new(&mut self.data[0x1cd7..])
     }
 

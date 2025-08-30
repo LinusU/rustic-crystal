@@ -16,6 +16,12 @@ pub trait MonListItem<'a> {
     fn as_ref(&self) -> &[u8];
 }
 
+pub trait MonListItemMut<'a> {
+    const LEN: usize;
+
+    fn new(data: &'a mut [u8]) -> Self;
+}
+
 #[derive(Debug, PartialEq, Eq)]
 pub enum MonListEntry<T> {
     Mon(T, PokeString<NAME_LENGTH>, PokeString<MON_NAME_LENGTH>),
@@ -83,12 +89,13 @@ impl<'a, T: MonListItem<'a>, const N: usize> MonList<'a, T, N> {
     }
 }
 
-pub struct MonListMut<'a, T: MonListItem<'a>, const N: usize> {
+pub struct MonListMut<'a, T: MonListItem<'a>, TMut: MonListItemMut<'a>, const N: usize> {
     data: &'a mut [u8],
-    _marker: PhantomData<T>,
+    _ref: PhantomData<T>,
+    _mut: PhantomData<TMut>,
 }
 
-impl<'a, T: MonListItem<'a>, const N: usize> MonListMut<'a, T, N> {
+impl<'a, T: MonListItem<'a>, TMut: MonListItemMut<'a>, const N: usize> MonListMut<'a, T, TMut, N> {
     const SPECIES_OFFSET: usize = 1;
     const POKEMON_OFFSET: usize = Self::SPECIES_OFFSET + N + 1;
     const OT_NAME_OFFSET: usize = Self::POKEMON_OFFSET + (N * T::LEN);
@@ -98,7 +105,8 @@ impl<'a, T: MonListItem<'a>, const N: usize> MonListMut<'a, T, N> {
     pub fn new(data: &'a mut [u8]) -> Self {
         Self {
             data,
-            _marker: PhantomData,
+            _ref: PhantomData,
+            _mut: PhantomData,
         }
     }
 
@@ -134,6 +142,16 @@ impl<'a, T: MonListItem<'a>, const N: usize> MonListMut<'a, T, N> {
         } else {
             Some(MonListEntry::Mon(mon, ot_name, nickname))
         }
+    }
+
+    pub fn get_mut(&'a mut self, index: usize) -> Option<TMut> {
+        if index >= self.len() {
+            return None;
+        }
+
+        let start = Self::POKEMON_OFFSET + (index * T::LEN);
+        let end = start + T::LEN;
+        Some(TMut::new(&mut self.data[start..end]))
     }
 
     pub fn push_back(&mut self, pokemon: MonListEntry<T>) {

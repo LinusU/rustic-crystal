@@ -2,7 +2,7 @@ use crate::{
     game::constants::{item_constants::Item, pokemon_constants::PokemonSpecies},
     game_state::{
         box_mon::{BoxMonMut, BoxMonOwned, BoxMonRef},
-        mon_list::MonListItem,
+        mon_list::{MonListItem, MonListItemMut},
         moveset::Moveset,
     },
 };
@@ -225,6 +225,14 @@ impl<'a> PartyMonMut<'a> {
         BoxMonMut::new(self.data).set_item(item);
     }
 
+    pub fn set_moves(&mut self, moves: &Moveset) {
+        BoxMonMut::new(self.data).set_moves(moves);
+    }
+
+    pub fn set_pp(&mut self, pp: [u8; 4]) {
+        BoxMonMut::new(self.data).set_pp(pp);
+    }
+
     pub fn set_happiness(&mut self, happiness: u8) {
         BoxMonMut::new(self.data).set_happiness(happiness)
     }
@@ -259,5 +267,13 @@ impl<'a> PartyMonMut<'a> {
 
     pub fn set_special_defense(&mut self, special_defense: u16) {
         self.data[46..=47].copy_from_slice(&special_defense.to_be_bytes());
+    }
+}
+
+impl<'a> MonListItemMut<'a> for PartyMonMut<'a> {
+    const LEN: usize = PartyMonOwned::LEN;
+
+    fn new(data: &'a mut [u8]) -> Self {
+        PartyMonMut::new(data)
     }
 }
