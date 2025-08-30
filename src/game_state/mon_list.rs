@@ -192,6 +192,32 @@ impl<'a, T: MonListItem<'a>, TMut: MonListItemMut<'a>, const N: usize> MonListMu
         self.set(0, pokemon);
     }
 
+    pub fn remove(&mut self, index: usize) {
+        assert!(index < self.len());
+
+        if index + 1 < self.len() {
+            self.data.copy_within(
+                (Self::SPECIES_OFFSET + index + 1)..Self::POKEMON_OFFSET,
+                Self::SPECIES_OFFSET + index,
+            );
+            self.data.copy_within(
+                (Self::POKEMON_OFFSET + (index + 1) * T::LEN)..Self::OT_NAME_OFFSET,
+                Self::POKEMON_OFFSET + index * T::LEN,
+            );
+            self.data.copy_within(
+                (Self::OT_NAME_OFFSET + (index + 1) * NAME_LENGTH)..Self::NICKNAME_OFFSET,
+                Self::OT_NAME_OFFSET + index * NAME_LENGTH,
+            );
+            self.data.copy_within(
+                (Self::NICKNAME_OFFSET + (index + 1) * MON_NAME_LENGTH)..Self::END_OFFSET,
+                Self::NICKNAME_OFFSET + index * MON_NAME_LENGTH,
+            );
+        }
+
+        self.data[0] -= 1;
+        *self.species_slot_mut(self.len()) = 0xff;
+    }
+
     fn set(&mut self, i: usize, pokemon: MonListEntry<T>) {
         let (pokemon, ot_name, nickname) = match pokemon {
             MonListEntry::Egg(pokemon, ot_name, nickname) => {
