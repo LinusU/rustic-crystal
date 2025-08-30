@@ -1,131 +1,23 @@
 use crate::{
-    game::constants::{
-        pokemon_constants::EGG,
-        pokemon_data_constants::MONS_PER_BOX,
-        text_constants::{MON_NAME_LENGTH, NAME_LENGTH},
-    },
+    game::constants::pokemon_data_constants::MONS_PER_BOX,
     game_state::{
-        box_mon::{BoxMonMut, BoxMonOwned, BoxMonRef},
-        mon_list::{MonList, MonListEntry, MonListItem},
+        box_mon::BoxMonRef,
+        mon_list::{MonList, MonListMut},
     },
 };
 
 pub type Box<'a> = MonList<'a, BoxMonRef<'a>, MONS_PER_BOX>;
-
-pub struct BoxMut<'a> {
-    data: &'a mut [u8],
-}
-
-impl<'a> BoxMut<'a> {
-    pub fn new(data: &'a mut [u8]) -> Self {
-        Self { data }
-    }
-
-    pub fn len(&self) -> usize {
-        self.data[0].into()
-    }
-
-    pub fn get(&mut self, index: usize) -> Option<BoxMonRef<'_>> {
-        if index >= self.len() {
-            return None;
-        }
-
-        if self.data[1 + index] == 0xff {
-            log::error!("List terminated before expected length");
-            return None;
-        }
-
-        Some(BoxMonRef::new(&self.data[22 + (index * 32)..]))
-    }
-
-    pub fn get_mut(&mut self, index: usize) -> Option<BoxMonMut<'_>> {
-        if index >= self.len() {
-            return None;
-        }
-
-        if self.data[1 + index] == 0xff {
-            log::error!("List terminated before expected length");
-            return None;
-        }
-
-        Some(BoxMonMut::new(&mut self.data[22 + (index * 32)..]))
-    }
-
-    pub fn push_back(&mut self, pokemon: MonListEntry<BoxMonRef>) {
-        assert!(self.len() < MONS_PER_BOX);
-
-        let idx = self.len();
-        self.data[0] += 1;
-        self.set(idx, pokemon);
-        *self.species_slot_mut(idx + 1) = 0xff;
-    }
-
-    pub fn push_front(&mut self, pokemon: MonListEntry<BoxMonRef>) {
-        assert!(self.len() < MONS_PER_BOX);
-
-        self.data[0] += 1;
-
-        if self.data[0] == 1 {
-            self.data[2] = 0xff;
-        } else {
-            self.data.copy_within(1..21, 2);
-            self.data.copy_within(22..630, 54);
-            self.data.copy_within(662..871, 673);
-            self.data.copy_within(882..1091, 893);
-        }
-
-        self.set(0, pokemon);
-    }
-
-    fn set(&mut self, i: usize, pokemon: MonListEntry<BoxMonRef>) {
-        let (pokemon, ot_name, nickname) = match pokemon {
-            MonListEntry::Egg(pokemon, ot_name, nickname) => {
-                *self.species_slot_mut(i) = EGG;
-                (pokemon, ot_name, nickname)
-            }
-            MonListEntry::Mon(pokemon, ot_name, nickname) => {
-                *self.species_slot_mut(i) = pokemon.species().into();
-                (pokemon, ot_name, nickname)
-            }
-        };
-
-        self.pokemon_slot_mut(i).copy_from_slice(pokemon.as_ref());
-        self.ot_name_slot_mut(i).copy_from_slice(ot_name.as_ref());
-        self.nickname_slot_mut(i).copy_from_slice(nickname.as_ref());
-    }
-
-    fn species_slot_mut(&mut self, index: usize) -> &mut u8 {
-        assert!(index < self.len());
-        &mut self.data[1 + index]
-    }
-
-    fn pokemon_slot_mut(&mut self, index: usize) -> &mut [u8; BoxMonOwned::LEN] {
-        assert!(index < self.len());
-        let start = 22 + index * BoxMonOwned::LEN;
-        let end = start + BoxMonOwned::LEN;
-        (&mut self.data[start..end]).try_into().unwrap()
-    }
-
-    fn ot_name_slot_mut(&mut self, index: usize) -> &mut [u8; NAME_LENGTH] {
-        assert!(index < self.len());
-        let start = 662 + index * NAME_LENGTH;
-        let end = start + NAME_LENGTH;
-        (&mut self.data[start..end]).try_into().unwrap()
-    }
-
-    fn nickname_slot_mut(&mut self, index: usize) -> &mut [u8; MON_NAME_LENGTH] {
-        assert!(index < self.len());
-        let start = 882 + index * MON_NAME_LENGTH;
-        let end = start + MON_NAME_LENGTH;
-        (&mut self.data[start..end]).try_into().unwrap()
-    }
-}
+pub type BoxMut<'a> = MonListMut<'a, BoxMonRef<'a>, MONS_PER_BOX>;
 
 #[cfg(test)]
 mod test {
     use crate::{
         game::constants::pokemon_constants::PokemonSpecies,
-        game_state::battle_mon::{BattleMon, BattleMonMut},
+        game_state::{
+            battle_mon::{BattleMon, BattleMonMut},
+            box_mon::BoxMonOwned,
+            mon_list::MonListEntry,
+        },
         save_state::string::PokeString,
     };
 
@@ -182,25 +74,43 @@ mod test {
         assert_eq!(r#box.len(), 0);
         assert_eq!(r#box.get(0), None);
 
-        r#box.push_front(MonListEntry::Mon(c.as_ref(), c_ot, c_name));
+        r#box.push_front(MonListEntry::Mon(c.as_ref(), c_ot.clone(), c_name.clone()));
 
         assert_eq!(r#box.len(), 1);
-        assert_eq!(r#box.get(0), Some(c.as_ref()));
+        assert_eq!(
+            r#box.get(0),
+            Some(MonListEntry::Mon(c.as_ref(), c_ot.clone(), c_name.clone()))
+        );
         assert_eq!(r#box.get(1), None);
 
-        r#box.push_front(MonListEntry::Mon(b.as_ref(), b_ot, b_name));
+        r#box.push_front(MonListEntry::Mon(b.as_ref(), b_ot.clone(), b_name.clone()));
 
         assert_eq!(r#box.len(), 2);
-        assert_eq!(r#box.get(0), Some(b.as_ref()));
-        assert_eq!(r#box.get(1), Some(c.as_ref()));
+        assert_eq!(
+            r#box.get(0),
+            Some(MonListEntry::Mon(b.as_ref(), b_ot.clone(), b_name.clone()))
+        );
+        assert_eq!(
+            r#box.get(1),
+            Some(MonListEntry::Mon(c.as_ref(), c_ot.clone(), c_name.clone()))
+        );
         assert_eq!(r#box.get(2), None);
 
-        r#box.push_front(MonListEntry::Mon(a.as_ref(), a_ot, a_name));
+        r#box.push_front(MonListEntry::Mon(a.as_ref(), a_ot.clone(), a_name.clone()));
 
         assert_eq!(r#box.len(), 3);
-        assert_eq!(r#box.get(0), Some(a.as_ref()));
-        assert_eq!(r#box.get(1), Some(b.as_ref()));
-        assert_eq!(r#box.get(2), Some(c.as_ref()));
+        assert_eq!(
+            r#box.get(0),
+            Some(MonListEntry::Mon(a.as_ref(), a_ot.clone(), a_name.clone()))
+        );
+        assert_eq!(
+            r#box.get(1),
+            Some(MonListEntry::Mon(b.as_ref(), b_ot.clone(), b_name.clone()))
+        );
+        assert_eq!(
+            r#box.get(2),
+            Some(MonListEntry::Mon(c.as_ref(), c_ot.clone(), c_name.clone()))
+        );
         assert_eq!(r#box.get(3), None);
     }
 }

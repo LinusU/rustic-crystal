@@ -16,6 +16,7 @@ pub trait MonListItem<'a> {
     fn as_ref(&self) -> &[u8];
 }
 
+#[derive(Debug, PartialEq, Eq)]
 pub enum MonListEntry<T> {
     Mon(T, PokeString<NAME_LENGTH>, PokeString<MON_NAME_LENGTH>),
     Egg(T, PokeString<NAME_LENGTH>, PokeString<MON_NAME_LENGTH>),
@@ -88,6 +89,12 @@ pub struct MonListMut<'a, T: MonListItem<'a>, const N: usize> {
 }
 
 impl<'a, T: MonListItem<'a>, const N: usize> MonListMut<'a, T, N> {
+    const SPECIES_OFFSET: usize = 1;
+    const POKEMON_OFFSET: usize = Self::SPECIES_OFFSET + N + 1;
+    const OT_NAME_OFFSET: usize = Self::POKEMON_OFFSET + (N * T::LEN);
+    const NICKNAME_OFFSET: usize = Self::OT_NAME_OFFSET + (N * NAME_LENGTH);
+    const END_OFFSET: usize = Self::NICKNAME_OFFSET + (N * MON_NAME_LENGTH);
+
     pub fn new(data: &'a mut [u8]) -> Self {
         Self {
             data,
@@ -95,8 +102,38 @@ impl<'a, T: MonListItem<'a>, const N: usize> MonListMut<'a, T, N> {
         }
     }
 
-    fn len(&self) -> usize {
+    pub fn len(&self) -> usize {
         self.data[0] as usize
+    }
+
+    pub fn get(&'a self, index: usize) -> Option<MonListEntry<T>> {
+        if index >= self.len() {
+            return None;
+        }
+
+        let mon = {
+            let start = Self::POKEMON_OFFSET + (index * T::LEN);
+            let end = start + T::LEN;
+            T::new(&self.data[start..end])
+        };
+
+        let ot_name = {
+            let start = Self::OT_NAME_OFFSET + (index * NAME_LENGTH);
+            let end = start + NAME_LENGTH;
+            PokeString::<NAME_LENGTH>::new(self.data[start..end].try_into().unwrap())
+        };
+
+        let nickname = {
+            let start = Self::NICKNAME_OFFSET + (index * MON_NAME_LENGTH);
+            let end = start + MON_NAME_LENGTH;
+            PokeString::<MON_NAME_LENGTH>::new(self.data[start..end].try_into().unwrap())
+        };
+
+        if self.data[1 + index] == EGG {
+            Some(MonListEntry::Egg(mon, ot_name, nickname))
+        } else {
+            Some(MonListEntry::Mon(mon, ot_name, nickname))
+        }
     }
 
     pub fn push_back(&mut self, pokemon: MonListEntry<T>) {
@@ -106,6 +143,35 @@ impl<'a, T: MonListItem<'a>, const N: usize> MonListMut<'a, T, N> {
         self.data[0] += 1;
         self.set(idx, pokemon);
         *self.species_slot_mut(idx + 1) = 0xff;
+    }
+
+    pub fn push_front(&mut self, pokemon: MonListEntry<T>) {
+        assert!(self.len() < N);
+
+        self.data[0] += 1;
+
+        if self.data[0] == 1 {
+            self.data[2] = 0xff;
+        } else {
+            self.data.copy_within(
+                Self::SPECIES_OFFSET..(Self::POKEMON_OFFSET - 1),
+                Self::SPECIES_OFFSET + 1,
+            );
+            self.data.copy_within(
+                Self::POKEMON_OFFSET..(Self::OT_NAME_OFFSET - T::LEN),
+                Self::POKEMON_OFFSET + T::LEN,
+            );
+            self.data.copy_within(
+                Self::OT_NAME_OFFSET..(Self::NICKNAME_OFFSET - NAME_LENGTH),
+                Self::OT_NAME_OFFSET + NAME_LENGTH,
+            );
+            self.data.copy_within(
+                Self::NICKNAME_OFFSET..(Self::END_OFFSET - MON_NAME_LENGTH),
+                Self::NICKNAME_OFFSET + MON_NAME_LENGTH,
+            );
+        }
+
+        self.set(0, pokemon);
     }
 
     fn set(&mut self, i: usize, pokemon: MonListEntry<T>) {
@@ -127,27 +193,27 @@ impl<'a, T: MonListItem<'a>, const N: usize> MonListMut<'a, T, N> {
 
     fn species_slot_mut(&mut self, index: usize) -> &mut u8 {
         assert!(index <= self.len());
-        &mut self.data[1 + index]
+        &mut self.data[Self::SPECIES_OFFSET + index]
     }
 
     // FIXME: when generic_const_exprs is unflagged this can be &mut [u8; T::LEN]
     fn pokemon_slot_mut(&mut self, index: usize) -> &mut [u8] {
         assert!(index < self.len());
-        let start = 1 + N + 1 + (index * T::LEN);
+        let start = Self::POKEMON_OFFSET + (index * T::LEN);
         let end = start + T::LEN;
         &mut self.data[start..end]
     }
 
     fn ot_name_slot_mut(&mut self, index: usize) -> &mut [u8; NAME_LENGTH] {
         assert!(index < self.len());
-        let start = 1 + N + 1 + (N * T::LEN) + (index * NAME_LENGTH);
+        let start = Self::OT_NAME_OFFSET + (index * NAME_LENGTH);
         let end = start + NAME_LENGTH;
         (&mut self.data[start..end]).try_into().unwrap()
     }
 
     fn nickname_slot_mut(&mut self, index: usize) -> &mut [u8; MON_NAME_LENGTH] {
         assert!(index < self.len());
-        let start = 1 + N + 1 + (N * T::LEN) + (N * NAME_LENGTH) + (index * MON_NAME_LENGTH);
+        let start = Self::NICKNAME_OFFSET + (index * MON_NAME_LENGTH);
         let end = start + MON_NAME_LENGTH;
         (&mut self.data[start..end]).try_into().unwrap()
     }
