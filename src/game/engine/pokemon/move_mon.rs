@@ -2,7 +2,6 @@ use crate::{
     cpu::{Cpu, CpuFlag},
     game::{
         constants::{
-            battle_constants::NUM_MOVES,
             item_data_constants::MAIL_STRUCT_LENGTH,
             pokemon_constants::PokemonSpecies,
             ram_constants::{MonType, PokemonWithdrawDepositParameter},
@@ -142,14 +141,14 @@ pub fn send_mon_into_box(cpu: &mut Cpu) {
         cpu.borrow_wram().cur_party_species(),
     );
 
-    if cpu.borrow_sram().current_box().is_full() {
-        cpu.set_flag(CpuFlag::C, false); // return failure
+    fn return_value(cpu: &mut Cpu, value: bool) {
+        cpu.set_flag(CpuFlag::C, value);
         cpu.pc = cpu.stack_pop(); // ret
-        return;
     }
 
-    cpu.a = 0x01; // BANK(sBoxCount)
-    cpu.call(0x2fcb); // OpenSRAM
+    if cpu.borrow_sram().current_box().is_full() {
+        return return_value(cpu, false);
+    }
 
     let cur_species = cpu
         .borrow_wram()
@@ -167,6 +166,9 @@ pub fn send_mon_into_box(cpu: &mut Cpu) {
         .current_box_mut()
         .push_front(MonListEntry::Mon(mon.as_ref(), ot_name, cur_species.name()));
 
+    cpu.a = 0x01; // BANK(sBoxCount)
+    cpu.call(0x2fcb); // OpenSRAM
+
     cpu.a = u8::from(cur_species) - 1;
     cpu.call(0x3380); // SetSeenAndCaughtMon
 
@@ -176,23 +178,12 @@ pub fn send_mon_into_box(cpu: &mut Cpu) {
         macros::farcall::callfar(cpu, 0x3e, 0x7a18); // UpdateUnownDex
     }
 
-    cpu.set_hl(0xad28); // sBoxMon1Moves
-    cpu.set_de(0xd110); // wTempMonMoves
-    cpu.set_bc(NUM_MOVES as u16);
-    cpu.call(0x3026); // CopyBytes
-
-    cpu.set_hl(0xad3d); // sBoxMon1PP
-    cpu.set_de(0xd125); // wTempMonPP
-    cpu.set_bc(NUM_MOVES as u16);
-    cpu.call(0x3026); // CopyBytes
-
     cpu.b = 0;
     cpu.call(0x5cb6); // RestorePPOfDepositedPokemon
 
     cpu.call(0x2fe1); // CloseSRAM
 
-    cpu.set_flag(CpuFlag::C, true); // return success
-    cpu.pc = cpu.stack_pop(); // ret
+    return_value(cpu, true)
 }
 
 const REMOVE_PARTY: PokemonWithdrawDepositParameter = PokemonWithdrawDepositParameter::PCWithdraw;
