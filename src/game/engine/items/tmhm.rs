@@ -74,7 +74,7 @@ pub fn tm_hm_display_pocket_items(cpu: &mut Cpu) {
             cpu.write_byte(cur_line_coord + 3 + i as u16, chr);
         }
 
-        if idx <= NUM_TMS {
+        if !cfg!(feature = "unlimited_tm_use") && idx <= NUM_TMS {
             let base = cur_line_coord + 3 + SCREEN_WIDTH as u16 + 9;
             let str = PokeString::<2>::from_number(quantity as u32, PrintNum::empty());
 
@@ -97,22 +97,25 @@ pub fn tm_hm_display_pocket_items(cpu: &mut Cpu) {
 
 pub fn consume_tm(cpu: &mut Cpu) {
     cpu.call(0x47a7); // ConvertCurItemIntoCurTMHM
-    cpu.a = cpu.borrow_wram().temp_tm_hm();
 
-    let idx = cpu.a as usize - 1;
+    if !cfg!(feature = "unlimited_tm_use") {
+        cpu.a = cpu.borrow_wram().temp_tm_hm();
 
-    let wram = cpu.borrow_wram_mut();
-    let bag = wram.tms_hms_mut();
+        let idx = cpu.a as usize - 1;
 
-    if bag[idx] > 0 {
-        bag[idx] -= 1;
-    }
+        let wram = cpu.borrow_wram_mut();
+        let bag = wram.tms_hms_mut();
 
-    if bag[idx] == 0 {
-        let scroll_pos = wram.tm_hm_pocket_scroll_position_mut();
+        if bag[idx] > 0 {
+            bag[idx] -= 1;
+        }
 
-        if *scroll_pos > 0 {
-            *scroll_pos -= 1;
+        if bag[idx] == 0 {
+            let scroll_pos = wram.tm_hm_pocket_scroll_position_mut();
+
+            if *scroll_pos > 0 {
+                *scroll_pos -= 1;
+            }
         }
     }
 

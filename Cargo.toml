@@ -19,8 +19,9 @@ rodio = { version = "0.21.1", default-features = false, features = ["flac", "pla
 core-foundation = "0.9.3"
 
 [features]
-default = ["legacy"]
+default = ["legacy", "unlimited_tm_use"]
 legacy = []
+unlimited_tm_use = []
 
 [package.metadata.bundle]
 name = "Rustic Crystal"
