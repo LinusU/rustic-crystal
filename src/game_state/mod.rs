@@ -256,6 +256,10 @@ impl GameState {
         PartyMonRef::new(&self.data[0x1018..])
     }
 
+    pub fn tm_hm_pocket_scroll_position_mut(&mut self) -> &mut u8 {
+        &mut self.data[0x10e2]
+    }
+
     pub fn battle_result(&self) -> BattleResult {
         BattleResult::from_bits(self.data[0x10ee]).unwrap()
     }
@@ -460,6 +464,10 @@ impl GameState {
         self.data[0x1265] = value.map_or(0, Into::into);
     }
 
+    pub fn temp_tm_hm(&self) -> u8 {
+        self.data[0x1265]
+    }
+
     pub fn type_matchup(&self) -> TypeEffectiveness {
         self.data[0x1265].into()
     }
@@ -496,6 +504,10 @@ impl GameState {
 
     pub fn tms_hms(&self) -> &[u8] {
         &self.data[0x1859..0x1859 + NUM_TMS + NUM_HMS]
+    }
+
+    pub fn tms_hms_mut(&mut self) -> &mut [u8] {
+        &mut self.data[0x1859..0x1859 + NUM_TMS + NUM_HMS]
     }
 
     pub fn cur_box(&self) -> u8 {

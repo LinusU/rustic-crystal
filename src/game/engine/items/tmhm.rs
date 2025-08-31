@@ -94,3 +94,27 @@ pub fn tm_hm_display_pocket_items(cpu: &mut Cpu) {
 
     cpu.pc = cpu.stack_pop(); // ret
 }
+
+pub fn consume_tm(cpu: &mut Cpu) {
+    cpu.call(0x47a7); // ConvertCurItemIntoCurTMHM
+    cpu.a = cpu.borrow_wram().temp_tm_hm();
+
+    let idx = cpu.a as usize - 1;
+
+    let wram = cpu.borrow_wram_mut();
+    let bag = wram.tms_hms_mut();
+
+    if bag[idx] > 0 {
+        bag[idx] -= 1;
+    }
+
+    if bag[idx] == 0 {
+        let scroll_pos = wram.tm_hm_pocket_scroll_position_mut();
+
+        if *scroll_pos > 0 {
+            *scroll_pos -= 1;
+        }
+    }
+
+    cpu.pc = cpu.stack_pop(); // ret
+}
