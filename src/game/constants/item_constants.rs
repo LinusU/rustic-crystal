@@ -30,3 +30,6 @@ define_u8_enum! {
 }
 
 pub const SAFARI_BALL: Item = Item::MoonStone; // leftovers from red
+
+pub const NUM_TMS: usize = 50;
+pub const NUM_HMS: usize = 7;

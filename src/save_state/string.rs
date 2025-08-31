@@ -1,4 +1,9 @@
-use std::fmt::{Debug, Display, Write};
+use std::{
+    fmt::{Debug, Display, Write},
+    ops::Index,
+};
+
+use crate::game::constants::text_constants::PrintNum;
 
 #[derive(PartialEq, Eq, PartialOrd, Ord, Clone)]
 pub struct PokeString<const N: usize>([u8; N]);
@@ -15,11 +20,46 @@ impl<const N: usize> PokeString<N> {
     pub fn len(&self) -> usize {
         self.0.len()
     }
+
+    pub fn from_number(n: u32, format: PrintNum) -> Self {
+        if format.contains(PrintNum::MONEY) || format.contains(PrintNum::LEFT_ALIGN) {
+            unimplemented!();
+        }
+
+        let result = if format.contains(PrintNum::LEADING_ZEROS) {
+            format!("{n:0N$}")
+        } else {
+            format!("{n:>N$}")
+        };
+
+        Self(
+            result
+                .bytes()
+                .map(|b| match b {
+                    b' ' => 0x7f,
+                    b'0'..=b'9' => 0xf6 + (b - b'0'),
+                    _ => unreachable!(),
+                })
+                .collect::<Vec<u8>>()
+                .try_into()
+                .unwrap_or_else(|v: Vec<u8>| {
+                    panic!("Expected a Vec of length {} but got {}", N, v.len())
+                }),
+        )
+    }
 }
 
 impl<const N: usize> AsRef<[u8]> for PokeString<N> {
     fn as_ref(&self) -> &[u8] {
         &self.0
+    }
+}
+
+impl<const N: usize> Index<usize> for PokeString<N> {
+    type Output = u8;
+
+    fn index(&self, index: usize) -> &Self::Output {
+        &self.0[index]
     }
 }
 

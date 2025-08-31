@@ -5,7 +5,7 @@ use crate::{
             battle_constants::{self, BattleMode, BattleResult, BattleType, TypeEffectiveness},
             engine_flags::UnlockedUnowns,
             input_constants::JoypadButtons,
-            item_constants::Item,
+            item_constants::{Item, NUM_HMS, NUM_TMS},
             map_constants::Map,
             move_constants::Move,
             pokemon_constants::{PokemonSpecies, EGG},
@@ -492,6 +492,10 @@ impl GameState {
 
     pub fn player_name(&self) -> PokeString<NAME_LENGTH> {
         PokeString::new(self.data[0x147d..0x147d + NAME_LENGTH].try_into().unwrap())
+    }
+
+    pub fn tms_hms(&self) -> &[u8] {
+        &self.data[0x1859..0x1859 + NUM_TMS + NUM_HMS]
     }
 
     pub fn cur_box(&self) -> u8 {

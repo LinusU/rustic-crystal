@@ -128,6 +128,8 @@ impl<'a> Cpu<'a> {
                 (0x0a, 0x64ab) => crate::game::engine::overworld::wildmons::random_unseen_wild_mon(self),
                 (0x0a, 0x651f) => crate::game::engine::overworld::wildmons::random_phone_wild_mon(self),
 
+                (0x0b, 0x49e2) => crate::game::engine::items::tmhm::tm_hm_display_pocket_items(self),
+
                 (0x0f, 0x5618) => crate::game::engine::battle::core::is_the_player_mon_types_effective_against_ot_mon(self),
 
                 (0x10, 0x61e6) => crate::game::engine::pokemon::evolve::evolve_after_battle(self),
