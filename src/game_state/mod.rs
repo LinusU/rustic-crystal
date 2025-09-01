@@ -493,14 +493,8 @@ impl GameState {
         self.data[0x1269].into()
     }
 
-    pub fn ot_party_species(&self) -> Vec<PokemonSpecies> {
-        let count = self.data[0x1280] as usize;
-
-        self.data[0x1281..(0x1281 + count)]
-            .iter()
-            .take_while(|&n| *n != 0)
-            .map(|&n| n.into())
-            .collect::<Vec<_>>()
+    pub fn ot_party(&self) -> MonList<'_, PartyMonRef<'_>, PARTY_LENGTH> {
+        MonList::new(&self.data[0x1280..])
     }
 
     pub fn player_id(&self) -> u16 {

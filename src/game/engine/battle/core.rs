@@ -10,7 +10,13 @@ pub fn is_the_player_mon_types_effective_against_ot_mon(cpu: &mut Cpu) {
         cpu.b
     );
 
-    let species = cpu.borrow_wram().ot_party_species()[cpu.b as usize];
+    let species = cpu
+        .borrow_wram()
+        .ot_party()
+        .get(cpu.b as usize)
+        .unwrap()
+        .mon()
+        .species();
 
     cpu.borrow_wram_mut()
         .enemy_mon_mut()
