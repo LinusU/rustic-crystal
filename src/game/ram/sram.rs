@@ -4,6 +4,7 @@ pub const CHECK_VALUE_BANK: u8 = 1;
 pub const CHECK_VALUE_1: u16 = 0xa008;
 pub const PARTY_MAIL: (u8, u16) = (0, 0xa600);
 pub const NUM_DAILY_MYSTERY_GIFT_PARTNER_IDS: (u8, u16) = (0, 0xabe5);
+pub const MYSTERY_GIFT_TRAINER: (u8, u16) = (0, 0xac0a);
 pub const CHECK_VALUE_2: u16 = 0xad0f;
 pub const BOX_MON_NICKNAMES: (u8, u16) = (1, 0xb082);
 pub const HALL_OF_FAME: (u8, u16) = (1, 0xb2c0);

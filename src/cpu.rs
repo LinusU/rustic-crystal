@@ -131,6 +131,8 @@ impl<'a> Cpu<'a> {
                 (0x0b, 0x49e2) => crate::game::engine::items::tmhm::tm_hm_display_pocket_items(self),
                 (0x0b, 0x4b0c) => crate::game::engine::items::tmhm::consume_tm(self),
 
+                (0x0e, 0x5771) => crate::game::engine::battle::read_trainer_party::read_trainer_party(self),
+
                 (0x0f, 0x5618) => crate::game::engine::battle::core::is_the_player_mon_types_effective_against_ot_mon(self),
 
                 (0x10, 0x61e6) => crate::game::engine::pokemon::evolve::evolve_after_battle(self),

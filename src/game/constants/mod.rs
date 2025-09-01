@@ -19,4 +19,5 @@ pub mod ram_constants;
 pub mod scgb_constants;
 pub mod serial_constants;
 pub mod text_constants;
+pub mod trainer_constants;
 pub mod type_constants;

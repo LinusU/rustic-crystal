@@ -13,6 +13,7 @@ use crate::{
             ram_constants::{MonType, PokemonWithdrawDepositParameter, SwarmFlags, TimeOfDay},
             serial_constants::LinkMode,
             text_constants::{MON_NAME_LENGTH, NAME_LENGTH},
+            trainer_constants::Trainer,
         },
     },
     game_state::{
@@ -211,6 +212,10 @@ impl GameState {
         }
     }
 
+    pub fn in_battle_tower_battle(&self) -> bool {
+        (self.data[0x0fc0] & 1) != 0
+    }
+
     pub fn set_fx_anim_id(&mut self, value: u16) {
         self.data[0x0fc2] = (value & 0xff) as u8;
         self.data[0x0fc3] = (value >> 8) as u8;
@@ -407,6 +412,10 @@ impl GameState {
 
     pub fn set_temp_wild_mon_species(&mut self, value: Option<PokemonSpecies>) {
         self.data[0x122e] = value.map_or(0, Into::into);
+    }
+
+    pub fn other_trainer(&self) -> Trainer {
+        (self.data[0x122f], self.data[0x1231]).into()
     }
 
     pub fn battle_type(&self) -> BattleType {
