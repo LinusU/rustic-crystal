@@ -132,6 +132,7 @@ impl<'a> Cpu<'a> {
                 (0x0b, 0x4b0c) => crate::game::engine::items::tmhm::consume_tm(self),
 
                 (0x0e, 0x5771) => crate::game::engine::battle::read_trainer_party::read_trainer_party(self),
+                (0x0e, 0x594c) => crate::game::engine::battle::read_trainer_party::get_trainer_name(self),
 
                 (0x0f, 0x5618) => crate::game::engine::battle::core::is_the_player_mon_types_effective_against_ot_mon(self),
 

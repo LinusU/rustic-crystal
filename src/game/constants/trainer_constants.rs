@@ -3,6 +3,37 @@ macro_rules! define_trainer_enum {
         $( class $gname:ident { $( $variant:ident ),* $(,)? } )+ $(,)?
     ) => {
         #[derive(Debug, Clone, Copy, PartialEq, Eq)]
+        pub enum TrainerClass {
+            $( $gname, )*
+            Unknown(u8),
+        }
+
+        impl From<u8> for TrainerClass {
+            fn from(id: u8) -> Self {
+                {
+                    let __x = id;
+                    // expand to a sequence of `if ... { return TrainerClass::... }` statements
+                    define_trainer_enum!(@gclass_from_statements __x [] ; $( class $gname { $( $variant ),* } )+);
+                    TrainerClass::Unknown(__x)
+                }
+            }
+        }
+
+        impl From<TrainerClass> for u8 {
+            fn from(map: TrainerClass) -> Self {
+                {
+                    let __m = map;
+                    // expand to a sequence of `if let TrainerClass::... = __m { return ... }`
+                    define_trainer_enum!(@gclass_to_statements __m [] ; $( class $gname { $( $variant ),* } )+);
+                    match __m {
+                        TrainerClass::Unknown(x) => x,
+                        _ => unreachable!("all named variants handled by generated code"),
+                    }
+                }
+            }
+        }
+
+        #[derive(Debug, Clone, Copy, PartialEq, Eq)]
         pub enum Trainer {
             $( $( $variant, )* )+
             Unknown(u8, u8),
@@ -32,6 +63,28 @@ macro_rules! define_trainer_enum {
                 }
             }
         }
+    };
+
+    // ===== u8 -> TrainerClass =====
+    (@gclass_from_statements $x:ident [$($gacc:tt)*] ; ) => {};
+    (@gclass_from_statements $x:ident [$($gacc:tt)*] ;
+        class $gname:ident { $( $v:ident ),* $(,)? } $($rest:tt)*
+    ) => {
+        if ($x as usize) == (define_trainer_enum!(@n $($gacc)*)) {
+            return TrainerClass::$gname;
+        }
+        define_trainer_enum!(@gclass_from_statements $x [$($gacc)* _] ; $($rest)*);
+    };
+
+    // ===== TrainerClass -> u8 =====
+    (@gclass_to_statements $m:ident [$($gacc:tt)*] ; ) => {};
+    (@gclass_to_statements $m:ident [$($gacc:tt)*] ;
+        class $gname:ident { $( $v:ident ),* $(,)? } $($rest:tt)*
+    ) => {
+        if let TrainerClass::$gname = $m {
+            return (define_trainer_enum!(@n $($gacc)*)) as u8;
+        }
+        define_trainer_enum!(@gclass_to_statements $m [$($gacc)* _] ; $($rest)*);
     };
 
     // ===== (u8,u8) -> Trainer =====
@@ -76,6 +129,12 @@ macro_rules! define_trainer_enum {
     // ===== tiny counter: `_ _ _` -> N =====
     (@n) => { 0usize };
     (@n $_head:tt $($rest:tt)*) => { 1usize + define_trainer_enum!(@n $($rest)*) };
+}
+
+impl Trainer {
+    pub fn class(self) -> TrainerClass {
+        <(u8, u8)>::from(self).0.into()
+    }
 }
 
 define_trainer_enum! {

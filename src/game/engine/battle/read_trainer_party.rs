@@ -2,11 +2,13 @@ use crate::{
     cpu::Cpu,
     game::{
         constants::{
-            pokemon_data_constants::PARTY_LENGTH, ram_constants::MonType,
-            serial_constants::LinkMode, trainer_constants::Trainer,
+            pokemon_data_constants::PARTY_LENGTH,
+            ram_constants::MonType,
+            serial_constants::LinkMode,
+            trainer_constants::{Trainer, TrainerClass},
         },
         macros,
-        ram::sram::MYSTERY_GIFT_TRAINER,
+        ram::{sram, wram},
     },
     game_state::{moveset::Moveset, party_mon::PartyMonOwned},
 };
@@ -35,10 +37,10 @@ pub fn read_trainer_party(cpu: &mut Cpu) {
     cpu.call(0x3041); // ByteFill: fill bc bytes with the value of a, starting at hl
 
     if trainer == Trainer::Cal2 {
-        cpu.a = MYSTERY_GIFT_TRAINER.0;
+        cpu.a = sram::MYSTERY_GIFT_TRAINER.0;
         cpu.call(0x2fcb); // OpenSRAM
 
-        cpu.set_de(MYSTERY_GIFT_TRAINER.1);
+        cpu.set_de(sram::MYSTERY_GIFT_TRAINER.1);
         cpu.call(0x5806); // TrainerType2
         cpu.call(0x2fe1); // CloseSRAM
 
@@ -82,4 +84,31 @@ pub fn read_trainer_party(cpu: &mut Cpu) {
     }
 
     cpu.jump(0x591b) // ComputeTrainerReward
+}
+
+pub fn get_trainer_name(cpu: &mut Cpu) {
+    let trainer = Trainer::from((cpu.c, cpu.b));
+
+    if trainer.class() == TrainerClass::Cal {
+        cpu.a = sram::MYSTERY_GIFT_TRAINER_HOUSE_FLAG.0;
+        cpu.call(0x2fcb); // OpenSRAM
+        let flag = cpu.read_byte(sram::MYSTERY_GIFT_TRAINER_HOUSE_FLAG.1);
+        cpu.call(0x2fe1); // CloseSRAM
+
+        if flag != 0 {
+            cpu.a = sram::MYSTERY_GIFT_PARTNER_NAME.0;
+            cpu.call(0x2fcb); // OpenSRAM
+
+            cpu.set_hl(sram::MYSTERY_GIFT_PARTNER_NAME.1);
+            cpu.call(0x5984); // CopyTrainerName
+
+            return cpu.jump(0x2fe1); // CloseSRAM
+        }
+    }
+
+    for (i, chr) in trainer.party().name.iter().enumerate() {
+        cpu.write_byte(wram::STRING_BUFFER_1 + i as u16, chr);
+    }
+
+    cpu.pc = cpu.stack_pop(); // ret
 }
