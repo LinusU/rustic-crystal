@@ -20,8 +20,8 @@ macro_rules! define_moves_enum {
             pub fn effect(self) -> MoveEffect {
                 match self {
                     $( Move::$name => MoveEffect::$effect, )*
-                    _ => {
-                        log::error!("Unknown move effect for move: {:?}", self);
+                    Move::Unknown(n) => {
+                        log::error!("Unknown move effect for move: {n}");
                         0.into()
                     }
                 }
@@ -30,8 +30,8 @@ macro_rules! define_moves_enum {
             pub fn base_power(self) -> u8 {
                 match self {
                     $( Move::$name => $power, )*
-                    _ => {
-                        log::error!("Unknown base power for move: {:?}", self);
+                    Move::Unknown(n) => {
+                        log::error!("Unknown base power for move: {n}");
                         0
                     }
                 }
@@ -40,8 +40,8 @@ macro_rules! define_moves_enum {
             pub fn r#type(self) -> Type {
                 match self {
                     $( Move::$name => Type::$ty, )*
-                    _ => {
-                        log::error!("Unknown type for move: {:?}", self);
+                    Move::Unknown(n) => {
+                        log::error!("Unknown type for move: {n}");
                         Type::Normal
                     }
                 }
@@ -50,8 +50,8 @@ macro_rules! define_moves_enum {
             pub fn accuracy(self) -> u8 {
                 match self {
                     $( Move::$name => percent($accuracy), )*
-                    _ => {
-                        log::error!("Unknown accuracy for move: {:?}", self);
+                    Move::Unknown(n) => {
+                        log::error!("Unknown accuracy for move: {n}");
                         0
                     }
                 }
