@@ -12,7 +12,9 @@ define_u8_enum! {
         WaterStone = 0x18,
         LeafStone = 0x22,
         KingsRock = 0x52,
+        PinkBow = 0x68,
         Everstone = 0x70,
+        FocusBand = 0x77,
         MetalCoat = 0x8f,
         DragonScale = 0x97,
         HeavyBall = 0x9d,
@@ -24,6 +26,7 @@ define_u8_enum! {
         LoveBall = 0xa6,
         SunStone = 0xa9,
         UpGrade = 0xac,
+        Berry = 0xad,
         ParkBall = 0xb1,
         BrickPiece = 0xb4,
     }

@@ -47,6 +47,33 @@ impl<const N: usize> PokeString<N> {
                 }),
         )
     }
+
+    pub const fn from_ascii(s: &[u8]) -> Self {
+        let mut arr = [0x50; N];
+        let mut i = 0;
+        while i < s.len() && i < N {
+            arr[i] = match s[i] {
+                b' ' => 0x7f,
+                b'A'..=b'Z' => 0x80 + (s[i] - b'A'),
+                b'a'..=b'z' => 0xa0 + (s[i] - b'a'),
+                b'0'..=b'9' => 0xf6 + (s[i] - b'0'),
+                b'(' => 0x9a,
+                b')' => 0x9b,
+                b':' => 0x9c,
+                b';' => 0x9d,
+                b'[' => 0x9e,
+                b']' => 0x9f,
+                b'&' => 0xe9,
+                b'.' => 0xf2,
+                b',' => 0xf4,
+                b'!' => 0xe7,
+                b'?' => 0xe6,
+                _ => unimplemented!(),
+            };
+            i += 1;
+        }
+        Self(arr)
+    }
 }
 
 impl<const N: usize> AsRef<[u8]> for PokeString<N> {

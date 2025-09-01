@@ -1,10 +1,14 @@
+use std::fmt::Debug;
+
 use crate::{
     game::constants::{item_constants::Item, pokemon_constants::PokemonSpecies},
     game_state::{
+        battle_mon::BattleMonStatus,
         box_mon::{BoxMonMut, BoxMonOwned, BoxMonRef},
         mon_list::{MonListItem, MonListItemMut},
         moveset::Moveset,
     },
+    save_state::determinant_values::DeterminantValues,
 };
 
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -161,6 +165,38 @@ impl<'a> PartyMonRef<'a> {
         BoxMonRef::new(self.data).moves()
     }
 
+    pub fn ot_id(&self) -> u16 {
+        BoxMonRef::new(self.data).ot_id()
+    }
+
+    pub fn exp(&self) -> u32 {
+        BoxMonRef::new(self.data).exp()
+    }
+
+    pub fn hp_ev(&self) -> u16 {
+        BoxMonRef::new(self.data).hp_ev()
+    }
+
+    pub fn attack_ev(&self) -> u16 {
+        BoxMonRef::new(self.data).attack_ev()
+    }
+
+    pub fn defense_ev(&self) -> u16 {
+        BoxMonRef::new(self.data).defense_ev()
+    }
+
+    pub fn speed_ev(&self) -> u16 {
+        BoxMonRef::new(self.data).speed_ev()
+    }
+
+    pub fn special_ev(&self) -> u16 {
+        BoxMonRef::new(self.data).special_ev()
+    }
+
+    pub fn dvs(&self) -> DeterminantValues {
+        BoxMonRef::new(self.data).dvs()
+    }
+
     pub fn pp(&self) -> [u8; 4] {
         BoxMonRef::new(self.data).pp()
     }
@@ -169,8 +205,20 @@ impl<'a> PartyMonRef<'a> {
         BoxMonRef::new(self.data).happiness()
     }
 
+    pub fn pokerus_status(&self) -> u8 {
+        BoxMonRef::new(self.data).pokerus_status()
+    }
+
+    pub fn caught_data(&self) -> u16 {
+        BoxMonRef::new(self.data).caught_data()
+    }
+
     pub fn level(&self) -> u8 {
         BoxMonRef::new(self.data).level()
+    }
+
+    pub fn status(&self) -> BattleMonStatus {
+        self.data[32].into()
     }
 
     pub fn hp(&self) -> u16 {
@@ -187,6 +235,49 @@ impl<'a> PartyMonRef<'a> {
 
     pub fn defense(&self) -> u16 {
         u16::from_be_bytes([self.data[40], self.data[41]])
+    }
+
+    pub fn speed(&self) -> u16 {
+        u16::from_be_bytes([self.data[42], self.data[43]])
+    }
+
+    pub fn spcl_atk(&self) -> u16 {
+        u16::from_be_bytes([self.data[44], self.data[45]])
+    }
+
+    pub fn spcl_def(&self) -> u16 {
+        u16::from_be_bytes([self.data[46], self.data[47]])
+    }
+}
+
+impl<'a> Debug for PartyMonRef<'a> {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct("PartyMonRef")
+            .field("species", &self.species())
+            .field("item", &self.item())
+            .field("moves", &self.moves())
+            .field("ot_id", &self.ot_id())
+            .field("exp", &self.exp())
+            .field("hp_ev", &self.hp_ev())
+            .field("attack_ev", &self.attack_ev())
+            .field("defense_ev", &self.defense_ev())
+            .field("speed_ev", &self.speed_ev())
+            .field("special_ev", &self.special_ev())
+            .field("dvs", &self.dvs())
+            .field("pp", &self.pp())
+            .field("happiness", &self.happiness())
+            .field("pokerus_status", &self.pokerus_status())
+            .field("caught_data", &self.caught_data())
+            .field("level", &self.level())
+            .field("status", &self.status())
+            .field("hp", &self.hp())
+            .field("max_hp", &self.max_hp())
+            .field("attack", &self.attack())
+            .field("defense", &self.defense())
+            .field("speed", &self.speed())
+            .field("spcl_atk", &self.spcl_atk())
+            .field("spcl_def", &self.spcl_def())
+            .finish()
     }
 }
 
@@ -229,8 +320,9 @@ impl<'a> PartyMonMut<'a> {
         BoxMonMut::new(self.data).set_item(item);
     }
 
-    pub fn set_moves(&mut self, moves: &Moveset) {
+    pub fn set_moves(&mut self, moves: &Moveset) -> &mut Self {
         BoxMonMut::new(self.data).set_moves(moves);
+        self
     }
 
     pub fn set_pp(&mut self, pp: [u8; 4]) {

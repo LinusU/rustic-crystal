@@ -5,6 +5,7 @@ use crate::game::macros::r#enum::define_u8_enum;
 define_u8_enum! {
     pub enum MonType {
         Party = 0,
+        OtherParty = 1,
         Box = 2,
         Temp = 3,
     }

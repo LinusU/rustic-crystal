@@ -2,12 +2,13 @@ use crate::{
     cpu::Cpu,
     game::{
         constants::{
-            pokemon_data_constants::PARTY_LENGTH, serial_constants::LinkMode,
-            trainer_constants::Trainer,
+            pokemon_data_constants::PARTY_LENGTH, ram_constants::MonType,
+            serial_constants::LinkMode, trainer_constants::Trainer,
         },
+        macros,
         ram::sram::MYSTERY_GIFT_TRAINER,
     },
-    game_state::party_mon::PartyMonOwned,
+    game_state::{moveset::Moveset, party_mon::PartyMonOwned},
 };
 
 pub fn read_trainer_party(cpu: &mut Cpu) {
@@ -44,60 +45,40 @@ pub fn read_trainer_party(cpu: &mut Cpu) {
         return cpu.jump(0x591b); // ComputeTrainerReward
     }
 
-    (cpu.a, _) = trainer.into();
+    let party = trainer.party();
 
-    cpu.a = cpu.a.wrapping_sub(1);
-    cpu.b = 0;
-    cpu.c = cpu.a;
+    for (i, mon) in party.mons.iter().enumerate() {
+        let wram = cpu.borrow_wram_mut();
+        wram.set_cur_party_level(mon.level);
+        wram.set_cur_party_species(Some(mon.species));
+        wram.set_mon_type(MonType::OtherParty);
 
-    cpu.set_hl(0x5999 + cpu.a as u16 * 2); // TrainerGroups + (trainer_class * 2)
+        macros::predef::predef_call!(cpu, TryAddMonToParty);
 
-    cpu.a = cpu.read_byte(cpu.hl());
-    cpu.set_hl(cpu.hl() + 1);
-    cpu.h = cpu.read_byte(cpu.hl());
-    cpu.l = cpu.a;
-
-    (_, cpu.a) = trainer.into();
-    cpu.b = cpu.a;
-
-    // Skip trainers
-    'outer: loop {
-        cpu.b = cpu.b.wrapping_sub(1);
-
-        if cpu.b == 0 {
-            break 'outer;
+        if let Some(item) = mon.held_item {
+            cpu.borrow_wram_mut()
+                .ot_party_mut()
+                .get_mut(i)
+                .unwrap()
+                .set_item(Some(item));
         }
 
-        'inner: loop {
-            cpu.a = cpu.read_byte(cpu.hl());
-            cpu.set_hl(cpu.hl() + 1);
+        if let Some(moves) = mon.moves {
+            let set: Moveset = moves.into();
+            let pps = set.pps();
 
-            if cpu.a == 0xff {
-                break 'inner;
-            }
+            cpu.borrow_wram_mut()
+                .ot_party_mut()
+                .get_mut(i)
+                .unwrap()
+                .set_moves(&set)
+                .set_pp(pps);
         }
-    }
 
-    // Skip name
-    loop {
-        cpu.a = cpu.read_byte(cpu.hl());
-        cpu.set_hl(cpu.hl() + 1);
-
-        if cpu.a == 0x50 {
-            break;
-        }
-    }
-
-    let trainer_type = cpu.read_byte(cpu.hl());
-
-    cpu.set_de(cpu.hl() + 1);
-
-    match trainer_type {
-        0 => cpu.call(0x57eb), // TrainerType1
-        1 => cpu.call(0x5806), // TrainerType2
-        2 => cpu.call(0x5871), // TrainerType3
-        3 => cpu.call(0x589d), // TrainerType4
-        n => panic!("Invalid trainer type: {n}"),
+        log::trace!(
+            "read_trainer_party({trainer:?}) Added mon: {:?}",
+            cpu.borrow_wram().ot_party().get(i)
+        );
     }
 
     cpu.jump(0x591b) // ComputeTrainerReward

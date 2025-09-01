@@ -21,6 +21,14 @@ impl Moveset {
     pub fn len(&self) -> usize {
         self.data.len()
     }
+
+    pub fn pps(&self) -> [u8; NUM_MOVES] {
+        let mut pps = [0; NUM_MOVES];
+        for (i, &m) in self.data.iter().enumerate() {
+            pps[i] = m.pp();
+        }
+        pps
+    }
 }
 
 impl Debug for Moveset {
@@ -37,6 +45,14 @@ impl From<[u8; NUM_MOVES]> for Moveset {
                 .take_while(|&n| n != 0)
                 .map(Into::into)
                 .collect(),
+        }
+    }
+}
+
+impl From<&[Move]> for Moveset {
+    fn from(data: &[Move]) -> Self {
+        Self {
+            data: data.iter().copied().take(NUM_MOVES).collect(),
         }
     }
 }

@@ -30,6 +30,12 @@ impl BattleMonStatus {
     }
 }
 
+impl From<u8> for BattleMonStatus {
+    fn from(val: u8) -> Self {
+        Self(val)
+    }
+}
+
 impl From<BattleMonStatus> for u8 {
     fn from(val: BattleMonStatus) -> Self {
         val.0

@@ -497,6 +497,12 @@ impl GameState {
         MonList::new(&self.data[0x1280..])
     }
 
+    pub fn ot_party_mut(
+        &mut self,
+    ) -> MonListMut<'_, PartyMonRef<'_>, PartyMonMut<'_>, PARTY_LENGTH> {
+        MonListMut::new(&mut self.data[0x1280..])
+    }
+
     pub fn player_id(&self) -> u16 {
         u16::from_be_bytes([self.data[0x147b], self.data[0x147c]])
     }
