@@ -301,7 +301,7 @@ parties! {
         44 Crobat     [ DoubleTeam, QuickAttack, WingAttack, Toxic ]
     }
 
-    Lance => {
+    Lance1 => {
         "LANCE"
         44 Gyarados   [ Flail, RainDance, Surf, HyperBeam ]
         47 Dragonite  [ ThunderWave, Twister, Thunder, HyperBeam ]

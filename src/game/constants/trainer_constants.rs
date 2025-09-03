@@ -1,6 +1,6 @@
 macro_rules! define_trainer_enum {
     (
-        $( class $gname:ident { $( $variant:ident ),* $(,)? } )+ $(,)?
+        $( class $gname:ident { $( $(#[$attr:meta])? $variant:ident ),* $(,)? } )+ $(,)?
     ) => {
         #[derive(Debug, Clone, Copy, PartialEq, Eq)]
         pub enum TrainerClass {
@@ -35,7 +35,7 @@ macro_rules! define_trainer_enum {
 
         #[derive(Debug, Clone, Copy, PartialEq, Eq)]
         pub enum Trainer {
-            $( $( $variant, )* )+
+            $( $( $(#[$attr])? $variant, )* )+
             Unknown(u8, u8),
         }
 
@@ -44,7 +44,7 @@ macro_rules! define_trainer_enum {
                 {
                     let (__x, __y) = id;
                     // expand to a sequence of `if ... { return Trainer::... }` statements
-                    define_trainer_enum!(@emit_from_statements __x __y [] ; $( class $gname { $( $variant ),* } )+);
+                    define_trainer_enum!(@emit_from_statements __x __y [] ; $( class $gname { $( $(#[$attr])? $variant ),* } )+);
                     Trainer::Unknown(__x, __y)
                 }
             }
@@ -55,7 +55,7 @@ macro_rules! define_trainer_enum {
                 {
                     let __m = map;
                     // expand to a sequence of `if let Trainer::... = __m { return (...) }`
-                    define_trainer_enum!(@emit_to_statements __m [] ; $( class $gname { $( $variant ),* } )+);
+                    define_trainer_enum!(@emit_to_statements __m [] ; $( class $gname { $( $(#[$attr])? $variant ),* } )+);
                     match __m {
                         Trainer::Unknown(x, y) => (x, y),
                         _ => unreachable!("all named variants handled by generated code"),
@@ -90,39 +90,41 @@ macro_rules! define_trainer_enum {
     // ===== (u8,u8) -> Trainer =====
     (@emit_from_statements $x:ident $y:ident [$($gacc:tt)*] ; ) => {};
     (@emit_from_statements $x:ident $y:ident [$($gacc:tt)*] ;
-        class $gname:ident { $( $v:ident ),* $(,)? } $($rest:tt)*
+        class $gname:ident { $( $(#[$attr:meta])? $v:ident ),* $(,)? } $($rest:tt)*
     ) => {
-        define_trainer_enum!(@emit_from_items $x $y [$($gacc)*] [] $( $v ),*);
+        define_trainer_enum!(@emit_from_items $x $y [$($gacc)*] [] $( $( #[$attr] )? $v ),*);
         define_trainer_enum!(@emit_from_statements $x $y [$($gacc)* _] ; $($rest)*);
     };
 
     (@emit_from_items $x:ident $y:ident [$($gacc:tt)*] [$($iacc:tt)*]) => {};
-    (@emit_from_items $x:ident $y:ident [$($gacc:tt)*] [$($iacc:tt)*] $head:ident $(, $tail:ident )* ) => {
+    (@emit_from_items $x:ident $y:ident [$($gacc:tt)*] [$($iacc:tt)*] $(#[$attr:meta])? $variant:ident $(, $(#[$attr_rest:meta])? $variant_rest:ident )* ) => {
+        $(#[$attr])?
         if ($x as usize) == (define_trainer_enum!(@n $($gacc)*))
            && ($y as usize) == (define_trainer_enum!(@n $($iacc)*) + 1)
         {
-            return Trainer::$head;
+            return Trainer::$variant;
         }
-        define_trainer_enum!(@emit_from_items $x $y [$($gacc)*] [$($iacc)* _] $( $tail ),*);
+        define_trainer_enum!(@emit_from_items $x $y [$($gacc)*] [$($iacc)* _] $( $(#[$attr_rest])? $variant_rest ),*);
     };
 
     // ===== Trainer -> (u8,u8) =====
     (@emit_to_statements $m:ident [$($gacc:tt)*] ; ) => {};
     (@emit_to_statements $m:ident [$($gacc:tt)*] ;
-        class $gname:ident { $( $v:ident ),* $(,)? } $($rest:tt)*
+        class $gname:ident { $( $(#[$attr:meta])? $v:ident ),* $(,)? } $($rest:tt)*
     ) => {
-        define_trainer_enum!(@emit_to_items $m [$($gacc)*] [] $( $v ),*);
+        define_trainer_enum!(@emit_to_items $m [$($gacc)*] [] $( $( #[$attr] )? $v ),*);
         define_trainer_enum!(@emit_to_statements $m [$($gacc)* _] ; $($rest)*);
     };
 
-    (@emit_to_items $m:ident [$($gacc:tt)*] [$($iacc:tt)*] $head:ident $(, $tail:ident )* ) => {
-        if let Trainer::$head = $m {
+    (@emit_to_items $m:ident [$($gacc:tt)*] [$($iacc:tt)*] $(#[$attr:meta])? $variant:ident $(, $(#[$attr_rest:meta])? $variant_rest:ident )* ) => {
+        $(#[$attr])?
+        if let Trainer::$variant = $m {
             return (
                 (define_trainer_enum!(@n $($gacc)*)) as u8,
                 (define_trainer_enum!(@n $($iacc)*) + 1) as u8,
             );
         }
-        define_trainer_enum!(@emit_to_items $m [$($gacc)*] [$($iacc)* _] $( $tail ),*);
+        define_trainer_enum!(@emit_to_items $m [$($gacc)*] [$($iacc)* _] $( $(#[$attr_rest])? $variant_rest ),*);
     };
     (@emit_to_items $m:ident [$($gacc:tt)*] [$($iacc:tt)*]) => {};
 
@@ -148,34 +150,62 @@ define_trainer_enum! {
 
     class Falkner {
         Falkner1,
+        #[cfg(feature = "legacy")]
+        Falkner2,
     }
 
     class Whitney {
         Whitney1,
+        #[cfg(feature = "legacy")]
+        Whitney2,
     }
 
     class Bugsy {
         Bugsy1,
+        #[cfg(feature = "legacy")]
+        Bugsy2,
     }
 
     class Morty {
         Morty1,
+        #[cfg(feature = "legacy")]
+        Morty2,
     }
 
     class Pryce {
         Pryce1,
+        #[cfg(feature = "legacy")]
+        Pryce2,
+        #[cfg(feature = "legacy")]
+        Pryce3,
+        #[cfg(feature = "legacy")]
+        Pryce4,
     }
 
     class Jasmine {
         Jasmine1,
+        #[cfg(feature = "legacy")]
+        Jasmine2,
+        #[cfg(feature = "legacy")]
+        Jasmine3,
+        #[cfg(feature = "legacy")]
+        Jasmine4,
     }
 
     class Chuck {
         Chuck1,
+        #[cfg(feature = "legacy")]
+        Chuck2,
+        #[cfg(feature = "legacy")]
+        Chuck3,
+        #[cfg(feature = "legacy")]
+        Chuck4,
     }
 
     class Clair {
         Clair1,
+        #[cfg(feature = "legacy")]
+        Clair2,
     }
 
     class Rival1 {
@@ -200,28 +230,42 @@ define_trainer_enum! {
 
     class Will {
         Will1,
+        #[cfg(feature = "legacy")]
+        Will2,
     }
 
     class Cal {
         Cal1, // unused
         Cal2,
         Cal3,
+        #[cfg(feature = "legacy")]
+        Smith,
+        #[cfg(feature = "legacy")]
+        Craig,
     }
 
     class Bruno {
         Bruno1,
+        #[cfg(feature = "legacy")]
+        Bruno2,
     }
 
     class Karen {
         Karen1,
+        #[cfg(feature = "legacy")]
+        Karen2,
     }
 
     class Koga {
         Koga1,
+        #[cfg(feature = "legacy")]
+        Koga2,
     }
 
     class Champion {
-        Lance,
+        Lance1,
+        #[cfg(feature = "legacy")]
+        Lance2,
     }
 
     class Brock {
@@ -864,10 +908,14 @@ define_trainer_enum! {
 
     class Red {
         Red1,
+        #[cfg(feature = "legacy")]
+        Red2,
     }
 
     class Blue {
         Blue1,
+        #[cfg(feature = "legacy")]
+        Blue2,
     }
 
     class Officer {
@@ -886,6 +934,23 @@ define_trainer_enum! {
     class Mysticalman {
         Eusine,
     }
+
+    class Boss {
+        #[cfg(feature = "legacy")]
+        Giovanni,
+    }
+
+    class RocketLeader {
+        #[cfg(feature = "legacy")]
+        Archer1,
+        #[cfg(feature = "legacy")]
+        Archer2,
+    }
+
+    class PkmnTrainerF {
+        #[cfg(feature = "legacy")]
+        Weebra,
+    }
 }
 
 #[cfg(test)]
@@ -899,5 +964,12 @@ mod tests {
 
         assert_eq!((0x43, 1), Trainer::Eusine.into());
         assert_eq!(Trainer::Eusine, Trainer::from((0x43, 1)));
+    }
+
+    #[test]
+    #[cfg(feature = "legacy")]
+    fn test_map_enum_legacy() {
+        assert_eq!((0x01, 2), Trainer::Falkner2.into());
+        assert_eq!(Trainer::Falkner2, Trainer::from((0x01, 2)));
     }
 }
