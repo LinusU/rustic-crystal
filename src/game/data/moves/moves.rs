@@ -174,7 +174,7 @@ define_moves_enum! {
     Dig            [ Fly,              60, Ground,       100, 10,   0 ],
     Toxic          [ Toxic,             0, Poison,        85, 10,   0 ],
     Confusion      [ ConfuseHit,       50, Psychic,      100, 25,  10 ],
-    PsychicM       [ SpDefDownHit,     90, Psychic,      100, 10,  10 ],
+    Psychic        [ SpDefDownHit,     90, Psychic,      100, 10,  10 ],
     Hypnosis       [ Sleep,             0, Psychic,       60, 20,   0 ],
     Meditate       [ AttackUp,          0, Psychic,      100, 40,   0 ],
     Agility        [ SpeedUp2,          0, Psychic,      100, 30,   0 ],

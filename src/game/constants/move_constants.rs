@@ -95,7 +95,7 @@ define_u8_enum! {
         Dig          = 0x5b,
         Toxic        = 0x5c,
         Confusion    = 0x5d,
-        PsychicM     = 0x5e,
+        Psychic      = 0x5e,
         Hypnosis     = 0x5f,
         Meditate     = 0x60,
         Agility      = 0x61,

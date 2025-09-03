@@ -246,11 +246,11 @@ parties! {
 
     Will1 => {
         "WILL"
-        40 Xatu      [ QuickAttack, FutureSight, ConfuseRay, PsychicM ]
-        41 Jynx      [ Doubleslap, LovelyKiss, IcePunch, PsychicM ]
-        41 Exeggutor [ Reflect, LeechSeed, EggBomb, PsychicM ]
-        41 Slowbro   [ Curse, Amnesia, BodySlam, PsychicM ]
-        42 Xatu      [ QuickAttack, FutureSight, ConfuseRay, PsychicM ]
+        40 Xatu      [ QuickAttack, FutureSight, ConfuseRay, Psychic ]
+        41 Jynx      [ Doubleslap, LovelyKiss, IcePunch, Psychic ]
+        41 Exeggutor [ Reflect, LeechSeed, EggBomb, Psychic ]
+        41 Slowbro   [ Curse, Amnesia, BodySlam, Psychic ]
+        42 Xatu      [ QuickAttack, FutureSight, ConfuseRay, Psychic ]
     }
 
     Cal1 => {
@@ -295,7 +295,7 @@ parties! {
     Koga1 => {
         "KOGA"
         40 Ariados    [ DoubleTeam, SpiderWeb, BatonPass, GigaDrain ]
-        41 Venomoth   [ Supersonic, Gust, PsychicM, Toxic ]
+        41 Venomoth   [ Supersonic, Gust, Psychic, Toxic ]
         43 Forretress [ Protect, Swift, Explosion, Spikes ]
         42 Muk        [ Minimize, AcidArmor, SludgeBomb, Toxic ]
         44 Crobat     [ DoubleTeam, QuickAttack, WingAttack, Toxic ]
@@ -322,7 +322,7 @@ parties! {
 
     Misty1 => {
         "MISTY"
-        42 Golduck  [ Surf, Disable, PsychUp, PsychicM ]
+        42 Golduck  [ Surf, Disable, PsychUp, Psychic ]
         42 Quagsire [ Surf, Amnesia, Earthquake, RainDance ]
         44 Lapras   [ Surf, PerishSong, Blizzard, RainDance ]
         47 Starmie  [ Surf, ConfuseRay, Recover, IceBeam ]
@@ -604,7 +604,7 @@ parties! {
 
     Chad5 => {
         "CHAD"
-        34 MrMime   [ PsychicM, LightScreen, Reflect, Encore ]
+        34 MrMime   [ Psychic, LightScreen, Reflect, Encore ]
         38 Magneton [ ZapCannon, ThunderWave, LockOn, Swift ]
     }
 
@@ -824,7 +824,7 @@ parties! {
     Dana5 => {
         "DANA"
         36 Ampharos [ Swift, Thunderpunch, ThunderWave, CottonSpore ]
-        36 Golduck  [ Disable, Surf, PsychicM, Screech ]
+        36 Golduck  [ Disable, Surf, Psychic, Screech ]
     }
 
     Janine1 => {
@@ -833,7 +833,7 @@ parties! {
         36 Weezing  [ Smog, SludgeBomb, Toxic, Explosion ]
         36 Weezing  [ Smog, SludgeBomb, Toxic, Explosion ]
         33 Ariados  [ ScaryFace, GigaDrain, StringShot, NightShade ]
-        39 Venomoth [ Foresight, DoubleTeam, Gust, PsychicM ]
+        39 Venomoth [ Foresight, DoubleTeam, Gust, Psychic ]
     }
 
     Nick => {
@@ -1083,9 +1083,9 @@ parties! {
 
     Reena3 => {
         "REENA"
-        38 Starmie             [ DoubleTeam, PsychicM, Waterfall, ConfuseRay ]
+        38 Starmie             [ DoubleTeam, Psychic, Waterfall, ConfuseRay ]
         40 Nidoqueen + PinkBow [ Earthquake, DoubleKick, Toxic, BodySlam ]
-        38 Starmie             [ Blizzard, PsychicM, Waterfall, Recover ]
+        38 Starmie             [ Blizzard, Psychic, Waterfall, Recover ]
     }
 
     Cara => {
@@ -1239,7 +1239,7 @@ parties! {
 
     Brent3 => {
         "BRENT"
-        36 Porygon [ Recover, PsychicM, Conversion2, TriAttack ]
+        36 Porygon [ Recover, Psychic, Conversion2, TriAttack ]
     }
 
     Issac => {
@@ -1514,9 +1514,9 @@ parties! {
 
     Sabrina1 => {
         "SABRINA"
-        46 Espeon   [ SandAttack, QuickAttack, Swift, PsychicM ]
-        46 MrMime   [ Barrier, Reflect, BatonPass, PsychicM ]
-        48 Alakazam [ Recover, FutureSight, PsychicM, Reflect ]
+        46 Espeon   [ SandAttack, QuickAttack, Swift, Psychic ]
+        46 MrMime   [ Barrier, Reflect, BatonPass, Psychic ]
+        48 Alakazam [ Recover, FutureSight, Psychic, Reflect ]
     }
 
     Don => {
@@ -1629,7 +1629,7 @@ parties! {
 
     Arnie5 => {
         "ARNIE"
-        40 Venomoth [ Gust, Supersonic, PsychicM, Toxic ]
+        40 Venomoth [ Gust, Supersonic, Psychic, Toxic ]
     }
 
     Wayne => {
@@ -2218,7 +2218,7 @@ parties! {
         42 Golbat   [ LeechLife, Bite, ConfuseRay, WingAttack ]
         41 Magneton [ Thundershock, Sonicboom, ThunderWave, Swift ]
         43 Gengar   [ MeanLook, Curse, ShadowBall, ConfuseRay ]
-        43 Alakazam [ Disable, Recover, FutureSight, PsychicM ]
+        43 Alakazam [ Disable, Recover, FutureSight, Psychic ]
         45 Meganium [ RazorLeaf, Poisonpowder, BodySlam, LightScreen ]
     }
 
@@ -2228,7 +2228,7 @@ parties! {
         42 Golbat     [ LeechLife, Bite, ConfuseRay, WingAttack ]
         41 Magneton   [ Thundershock, Sonicboom, ThunderWave, Swift ]
         43 Gengar     [ MeanLook, Curse, ShadowBall, ConfuseRay ]
-        43 Alakazam   [ Disable, Recover, FutureSight, PsychicM ]
+        43 Alakazam   [ Disable, Recover, FutureSight, Psychic ]
         45 Typhlosion [ Smokescreen, QuickAttack, FlameWheel, Swift ]
     }
 
@@ -2238,7 +2238,7 @@ parties! {
         42 Golbat     [ LeechLife, Bite, ConfuseRay, WingAttack ]
         41 Magneton   [ Thundershock, Sonicboom, ThunderWave, Swift ]
         43 Gengar     [ MeanLook, Curse, ShadowBall, ConfuseRay ]
-        43 Alakazam   [ Disable, Recover, FutureSight, PsychicM ]
+        43 Alakazam   [ Disable, Recover, FutureSight, Psychic ]
         45 Feraligatr [ Rage, WaterGun, ScaryFace, Slash ]
     }
 
@@ -2248,7 +2248,7 @@ parties! {
         48 Crobat   [ Toxic, Bite, ConfuseRay, WingAttack ]
         45 Magneton [ Thunder, Sonicboom, ThunderWave, Swift ]
         46 Gengar   [ MeanLook, Curse, ShadowBall, ConfuseRay ]
-        46 Alakazam [ Recover, FutureSight, PsychicM, Reflect ]
+        46 Alakazam [ Recover, FutureSight, Psychic, Reflect ]
         50 Meganium [ GigaDrain, BodySlam, LightScreen, Safeguard ]
     }
 
@@ -2258,7 +2258,7 @@ parties! {
         48 Crobat     [ Toxic, Bite, ConfuseRay, WingAttack ]
         45 Magneton   [ Thunder, Sonicboom, ThunderWave, Swift ]
         46 Gengar     [ MeanLook, Curse, ShadowBall, ConfuseRay ]
-        46 Alakazam   [ Recover, FutureSight, PsychicM, Reflect ]
+        46 Alakazam   [ Recover, FutureSight, Psychic, Reflect ]
         50 Typhlosion [ Smokescreen, QuickAttack, FireBlast, Swift ]
     }
 
@@ -2268,7 +2268,7 @@ parties! {
         48 Crobat     [ Toxic, Bite, ConfuseRay, WingAttack ]
         45 Magneton   [ Thunder, Sonicboom, ThunderWave, Swift ]
         46 Gengar     [ MeanLook, Curse, ShadowBall, ConfuseRay ]
-        46 Alakazam   [ Recover, FutureSight, PsychicM, Reflect ]
+        46 Alakazam   [ Recover, FutureSight, Psychic, Reflect ]
         50 Feraligatr [ Surf, RainDance, Slash, Screech ]
     }
 
@@ -3054,7 +3054,7 @@ parties! {
         33 Graveler [ Selfdestruct, RockThrow, Harden, Magnitude ]
         33 Graveler [ Selfdestruct, RockThrow, Harden, Magnitude ]
         36 Magcargo [ RockThrow, Harden, Amnesia, Flamethrower ]
-        34 Golduck  [ Disable, PsychicM, Surf, PsychUp ]
+        34 Golduck  [ Disable, Psychic, Surf, PsychUp ]
     }
 
     Quentin => {
@@ -3424,7 +3424,7 @@ parties! {
     Red1 => {
         "RED"
         81 Pikachu   [ Charm, QuickAttack, Thunderbolt, Thunder ]
-        73 Espeon    [ MudSlap, Reflect, Swift, PsychicM ]
+        73 Espeon    [ MudSlap, Reflect, Swift, Psychic ]
         75 Snorlax   [ Amnesia, Snore, Rest, BodySlam ]
         77 Venusaur  [ SunnyDay, GigaDrain, Synthesis, Solarbeam ]
         77 Charizard [ Flamethrower, WingAttack, Slash, FireSpin ]
@@ -3434,7 +3434,7 @@ parties! {
     Blue1 => {
         "BLUE"
         56 Pidgeot   [ QuickAttack, Whirlwind, WingAttack, MirrorMove ]
-        54 Alakazam  [ Disable, Recover, PsychicM, Reflect ]
+        54 Alakazam  [ Disable, Recover, Psychic, Reflect ]
         56 Rhydon    [ FuryAttack, Sandstorm, RockSlide, Earthquake ]
         58 Gyarados  [ Twister, HydroPump, RainDance, HyperBeam ]
         58 Exeggutor [ SunnyDay, LeechSeed, EggBomb, Solarbeam ]

@@ -40,7 +40,7 @@ define_egg_moves! {
     Venonat => [BatonPass, Screech, GigaDrain],
     Diglett => [FaintAttack, Screech, Ancientpower, Pursuit, BeatUp],
     Meowth => [Spite, Charm, Hypnosis, Amnesia],
-    Psyduck => [IceBeam, Hypnosis, Psybeam, Foresight, LightScreen, FutureSight, PsychicM, CrossChop],
+    Psyduck => [IceBeam, Hypnosis, Psybeam, Foresight, LightScreen, FutureSight, Psychic, CrossChop],
     Mankey => [RockSlide, Foresight, Meditate, Counter, Reversal, BeatUp],
     Growlithe => [BodySlam, Safeguard, Crunch, Thrash, FireSpin],
     Poliwag => [Mist, Splash, Bubblebeam, Haze, MindReader],
