@@ -2,6 +2,7 @@ use crate::{
     cpu::Cpu,
     game::{
         constants::{
+            item_constants::Item,
             mart_constants::{Mart, MartType},
             ram_constants::{DailyFlags, StatusFlags},
         },
@@ -34,7 +35,7 @@ pub fn open_mart_dialog(cpu: &mut Cpu) {
 
 fn bargain_shop(cpu: &mut Cpu) {
     load_mart_pointer(cpu, bargain_shop::BARGAIN_SHOP_DATA);
-    cpu.call(0x5c25); // ReadMart
+    read_mart(cpu, bargain_shop::BARGAIN_SHOP_DATA);
     cpu.call(0x1d6e); // LoadStandardMenuHeader
 
     cpu.set_hl(0x5e6d); // BargainShopIntroText
@@ -64,7 +65,7 @@ fn rooftop_sale(cpu: &mut Cpu) {
     };
 
     load_mart_pointer(cpu, ptr);
-    cpu.call(0x5c25); // ReadMart
+    read_mart(cpu, ptr);
     cpu.call(0x1d6e); // LoadStandardMenuHeader
 
     cpu.set_hl(0x5f83); // MartWelcomeText
@@ -98,5 +99,24 @@ fn get_mart(mart: Mart) -> (u8, u16) {
         _ => {
             (0x05, MARTS[u8::from(mart) as usize]) // BANK(Marts)
         }
+    }
+}
+
+fn read_mart(cpu: &mut Cpu, ptr: (u8, u16)) {
+    let count = cpu.read_byte(ptr.1);
+    let items = ptr.1 + 1;
+
+    cpu.write_byte(0xd0f0, count); // wCurMartCount
+
+    for i in 0..(count as u16) {
+        let item = Item::from(cpu.read_byte(items + (i * 3)));
+        let price = cpu.read_byte(items + (i * 3) + 1) as u16
+            | ((cpu.read_byte(items + (i * 3) + 2) as u16) << 8);
+
+        cpu.write_byte(0xd0f1 + i, item.into()); // wCurMartItems + i
+
+        cpu.set_de(price);
+        cpu.set_hl(0xd002 + (i * 3)); // wMartItem{i}BCD
+        cpu.call(0x5bf0); // GetMartPrice
     }
 }
