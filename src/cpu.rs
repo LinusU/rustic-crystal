@@ -111,6 +111,7 @@ impl<'a> Cpu<'a> {
                 (0x05, 0x5a61) => panic!("mart_dialog should only be called from Rust"),
                 (0x05, 0x5a6e) => panic!("herb_shop should only be called from Rust"),
                 (0x05, 0x5a84) => panic!("bargain_shop should only be called from Rust"),
+                (0x05, 0x5aae) => panic!("pharmacist should only be called from Rust"),
                 (0x05, 0x5ac4) => panic!("rooftop_sale should only be called from Rust"),
                 (0x05, 0x5b10) => panic!("load_mart_pointer should only be called from Rust"),
                 (0x05, 0x5b31) => panic!("get_mart should only be called from Rust"),

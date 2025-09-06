@@ -25,7 +25,7 @@ pub fn open_mart_dialog(cpu: &mut Cpu) {
         MartType::Standard => mart_dialog(cpu),
         MartType::Bitter => herb_shop(cpu),
         MartType::Bargain => bargain_shop(cpu),
-        MartType::Pharmacy => cpu.call(0x5aae), // Pharmacist
+        MartType::Pharmacy => pharmacist(cpu),
         MartType::Rooftop => rooftop_sale(cpu),
         MartType::Unknown(n) => unreachable!("Invalid mart type: {n}"),
     }
@@ -69,6 +69,19 @@ fn bargain_shop(cpu: &mut Cpu) {
     }
 
     cpu.set_hl(0x5e8b); // BargainShopComeAgainText
+    cpu.call(0x5fcd); // MartTextbox
+}
+
+fn pharmacist(cpu: &mut Cpu) {
+    cpu.call(0x5bbb); // FarReadMart
+    cpu.call(0x1d6e); // LoadStandardMenuHeader
+
+    cpu.set_hl(0x5e90); // PharmacyIntroText
+    cpu.call(0x5fcd); // MartTextbox
+
+    cpu.call(0x5c62); // BuyMenu
+
+    cpu.set_hl(0x5eae); // PharmacyComeAgainText
     cpu.call(0x5fcd); // MartTextbox
 }
 
