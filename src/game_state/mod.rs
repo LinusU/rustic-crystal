@@ -273,8 +273,21 @@ impl GameState {
         self.data[0x103e] = value.into();
     }
 
+    pub fn set_mart_pointer(&mut self, value: (u8, u16)) {
+        self.data[0x103f] = value.0;
+        [self.data[0x1040], self.data[0x1041]] = value.1.to_be_bytes();
+    }
+
+    pub fn set_mart_jumptable_index(&mut self, value: u8) {
+        self.data[0x1042] = value;
+    }
+
     pub fn bargain_shop_flags(&self) -> u16 {
         u16::from_be_bytes([self.data[0x1043], self.data[0x1044]])
+    }
+
+    pub fn set_bargain_shop_flags(&mut self, value: u16) {
+        [self.data[0x1043], self.data[0x1044]] = value.to_be_bytes();
     }
 
     pub fn tm_hm_pocket_scroll_position_mut(&mut self) -> &mut u8 {

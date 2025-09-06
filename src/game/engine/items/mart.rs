@@ -17,8 +17,8 @@ pub fn open_mart_dialog(cpu: &mut Cpu) {
 
     cpu.borrow_wram_mut().set_mart_type(mart_type);
 
-    get_mart(cpu, mart);
-    cpu.call(0x5b10); // LoadMartPointer
+    let ptr = get_mart(mart);
+    load_mart_pointer(cpu, ptr);
 
     match mart_type {
         MartType::Standard => cpu.call(0x5a61), // MartDialog
@@ -33,9 +33,7 @@ pub fn open_mart_dialog(cpu: &mut Cpu) {
 }
 
 fn bargain_shop(cpu: &mut Cpu) {
-    cpu.b = bargain_shop::BARGAIN_SHOP_DATA.0;
-    cpu.set_de(bargain_shop::BARGAIN_SHOP_DATA.1);
-    cpu.call(0x5b10); // LoadMartPointer
+    load_mart_pointer(cpu, bargain_shop::BARGAIN_SHOP_DATA);
     cpu.call(0x5c25); // ReadMart
     cpu.call(0x1d6e); // LoadStandardMenuHeader
 
@@ -55,19 +53,17 @@ fn bargain_shop(cpu: &mut Cpu) {
 }
 
 fn rooftop_sale(cpu: &mut Cpu) {
-    if !cpu
+    let ptr = if !cpu
         .borrow_wram()
         .status_flags()
         .contains(StatusFlags::HALL_OF_FAME)
     {
-        cpu.b = rooftop_sale::ROOFTOP_SALE_MART_1.0;
-        cpu.set_de(rooftop_sale::ROOFTOP_SALE_MART_1.1);
+        rooftop_sale::ROOFTOP_SALE_MART_1
     } else {
-        cpu.b = rooftop_sale::ROOFTOP_SALE_MART_2.0;
-        cpu.set_de(rooftop_sale::ROOFTOP_SALE_MART_2.1);
-    }
+        rooftop_sale::ROOFTOP_SALE_MART_2
+    };
 
-    cpu.call(0x5b10); // LoadMartPointer
+    load_mart_pointer(cpu, ptr);
     cpu.call(0x5c25); // ReadMart
     cpu.call(0x1d6e); // LoadStandardMenuHeader
 
@@ -80,16 +76,27 @@ fn rooftop_sale(cpu: &mut Cpu) {
     cpu.call(0x5fcd); // MartTextbox
 }
 
-fn get_mart(cpu: &mut Cpu, mart: Mart) {
+fn load_mart_pointer(cpu: &mut Cpu, ptr: (u8, u16)) {
+    cpu.borrow_wram_mut().set_mart_pointer(ptr);
+
+    cpu.a = 0;
+    cpu.set_bc(16);
+    cpu.set_hl(0xd0f0); // wCurMartCount
+    cpu.call(0x3041); // ByteFill: fill bc bytes with the value of a, starting at hl
+
+    cpu.borrow_wram_mut().set_mart_jumptable_index(0); // STANDARDMART_HOWMAYIHELPYOU
+    cpu.borrow_wram_mut().set_bargain_shop_flags(0);
+    cpu.a = 0;
+}
+
+fn get_mart(mart: Mart) -> (u8, u16) {
     match mart {
         Mart::Unknown(_) => {
-            cpu.b = 0x05; // BANK(DefaultMart)
-            cpu.set_de(0x6214); // DefaultMart
+            (0x05, 0x6214) // BANK(DefaultMart), DefaultMart
         }
 
         _ => {
-            cpu.b = 0x05; // BANK(Marts)
-            cpu.set_de(MARTS[u8::from(mart) as usize]);
+            (0x05, MARTS[u8::from(mart) as usize]) // BANK(Marts)
         }
     }
 }
