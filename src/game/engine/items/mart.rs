@@ -23,7 +23,7 @@ pub fn open_mart_dialog(cpu: &mut Cpu) {
 
     match mart_type {
         MartType::Standard => mart_dialog(cpu),
-        MartType::Bitter => cpu.call(0x5a6e), // HerbShop
+        MartType::Bitter => herb_shop(cpu),
         MartType::Bargain => bargain_shop(cpu),
         MartType::Pharmacy => cpu.call(0x5aae), // Pharmacist
         MartType::Rooftop => rooftop_sale(cpu),
@@ -37,6 +37,19 @@ fn mart_dialog(cpu: &mut Cpu) {
     cpu.borrow_wram_mut().set_mart_type(MartType::Standard);
     cpu.borrow_wram_mut().set_mart_jumptable_index(0); // STANDARDMART_HOWMAYIHELPYOU
     cpu.call(0x5b47); // StandardMart
+}
+
+fn herb_shop(cpu: &mut Cpu) {
+    cpu.call(0x5bbb); // FarReadMart
+    cpu.call(0x1d6e); // LoadStandardMenuHeader
+
+    cpu.set_hl(0x5e4a); // HerbShopLadyIntroText
+    cpu.call(0x5fcd); // MartTextbox
+
+    cpu.call(0x5c62); // BuyMenu
+
+    cpu.set_hl(0x5e68); // HerbalLadyComeAgainText
+    cpu.call(0x5fcd); // MartTextbox
 }
 
 fn bargain_shop(cpu: &mut Cpu) {
