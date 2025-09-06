@@ -27,6 +27,19 @@ define_u8_enum! {
 }
 
 bitflags! {
+    pub struct StatusFlags: u8 {
+        const POKEDEX = 1 << 0;
+        const UNOWN_DEX = 1 << 1;
+        const FLASH = 1 << 2;
+        const CAUGHT_POKERUS = 1 << 3;
+        const ROCKET_SIGNAL = 1 << 4;
+        const NO_WILD_ENCOUNTERS = 1 << 5;
+        const HALL_OF_FAME = 1 << 6;
+        const MAIN_MENU_MOBILE_CHOICES = 1 << 7;
+    }
+}
+
+bitflags! {
     pub struct SwarmFlags: u8 {
         const BUENAS_PASSWORD = 1 << 0;
         const GOLDENROD_DEPT_STORE_SALE = 1 << 1;

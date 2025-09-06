@@ -10,7 +10,9 @@ use crate::{
             move_constants::Move,
             pokemon_constants::{PokemonSpecies, EGG},
             pokemon_data_constants::PARTY_LENGTH,
-            ram_constants::{MonType, PokemonWithdrawDepositParameter, SwarmFlags, TimeOfDay},
+            ram_constants::{
+                MonType, PokemonWithdrawDepositParameter, StatusFlags, SwarmFlags, TimeOfDay,
+            },
             serial_constants::LinkMode,
             text_constants::{MON_NAME_LENGTH, NAME_LENGTH},
             trainer_constants::Trainer,
@@ -509,6 +511,10 @@ impl GameState {
 
     pub fn player_name(&self) -> PokeString<NAME_LENGTH> {
         PokeString::new(self.data[0x147d..0x147d + NAME_LENGTH].try_into().unwrap())
+    }
+
+    pub fn status_flags(&self) -> StatusFlags {
+        StatusFlags::from_bits_retain(self.data[0x184c])
     }
 
     pub fn tms_hms(&self) -> &[u8] {
