@@ -1,10 +1,37 @@
 use crate::{
     cpu::Cpu,
     game::{
-        constants::{mart_constants::Mart, ram_constants::StatusFlags},
-        data::items::{marts::MARTS, rooftop_sale},
+        constants::{
+            mart_constants::Mart,
+            ram_constants::{DailyFlags, StatusFlags},
+        },
+        data::items::{bargain_shop, marts::MARTS, rooftop_sale},
     },
 };
+
+pub fn bargain_shop(cpu: &mut Cpu) {
+    cpu.b = bargain_shop::BARGAIN_SHOP_DATA.0;
+    cpu.set_de(bargain_shop::BARGAIN_SHOP_DATA.1);
+    cpu.call(0x5b10); // LoadMartPointer
+    cpu.call(0x5c25); // ReadMart
+    cpu.call(0x1d6e); // LoadStandardMenuHeader
+
+    cpu.set_hl(0x5e6d); // BargainShopIntroText
+    cpu.call(0x5fcd); // MartTextbox
+
+    cpu.call(0x5c62); // BuyMenu
+
+    if cpu.borrow_wram().bargain_shop_flags() != 0 {
+        let mut flags = cpu.borrow_wram().daily_flags();
+        flags.insert(DailyFlags::GOLDENROD_UNDERGROUND_BARGAIN);
+        cpu.borrow_wram_mut().set_daily_flags(flags);
+    }
+
+    cpu.set_hl(0x5e8b); // BargainShopComeAgainText
+    cpu.call(0x5fcd); // MartTextbox
+
+    cpu.pc = cpu.stack_pop(); // ret
+}
 
 pub fn rooftop_sale(cpu: &mut Cpu) {
     if !cpu

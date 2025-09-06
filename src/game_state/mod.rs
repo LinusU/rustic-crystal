@@ -11,7 +11,8 @@ use crate::{
             pokemon_constants::{PokemonSpecies, EGG},
             pokemon_data_constants::PARTY_LENGTH,
             ram_constants::{
-                MonType, PokemonWithdrawDepositParameter, StatusFlags, SwarmFlags, TimeOfDay,
+                DailyFlags, MonType, PokemonWithdrawDepositParameter, StatusFlags, SwarmFlags,
+                TimeOfDay,
             },
             serial_constants::LinkMode,
             text_constants::{MON_NAME_LENGTH, NAME_LENGTH},
@@ -261,6 +262,10 @@ impl GameState {
 
     pub fn buffer_mon(&self) -> PartyMonRef<'_> {
         PartyMonRef::new(&self.data[0x1018..])
+    }
+
+    pub fn bargain_shop_flags(&self) -> u16 {
+        u16::from_be_bytes([self.data[0x1043], self.data[0x1044]])
     }
 
     pub fn tm_hm_pocket_scroll_position_mut(&mut self) -> &mut u8 {
@@ -531,6 +536,16 @@ impl GameState {
 
     pub fn set_cur_box(&mut self, value: u8) {
         self.data[0x1b72] = value;
+    }
+
+    pub fn daily_flags(&self) -> DailyFlags {
+        DailyFlags::from_bits_retain(u16::from_be_bytes([self.data[0x1c1e], self.data[0x1c1f]]))
+    }
+
+    pub fn set_daily_flags(&mut self, value: DailyFlags) {
+        let bytes = value.bits().to_be_bytes();
+        self.data[0x1c1e] = bytes[0];
+        self.data[0x1c1f] = bytes[1];
     }
 
     pub fn swarm_flags(&self) -> SwarmFlags {

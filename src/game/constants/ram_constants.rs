@@ -40,6 +40,30 @@ bitflags! {
 }
 
 bitflags! {
+    pub struct DailyFlags: u16 {
+        // wDailyFlags1
+        const KURT_MAKING_BALLS = 1 << 0;
+        const BUG_CONTEST = 1 << 1;
+        const FISH_SWARM = 1 << 2;
+        const TIME_CAPSULE = 1 << 3;
+        const ALL_FRUIT_TREES = 1 << 4;
+        const GOT_SHUCKIE_TODAY = 1 << 5;
+        const GOLDENROD_UNDERGROUND_BARGAIN = 1 << 6;
+        const TRAINER_HOUSE = 1 << 7;
+
+        // wDailyFlags2
+        const MT_MOON_SQUARE_CLEFAIRY = 1 << 8;
+        const UNION_CAVE_LAPRAS = 1 << 9;
+        const GOLDENROD_UNDERGROUND_GOT_HAIRCUT = 1 << 10;
+        const GOLDENROD_DEPT_STORE_TM27_RETURN = 1 << 11;
+        const DAISYS_GROOMING = 1 << 12;
+        const INDIGO_PLATEAU_RIVAL_FIGHT = 1 << 13;
+        const MOVE_TUTOR = 1 << 14;
+        const BUENAS_PASSWORD = 1 << 15;
+    }
+}
+
+bitflags! {
     pub struct SwarmFlags: u8 {
         const BUENAS_PASSWORD = 1 << 0;
         const GOLDENROD_DEPT_STORE_SALE = 1 << 1;
