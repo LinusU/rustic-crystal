@@ -20,14 +20,19 @@ pub fn open_mart_dialog(cpu: &mut Cpu) {
     get_mart(cpu, mart);
     cpu.call(0x5b10); // LoadMartPointer
 
-    cpu.a = cpu.borrow_wram().mart_type().into();
-    cpu.set_hl(0x5a57); // MartTypeDialogs
-    cpu.call(0x0028); // JumpTable
+    match mart_type {
+        MartType::Standard => cpu.call(0x5a61), // MartDialog
+        MartType::Bitter => cpu.call(0x5a6e),   // HerbShop
+        MartType::Bargain => bargain_shop(cpu),
+        MartType::Pharmacy => cpu.call(0x5aae), // Pharmacist
+        MartType::Rooftop => rooftop_sale(cpu),
+        MartType::Unknown(n) => unreachable!("Invalid mart type: {n}"),
+    }
 
     cpu.pc = cpu.stack_pop(); // ret
 }
 
-pub fn bargain_shop(cpu: &mut Cpu) {
+fn bargain_shop(cpu: &mut Cpu) {
     cpu.b = bargain_shop::BARGAIN_SHOP_DATA.0;
     cpu.set_de(bargain_shop::BARGAIN_SHOP_DATA.1);
     cpu.call(0x5b10); // LoadMartPointer
@@ -47,11 +52,9 @@ pub fn bargain_shop(cpu: &mut Cpu) {
 
     cpu.set_hl(0x5e8b); // BargainShopComeAgainText
     cpu.call(0x5fcd); // MartTextbox
-
-    cpu.pc = cpu.stack_pop(); // ret
 }
 
-pub fn rooftop_sale(cpu: &mut Cpu) {
+fn rooftop_sale(cpu: &mut Cpu) {
     if !cpu
         .borrow_wram()
         .status_flags()
@@ -75,8 +78,6 @@ pub fn rooftop_sale(cpu: &mut Cpu) {
 
     cpu.set_hl(0x5fb4); // MartComeAgainText
     cpu.call(0x5fcd); // MartTextbox
-
-    cpu.pc = cpu.stack_pop(); // ret
 }
 
 fn get_mart(cpu: &mut Cpu, mart: Mart) {
