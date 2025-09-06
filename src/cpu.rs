@@ -107,6 +107,7 @@ impl<'a> Cpu<'a> {
                 (0x05, 0x50d8) => panic!("get_box_address should only be called from Rust"),
                 (0x05, 0x50f9) => panic!("save_box_address should only be called from Rust"),
                 (0x05, 0x517d) => panic!("load_box_address should only be called from Rust"),
+                (0x05, 0x5b31) => crate::game::engine::items::mart::get_mart(self),
                 (0x05, 0x70e4) => crate::game::engine::pokemon::breeding::get_egg_move(self),
                 (0x05, 0x720b) => panic!("get_breedmon_move_pointer should only be called from Rust"),
 

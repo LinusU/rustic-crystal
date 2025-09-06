@@ -8,6 +8,7 @@ pub mod item_constants;
 pub mod item_data_constants;
 pub mod landmark_constants;
 pub mod map_constants;
+pub mod mart_constants;
 pub mod menu_constants;
 pub mod misc_constants;
 pub mod move_constants;
