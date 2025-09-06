@@ -278,10 +278,6 @@ impl GameState {
         [self.data[0x1040], self.data[0x1041]] = value.1.to_be_bytes();
     }
 
-    pub fn set_mart_jumptable_index(&mut self, value: u8) {
-        self.data[0x1042] = value;
-    }
-
     pub fn bargain_shop_flags(&self) -> u16 {
         u16::from_be_bytes([self.data[0x1043], self.data[0x1044]])
     }

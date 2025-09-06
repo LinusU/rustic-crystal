@@ -1,5 +1,5 @@
 use crate::{
-    cpu::Cpu,
+    cpu::{Cpu, CpuFlag},
     game::{
         constants::{
             item_constants::Item,
@@ -35,8 +35,7 @@ pub fn open_mart_dialog(cpu: &mut Cpu) {
 
 fn mart_dialog(cpu: &mut Cpu) {
     cpu.borrow_wram_mut().set_mart_type(MartType::Standard);
-    cpu.borrow_wram_mut().set_mart_jumptable_index(0); // STANDARDMART_HOWMAYIHELPYOU
-    cpu.call(0x5b47); // StandardMart
+    standard_mart(cpu);
 }
 
 fn herb_shop(cpu: &mut Cpu) {
@@ -117,7 +116,6 @@ fn load_mart_pointer(cpu: &mut Cpu, ptr: (u8, u16)) {
     cpu.set_hl(0xd0f0); // wCurMartCount
     cpu.call(0x3041); // ByteFill: fill bc bytes with the value of a, starting at hl
 
-    cpu.borrow_wram_mut().set_mart_jumptable_index(0); // STANDARDMART_HOWMAYIHELPYOU
     cpu.borrow_wram_mut().set_bargain_shop_flags(0);
     cpu.a = 0;
 }
@@ -131,6 +129,70 @@ fn get_mart(mart: Mart) -> (u8, u16) {
         _ => {
             (0x05, MARTS[u8::from(mart) as usize]) // BANK(Marts)
         }
+    }
+}
+
+fn standard_mart(cpu: &mut Cpu) {
+    enum StandardMartJumptableIndex {
+        TopMenu,
+        Buy,
+        Sell,
+        AnythingElse,
+        Quit,
+    }
+
+    cpu.call(0x1d6e); // LoadStandardMenuHeader
+    cpu.set_hl(0x5f83); // MartWelcomeText
+    cpu.call(0x1057); // PrintText
+
+    let mut index = StandardMartJumptableIndex::TopMenu;
+
+    loop {
+        index = match index {
+            StandardMartJumptableIndex::TopMenu => {
+                cpu.set_hl(0x5f88); // MenuHeader_BuySell
+                cpu.call(0x1d3c); // CopyMenuHeader
+
+                cpu.call(0x1d81); // VerticalMenu
+
+                if cpu.flag(CpuFlag::C) {
+                    StandardMartJumptableIndex::Quit
+                } else {
+                    match cpu.borrow_wram().menu_cursor_y() {
+                        1 => StandardMartJumptableIndex::Buy,
+                        2 => StandardMartJumptableIndex::Sell,
+                        _ => break,
+                    }
+                }
+            }
+
+            StandardMartJumptableIndex::Buy => {
+                cpu.call(0x1c07); // ExitMenu
+                cpu.call(0x5bbb); // FarReadMart
+                cpu.call(0x5c62); // BuyMenu
+                StandardMartJumptableIndex::AnythingElse
+            }
+
+            StandardMartJumptableIndex::Sell => {
+                cpu.call(0x1c07); // ExitMenu
+                cpu.call(0x5eb3); // SellMenu
+                StandardMartJumptableIndex::AnythingElse
+            }
+
+            StandardMartJumptableIndex::AnythingElse => {
+                cpu.call(0x1d6e); // LoadStandardMenuHeader
+                cpu.set_hl(0x5fb9); // MartAskMoreText
+                cpu.call(0x1057); // PrintText
+                StandardMartJumptableIndex::TopMenu
+            }
+
+            StandardMartJumptableIndex::Quit => {
+                cpu.call(0x1c07); // ExitMenu
+                cpu.set_hl(0x5fb4); // MartComeAgainText
+                cpu.call(0x5fcd); // MartTextbox
+                break;
+            }
+        };
     }
 }
 
