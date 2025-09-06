@@ -1,6 +1,16 @@
 use crate::game::macros::r#enum::define_u8_enum;
 
 define_u8_enum! {
+    pub enum MartType {
+        Standard = 0,
+        Bitter = 1,
+        Bargain = 2,
+        Pharmacy = 3,
+        Rooftop = 4,
+    }
+}
+
+define_u8_enum! {
     pub enum Mart {
         Cherrygrove = 0,
         CherrygroveDex = 1,

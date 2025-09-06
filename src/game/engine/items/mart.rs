@@ -2,12 +2,30 @@ use crate::{
     cpu::Cpu,
     game::{
         constants::{
-            mart_constants::Mart,
+            mart_constants::{Mart, MartType},
             ram_constants::{DailyFlags, StatusFlags},
         },
         data::items::{bargain_shop, marts::MARTS, rooftop_sale},
     },
 };
+
+pub fn open_mart_dialog(cpu: &mut Cpu) {
+    let mart_type = MartType::from(cpu.c);
+    let mart = Mart::from(cpu.e);
+
+    log::info!("open_mart_dialog({mart_type:?}, {mart:?})");
+
+    cpu.borrow_wram_mut().set_mart_type(mart_type);
+
+    get_mart(cpu, mart);
+    cpu.call(0x5b10); // LoadMartPointer
+
+    cpu.a = cpu.borrow_wram().mart_type().into();
+    cpu.set_hl(0x5a57); // MartTypeDialogs
+    cpu.call(0x0028); // JumpTable
+
+    cpu.pc = cpu.stack_pop(); // ret
+}
 
 pub fn bargain_shop(cpu: &mut Cpu) {
     cpu.b = bargain_shop::BARGAIN_SHOP_DATA.0;
@@ -61,11 +79,7 @@ pub fn rooftop_sale(cpu: &mut Cpu) {
     cpu.pc = cpu.stack_pop(); // ret
 }
 
-pub fn get_mart(cpu: &mut Cpu) {
-    let mart = Mart::from(cpu.e);
-
-    log::info!("get_mart({mart:?}");
-
+fn get_mart(cpu: &mut Cpu, mart: Mart) {
     match mart {
         Mart::Unknown(_) => {
             cpu.b = 0x05; // BANK(DefaultMart)
@@ -77,6 +91,4 @@ pub fn get_mart(cpu: &mut Cpu) {
             cpu.set_de(MARTS[u8::from(mart) as usize]);
         }
     }
-
-    cpu.pc = cpu.stack_pop(); // ret
 }

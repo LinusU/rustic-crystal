@@ -7,6 +7,7 @@ use crate::{
             input_constants::JoypadButtons,
             item_constants::{Item, NUM_HMS, NUM_TMS},
             map_constants::Map,
+            mart_constants::MartType,
             move_constants::Move,
             pokemon_constants::{PokemonSpecies, EGG},
             pokemon_data_constants::PARTY_LENGTH,
@@ -262,6 +263,14 @@ impl GameState {
 
     pub fn buffer_mon(&self) -> PartyMonRef<'_> {
         PartyMonRef::new(&self.data[0x1018..])
+    }
+
+    pub fn mart_type(&self) -> MartType {
+        self.data[0x103e].into()
+    }
+
+    pub fn set_mart_type(&mut self, value: MartType) {
+        self.data[0x103e] = value.into();
     }
 
     pub fn bargain_shop_flags(&self) -> u16 {
