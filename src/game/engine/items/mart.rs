@@ -6,7 +6,7 @@ use crate::{
             mart_constants::{Mart, MartType},
             ram_constants::{DailyFlags, StatusFlags},
         },
-        data::items::{bargain_shop, marts::MARTS, rooftop_sale},
+        data::items::{bargain_shop, rooftop_sale},
     },
 };
 
@@ -18,14 +18,11 @@ pub fn open_mart_dialog(cpu: &mut Cpu) {
 
     cpu.borrow_wram_mut().set_mart_type(mart_type);
 
-    let ptr = get_mart(mart);
-    load_mart_pointer(cpu, ptr);
-
     match mart_type {
-        MartType::Standard => mart_dialog(cpu),
-        MartType::Bitter => herb_shop(cpu),
+        MartType::Standard => mart_dialog(cpu, mart),
+        MartType::Bitter => herb_shop(cpu, mart),
         MartType::Bargain => bargain_shop(cpu),
-        MartType::Pharmacy => pharmacist(cpu),
+        MartType::Pharmacy => pharmacist(cpu, mart),
         MartType::Rooftop => rooftop_sale(cpu),
         MartType::Unknown(n) => unreachable!("Invalid mart type: {n}"),
     }
@@ -33,13 +30,13 @@ pub fn open_mart_dialog(cpu: &mut Cpu) {
     cpu.pc = cpu.stack_pop(); // ret
 }
 
-fn mart_dialog(cpu: &mut Cpu) {
+fn mart_dialog(cpu: &mut Cpu, mart: Mart) {
     cpu.borrow_wram_mut().set_mart_type(MartType::Standard);
-    standard_mart(cpu);
+    standard_mart(cpu, mart);
 }
 
-fn herb_shop(cpu: &mut Cpu) {
-    cpu.call(0x5bbb); // FarReadMart
+fn herb_shop(cpu: &mut Cpu, mart: Mart) {
+    far_read_mart(cpu, mart.items());
     cpu.call(0x1d6e); // LoadStandardMenuHeader
 
     cpu.set_hl(0x5e4a); // HerbShopLadyIntroText
@@ -52,8 +49,8 @@ fn herb_shop(cpu: &mut Cpu) {
 }
 
 fn bargain_shop(cpu: &mut Cpu) {
-    load_mart_pointer(cpu, bargain_shop::BARGAIN_SHOP_DATA);
-    read_mart(cpu, bargain_shop::BARGAIN_SHOP_DATA);
+    load_mart_pointer(cpu, (0x05, 0x5c51));
+    read_mart(cpu, &bargain_shop::BARGAIN_SHOP_DATA);
     cpu.call(0x1d6e); // LoadStandardMenuHeader
 
     cpu.set_hl(0x5e6d); // BargainShopIntroText
@@ -71,8 +68,8 @@ fn bargain_shop(cpu: &mut Cpu) {
     cpu.call(0x5fcd); // MartTextbox
 }
 
-fn pharmacist(cpu: &mut Cpu) {
-    cpu.call(0x5bbb); // FarReadMart
+fn pharmacist(cpu: &mut Cpu, mart: Mart) {
+    far_read_mart(cpu, mart.items());
     cpu.call(0x1d6e); // LoadStandardMenuHeader
 
     cpu.set_hl(0x5e90); // PharmacyIntroText
@@ -85,18 +82,18 @@ fn pharmacist(cpu: &mut Cpu) {
 }
 
 fn rooftop_sale(cpu: &mut Cpu) {
-    let ptr = if !cpu
+    let (ptr, data) = if !cpu
         .borrow_wram()
         .status_flags()
         .contains(StatusFlags::HALL_OF_FAME)
     {
-        rooftop_sale::ROOFTOP_SALE_MART_1
+        ((0x05, 0x5aee), rooftop_sale::ROOFTOP_SALE_MART_1)
     } else {
-        rooftop_sale::ROOFTOP_SALE_MART_2
+        ((0x05, 0x5aff), rooftop_sale::ROOFTOP_SALE_MART_2)
     };
 
     load_mart_pointer(cpu, ptr);
-    read_mart(cpu, ptr);
+    read_mart(cpu, &data);
     cpu.call(0x1d6e); // LoadStandardMenuHeader
 
     cpu.set_hl(0x5f83); // MartWelcomeText
@@ -120,19 +117,7 @@ fn load_mart_pointer(cpu: &mut Cpu, ptr: (u8, u16)) {
     cpu.a = 0;
 }
 
-fn get_mart(mart: Mart) -> (u8, u16) {
-    match mart {
-        Mart::Unknown(_) => {
-            (0x05, 0x6214) // BANK(DefaultMart), DefaultMart
-        }
-
-        _ => {
-            (0x05, MARTS[u8::from(mart) as usize]) // BANK(Marts)
-        }
-    }
-}
-
-fn standard_mart(cpu: &mut Cpu) {
+fn standard_mart(cpu: &mut Cpu, mart: Mart) {
     enum StandardMartJumptableIndex {
         TopMenu,
         Buy,
@@ -168,7 +153,7 @@ fn standard_mart(cpu: &mut Cpu) {
 
             StandardMartJumptableIndex::Buy => {
                 cpu.call(0x1c07); // ExitMenu
-                cpu.call(0x5bbb); // FarReadMart
+                far_read_mart(cpu, mart.items());
                 cpu.call(0x5c62); // BuyMenu
                 StandardMartJumptableIndex::AnythingElse
             }
@@ -196,21 +181,30 @@ fn standard_mart(cpu: &mut Cpu) {
     }
 }
 
-fn read_mart(cpu: &mut Cpu, ptr: (u8, u16)) {
-    let count = cpu.read_byte(ptr.1);
-    let items = ptr.1 + 1;
+fn far_read_mart(cpu: &mut Cpu, data: &[Item]) {
+    cpu.write_byte(0xd0f0, data.len() as u8); // wCurMartCount
 
-    cpu.write_byte(0xd0f0, count); // wCurMartCount
+    for (i, &item) in data.iter().enumerate() {
+        cpu.write_byte(0xd0f1 + i as u16, item.into()); // wCurMartItems + i
 
-    for i in 0..(count as u16) {
-        let item = Item::from(cpu.read_byte(items + (i * 3)));
-        let price = cpu.read_byte(items + (i * 3) + 1) as u16
-            | ((cpu.read_byte(items + (i * 3) + 2) as u16) << 8);
+        cpu.a = item.into();
+        cpu.set_hl(0xd002 + (i as u16 * 3)); // wMartItem{i}BCD
+        cpu.call(0x5be5); // GetMartItemPrice: Return the price of item `a` in BCD at `hl` and in tiles at `wStringBuffer1`
+    }
 
-        cpu.write_byte(0xd0f1 + i, item.into()); // wCurMartItems + i
+    cpu.write_byte(0xd0f1 + data.len() as u16, 0xff); // terminator
+}
+
+fn read_mart(cpu: &mut Cpu, data: &[(Item, u16)]) {
+    cpu.write_byte(0xd0f0, data.len() as u8); // wCurMartCount
+
+    for (i, &(item, price)) in data.iter().enumerate() {
+        cpu.write_byte(0xd0f1 + i as u16, item.into()); // wCurMartItems + i
 
         cpu.set_de(price);
-        cpu.set_hl(0xd002 + (i * 3)); // wMartItem{i}BCD
+        cpu.set_hl(0xd002 + (i as u16 * 3)); // wMartItem{i}BCD
         cpu.call(0x5bf0); // GetMartPrice
     }
+
+    cpu.write_byte(0xd0f1 + data.len() as u16, 0xff); // terminator
 }

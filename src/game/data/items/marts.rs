@@ -1,36 +1,330 @@
-pub const MARTS: [u16; 34] = [
-    0x60ed, // MartCherrygrove
-    0x60f3, // MartCherrygroveDex
-    0x60fa, // MartViolet
-    0x6106, // MartAzalea
-    0x6111, // MartCianwood
-    0x6118, // MartGoldenrod2F1
-    0x6121, // MartGoldenrod2F2
-    0x612b, // MartGoldenrod3F
-    0x6134, // MartGoldenrod4F
-    0x613b, // MartGoldenrod5F1
-    0x6140, // MartGoldenrod5F2
-    0x6146, // MartGoldenrod5F3
-    0x614c, // MartGoldenrod5F4
-    0x6153, // MartOlivine
-    0x615e, // MartEcruteak
-    0x616a, // MartMahogany1
-    0x6170, // MartMahogany2
-    0x617b, // MartBlackthorn
-    0x6186, // MartViridian
-    0x6191, // MartPewter
-    0x619a, // MartCerulean
-    0x61a5, // MartLavender
-    0x61af, // MartVermilion
-    0x61b9, // MartCeladon2F1
-    0x61c2, // MartCeladon2F2
-    0x61ce, // MartCeladon3F
-    0x61d5, // MartCeladon4F
-    0x61da, // MartCeladon5F1
-    0x61e1, // MartCeladon5F2
-    0x61ea, // MartFuchsia
-    0x61f3, // MartSaffron
-    0x61fd, // MartMtMoon
-    0x6205, // MartIndigoPlateau
-    0x620e, // MartUnderground
-];
+use crate::game::constants::{item_constants::Item, mart_constants::Mart};
+
+impl Mart {
+    pub fn items(&self) -> &'static [Item] {
+        match self {
+            Mart::Cherrygrove => &[
+                Item::Potion,
+                Item::Antidote,
+                Item::ParlyzHeal,
+                Item::Awakening,
+            ],
+
+            Mart::CherrygroveDex => &[
+                Item::PokeBall,
+                Item::Potion,
+                Item::Antidote,
+                Item::ParlyzHeal,
+                Item::Awakening,
+            ],
+
+            Mart::Violet => &[
+                Item::PokeBall,
+                Item::Potion,
+                Item::EscapeRope,
+                Item::Antidote,
+                Item::ParlyzHeal,
+                Item::Awakening,
+                Item::XDefend,
+                Item::XAttack,
+                Item::XSpeed,
+                Item::FlowerMail,
+            ],
+
+            Mart::Azalea => &[
+                Item::Charcoal,
+                Item::PokeBall,
+                Item::Potion,
+                Item::SuperPotion,
+                Item::EscapeRope,
+                Item::Repel,
+                Item::Antidote,
+                Item::ParlyzHeal,
+                Item::FlowerMail,
+            ],
+
+            Mart::Cianwood => &[
+                Item::Potion,
+                Item::SuperPotion,
+                Item::HyperPotion,
+                Item::FullHeal,
+                Item::Revive,
+            ],
+
+            Mart::Goldenrod2F1 => &[
+                Item::Potion,
+                Item::SuperPotion,
+                Item::Antidote,
+                Item::ParlyzHeal,
+                Item::Awakening,
+                Item::BurnHeal,
+                Item::IceHeal,
+            ],
+
+            Mart::Goldenrod2F2 => &[
+                Item::PokeBall,
+                Item::GreatBall,
+                Item::EscapeRope,
+                Item::Repel,
+                Item::Revive,
+                Item::FullHeal,
+                Item::PokeDoll,
+                Item::FlowerMail,
+            ],
+
+            Mart::Goldenrod3F => &[
+                Item::XSpeed,
+                Item::XSpecial,
+                Item::XDefend,
+                Item::XAttack,
+                Item::DireHit,
+                Item::GuardSpec,
+                Item::XAccuracy,
+            ],
+
+            Mart::Goldenrod4F => &[
+                Item::Protein,
+                Item::Iron,
+                Item::Carbos,
+                Item::Calcium,
+                Item::HPUp,
+            ],
+
+            Mart::Goldenrod5F1 => &[Item::TmThunderpunch, Item::TmFirePunch, Item::TmIcePunch],
+
+            Mart::Goldenrod5F2 => &[
+                Item::TmThunderpunch,
+                Item::TmFirePunch,
+                Item::TmIcePunch,
+                Item::TmHeadbutt,
+            ],
+
+            Mart::Goldenrod5F3 => &[
+                Item::TmThunderpunch,
+                Item::TmFirePunch,
+                Item::TmIcePunch,
+                Item::TmRockSmash,
+            ],
+
+            Mart::Goldenrod5F4 => &[
+                Item::TmThunderpunch,
+                Item::TmFirePunch,
+                Item::TmIcePunch,
+                Item::TmHeadbutt,
+                Item::TmRockSmash,
+            ],
+
+            Mart::Olivine => &[
+                Item::GreatBall,
+                Item::SuperPotion,
+                Item::HyperPotion,
+                Item::Antidote,
+                Item::ParlyzHeal,
+                Item::Awakening,
+                Item::IceHeal,
+                Item::SuperRepel,
+                Item::SurfMail,
+            ],
+
+            Mart::Ecruteak => &[
+                Item::PokeBall,
+                Item::GreatBall,
+                Item::Potion,
+                Item::SuperPotion,
+                Item::Antidote,
+                Item::ParlyzHeal,
+                Item::Awakening,
+                Item::BurnHeal,
+                Item::IceHeal,
+                Item::Revive,
+            ],
+
+            Mart::Mahogany1 => &[
+                Item::Tinymushroom,
+                Item::Slowpoketail,
+                Item::PokeBall,
+                Item::Potion,
+            ],
+
+            Mart::Mahogany2 => &[
+                Item::Ragecandybar,
+                Item::GreatBall,
+                Item::SuperPotion,
+                Item::HyperPotion,
+                Item::Antidote,
+                Item::ParlyzHeal,
+                Item::SuperRepel,
+                Item::Revive,
+                Item::FlowerMail,
+            ],
+
+            Mart::Blackthorn => &[
+                Item::GreatBall,
+                Item::UltraBall,
+                Item::HyperPotion,
+                Item::MaxPotion,
+                Item::FullHeal,
+                Item::Revive,
+                Item::MaxRepel,
+                Item::XDefend,
+                Item::XAttack,
+            ],
+
+            Mart::Viridian => &[
+                Item::UltraBall,
+                Item::HyperPotion,
+                Item::FullHeal,
+                Item::Revive,
+                Item::Antidote,
+                Item::ParlyzHeal,
+                Item::Awakening,
+                Item::BurnHeal,
+                Item::FlowerMail,
+            ],
+
+            Mart::Pewter => &[
+                Item::GreatBall,
+                Item::SuperPotion,
+                Item::SuperRepel,
+                Item::Antidote,
+                Item::ParlyzHeal,
+                Item::Awakening,
+                Item::BurnHeal,
+            ],
+
+            Mart::Cerulean => &[
+                Item::GreatBall,
+                Item::UltraBall,
+                Item::SuperPotion,
+                Item::SuperRepel,
+                Item::FullHeal,
+                Item::XDefend,
+                Item::XAttack,
+                Item::DireHit,
+                Item::SurfMail,
+            ],
+
+            Mart::Lavender => &[
+                Item::GreatBall,
+                Item::Potion,
+                Item::SuperPotion,
+                Item::MaxRepel,
+                Item::Antidote,
+                Item::ParlyzHeal,
+                Item::Awakening,
+                Item::BurnHeal,
+            ],
+
+            Mart::Vermilion => &[
+                Item::UltraBall,
+                Item::SuperPotion,
+                Item::HyperPotion,
+                Item::Revive,
+                Item::ParlyzHeal,
+                Item::Awakening,
+                Item::BurnHeal,
+                Item::LiteBlueMail,
+            ],
+
+            Mart::Celadon2F1 => &[
+                Item::Potion,
+                Item::SuperPotion,
+                Item::HyperPotion,
+                Item::MaxPotion,
+                Item::Revive,
+                Item::SuperRepel,
+                Item::MaxRepel,
+            ],
+
+            Mart::Celadon2F2 => &[
+                Item::PokeBall,
+                Item::GreatBall,
+                Item::UltraBall,
+                Item::EscapeRope,
+                Item::FullHeal,
+                Item::Antidote,
+                Item::BurnHeal,
+                Item::IceHeal,
+                Item::Awakening,
+                Item::ParlyzHeal,
+            ],
+
+            Mart::Celadon3F => &[
+                Item::TmHiddenPower,
+                Item::TmSunnyDay,
+                Item::TmProtect,
+                Item::TmRainDance,
+                Item::TmSandstorm,
+            ],
+
+            Mart::Celadon4F => &[Item::PokeDoll, Item::LovelyMail, Item::SurfMail],
+
+            Mart::Celadon5F1 => &[
+                Item::HPUp,
+                Item::Protein,
+                Item::Iron,
+                Item::Carbos,
+                Item::Calcium,
+            ],
+
+            Mart::Celadon5F2 => &[
+                Item::XAccuracy,
+                Item::GuardSpec,
+                Item::DireHit,
+                Item::XAttack,
+                Item::XDefend,
+                Item::XSpeed,
+                Item::XSpecial,
+            ],
+
+            Mart::Fuchsia => &[
+                Item::GreatBall,
+                Item::UltraBall,
+                Item::SuperPotion,
+                Item::HyperPotion,
+                Item::FullHeal,
+                Item::MaxRepel,
+                Item::FlowerMail,
+            ],
+
+            Mart::Saffron => &[
+                Item::GreatBall,
+                Item::UltraBall,
+                Item::HyperPotion,
+                Item::MaxPotion,
+                Item::FullHeal,
+                Item::XAttack,
+                Item::XDefend,
+                Item::FlowerMail,
+            ],
+
+            Mart::MtMoon => &[
+                Item::PokeDoll,
+                Item::FreshWater,
+                Item::SodaPop,
+                Item::Lemonade,
+                Item::Repel,
+                Item::PortraitMail,
+            ],
+
+            Mart::IndigoPlateau => &[
+                Item::UltraBall,
+                Item::MaxRepel,
+                Item::HyperPotion,
+                Item::MaxPotion,
+                Item::FullRestore,
+                Item::Revive,
+                Item::FullHeal,
+            ],
+
+            Mart::Underground => &[
+                Item::EnergyPowder,
+                Item::EnergyRoot,
+                Item::HealPowder,
+                Item::RevivalHerb,
+            ],
+
+            Mart::Unknown(_) => &[Item::PokeBall, Item::Potion],
+        }
+    }
+}
