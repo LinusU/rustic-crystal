@@ -302,6 +302,10 @@ impl GameState {
         self.data[0x1106].into()
     }
 
+    pub fn mart_item_id(&self) -> u8 {
+        self.data[0x1107]
+    }
+
     pub fn cur_party_species(&self) -> Option<PokemonSpecies> {
         match self.data[0x1108] {
             0 => None,

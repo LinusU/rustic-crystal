@@ -82,17 +82,16 @@ fn pharmacist(cpu: &mut Cpu, mart: Mart) {
 }
 
 fn rooftop_sale(cpu: &mut Cpu) {
-    let (ptr, data) = if !cpu
+    let data = if !cpu
         .borrow_wram()
         .status_flags()
         .contains(StatusFlags::HALL_OF_FAME)
     {
-        ((0x05, 0x5aee), rooftop_sale::ROOFTOP_SALE_MART_1)
+        rooftop_sale::ROOFTOP_SALE_MART_1
     } else {
-        ((0x05, 0x5aff), rooftop_sale::ROOFTOP_SALE_MART_2)
+        rooftop_sale::ROOFTOP_SALE_MART_2
     };
 
-    load_mart_pointer(cpu, ptr);
     read_mart(cpu, &data);
     cpu.call(0x1d6e); // LoadStandardMenuHeader
 
@@ -207,4 +206,22 @@ fn read_mart(cpu: &mut Cpu, data: &[(Item, u16)]) {
     }
 
     cpu.write_byte(0xd0f1 + data.len() as u16, 0xff); // terminator
+}
+
+pub fn rooftop_sale_ask_purchase_quantity_get_sale_price(cpu: &mut Cpu) {
+    let data = if !cpu
+        .borrow_wram()
+        .status_flags()
+        .contains(StatusFlags::HALL_OF_FAME)
+    {
+        rooftop_sale::ROOFTOP_SALE_MART_1
+    } else {
+        rooftop_sale::ROOFTOP_SALE_MART_2
+    };
+
+    let idx = cpu.borrow_wram().mart_item_id() as usize;
+
+    cpu.set_de(data[idx].1);
+
+    cpu.pc = cpu.stack_pop(); // ret
 }
