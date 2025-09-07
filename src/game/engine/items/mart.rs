@@ -7,6 +7,7 @@ use crate::{
             ram_constants::{DailyFlags, StatusFlags},
         },
         data::items::{bargain_shop, rooftop_sale},
+        ram::hram,
     },
 };
 
@@ -49,7 +50,8 @@ fn herb_shop(cpu: &mut Cpu, mart: Mart) {
 }
 
 fn bargain_shop(cpu: &mut Cpu) {
-    load_mart_pointer(cpu, (0x05, 0x5c51));
+    cpu.borrow_wram_mut().set_bargain_shop_flags(0);
+
     read_mart(cpu, &bargain_shop::BARGAIN_SHOP_DATA);
     cpu.call(0x1d6e); // LoadStandardMenuHeader
 
@@ -102,18 +104,6 @@ fn rooftop_sale(cpu: &mut Cpu) {
 
     cpu.set_hl(0x5fb4); // MartComeAgainText
     cpu.call(0x5fcd); // MartTextbox
-}
-
-fn load_mart_pointer(cpu: &mut Cpu, ptr: (u8, u16)) {
-    cpu.borrow_wram_mut().set_mart_pointer(ptr);
-
-    cpu.a = 0;
-    cpu.set_bc(16);
-    cpu.set_hl(0xd0f0); // wCurMartCount
-    cpu.call(0x3041); // ByteFill: fill bc bytes with the value of a, starting at hl
-
-    cpu.borrow_wram_mut().set_bargain_shop_flags(0);
-    cpu.a = 0;
 }
 
 fn standard_mart(cpu: &mut Cpu, mart: Mart) {
@@ -206,6 +196,19 @@ fn read_mart(cpu: &mut Cpu, data: &[(Item, u16)]) {
     }
 
     cpu.write_byte(0xd0f1 + data.len() as u16, 0xff); // terminator
+}
+
+pub fn bargain_shop_ask_purchase_quantity_get_price(cpu: &mut Cpu) {
+    let idx = cpu.borrow_wram().mart_item_id() as usize;
+    let price = bargain_shop::BARGAIN_SHOP_DATA[idx].1.to_be_bytes();
+
+    cpu.write_byte(hram::MONEY_TEMP, 0);
+    cpu.write_byte(hram::MONEY_TEMP + 1, price[0]);
+    cpu.write_byte(hram::MONEY_TEMP + 2, price[1]);
+
+    cpu.set_flag(CpuFlag::C, false);
+
+    cpu.pc = cpu.stack_pop(); // ret
 }
 
 pub fn rooftop_sale_ask_purchase_quantity_get_sale_price(cpu: &mut Cpu) {
